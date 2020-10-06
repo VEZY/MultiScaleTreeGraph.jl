@@ -1,0 +1,35 @@
+# Xplo generated MTG
+CODE:	FORM-A
+
+CLASSES:
+SYMBOL	SCALE	DECOMPOSITION	INDEXATION	DEFINITION
+$ 	0	FREE	FREE	IMPLICIT
+Individual	1	FREE	FREE	IMPLICIT
+Axis	2	FREE	FREE	IMPLICIT # you can add comments anywhere
+Internode	3	FREE	FREE	IMPLICIT
+Leaf	3	FREE	FREE	IMPLICIT
+
+DESCRIPTION:
+LEFT	RIGHT	RELTYPE	MAX
+Internode	Internode,Leaf	+	?
+Internode	Internode,Leaf	<	?
+
+FEATURES:
+NAME	TYPE
+XX	REAL
+YY	REAL
+ZZ	REAL
+FileName	ALPHA
+Length	ALPHA
+Width	ALPHA
+XEuler	REAL
+
+MTG:
+ENTITY-CODE		XX	YY	ZZ	FileName	Length	Width	XEuler
+/Scene0
+^/Individual0		0.0	0.0	0.0	simple_OPF.opf
+^/Axis0
+^/Internode0						4.0	1.0
+	+Leaf0					10.0	6.0
+^<Internode1						6.0		170.0
+	+Leaf0					12.0	7.0

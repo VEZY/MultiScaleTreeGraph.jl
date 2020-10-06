@@ -1,0 +1,37 @@
+CODE:	FORM-A
+
+CLASSES:
+SYMBOL	SCALE	DECOMPOSITION	INDEXATION	DEFINITION
+$ 	0	FREE	FREE	IMPLICIT
+Individual	1	FREE	FREE	IMPLICIT
+Axis	2	FREE	FREE	IMPLICIT
+Internode	3	FREE	FREE	IMPLICIT
+Leaf	3	FREE	FREE	IMPLICIT        # you can add comments anywhere
+
+DESCRIPTION:
+LEFT	RIGHT	RELTYPE	MAX
+Internode	Internode,Leaf	+	?
+Internode	Internode	<	?
+
+FEATURES:
+NAME	TYPE
+XX	REAL
+YY	REAL
+ZZ	REAL
+Length	ALPHA
+Width	ALPHA
+
+MTG:
+ENTITY-CODE				XX	YY	ZZ	Length	Width
+/Scene0
+^/Individual0				0.0	0.0	0.0
+^/Axis0
+^/Internode0							4.0	1.0
+	+Leaf0				10.0	6.0
+	+Axis1
+		/Internode0					4.0	1.0
+			+Leaf0				10.0	6.0
+^<Internode1							6.0	1.0
+	+Axis1
+		/Internode0					4.0	1.0
+			+Leaf0				10.0	6.0
