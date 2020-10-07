@@ -3,7 +3,7 @@ module MTG
 using LightGraphs
 using Printf
 using DataFrames
-using StructArrays
+using MutableNamedTuples
 
 # Write your package code here.
 include("read_MTG/read_MTG.jl")

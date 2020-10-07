@@ -51,12 +51,20 @@ function read_mtg(file)
             # Parse the mtg CLASSES section, and then continue to next while loop iteration:
             if issection(l[1],"CLASSES")
                 classes = parse_section!(f,["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"],"CLASSES",line,l)
+                classes.SCALE = parse.(Int,classes.SCALE)
                 continue
             end
 
             # Parse the mtg DESCRIPTION section:
             if issection(l[1],"DESCRIPTION")
                 description = parse_section!(f,["LEFT","RIGHT","RELTYPE","MAX"],"DESCRIPTION",line,l,allow_empty=true)
+                if description != nothing
+                    description.RIGHT = split.(description.RIGHT,",")
+                    if !all(occursin.(description.RELTYPE, ("+","<")))
+                        error("Unknown relation type(s) in DESCRITPION section: ",
+                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+","<")) .== 0]),", "))
+                    end
+                end
                 continue
             end
 

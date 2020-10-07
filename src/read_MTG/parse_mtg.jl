@@ -34,9 +34,6 @@ function parse_mtg!(f,classes,description,features,line,l)
     columns = l_header[l_header .!= ""][2:end]
     common_features = occursin.(columns, features.NAME)
 
-
-    
-
     if !all(common_features)
      error("Unknown column in the ENTITY-CODE (column names) in MTG: ",join(columns[.!common_features],", "))
     end
@@ -50,10 +47,21 @@ function parse_mtg!(f,classes,description,features,line,l)
     l[1] = next_line!(f,line)
     splitted_MTG = split(l[1], "\t")
     node_1_node = split_MTG_elements(splitted_MTG[1])
-    node_1_element = parse_MTG_node.(node_1_node)
+    # node_1_element = parse_MTG_node(node_1_node[1])
+    link, symbol, index = parse_MTG_node(node_1_node[1])
+    
+    # Handling special case of the scene node:
+    if symbol == "Scene"
+         symbol = "\$"
+    end
 
-    # node_data = splitted_MTG[1] ; 
+    scale = classes.SCALE[symbol .== classes.SYMBOL][1]
     attrs = parse_MTG_node_attr(splitted_MTG,features,attr_column_start,line)
+    MutableNamedTuple(zip(keys(attrs), values(attrs)))
+    
+
+    root_node = Node(NodeMTG(link,symbol,index,scale), )
+    
     Node(node_1_element, node_1_attr)
     
     # Continue here !!!
@@ -77,7 +85,7 @@ A parsed node in the form of a Dict of three:
 """
 function parse_MTG_node(l)
     if any(l .== ("^","<.","+."))
-        return((l))
+        return((l,missing,missing))
     end
 
     link = l[1]
@@ -111,7 +119,6 @@ A list of attributes
 function parse_MTG_node_attr(node_data,features,attr_column_start,line;force = false)
 
     node_attr = Dict{String,Any}(zip(features.NAME, fill(missing, size(features)[1])))
-    # node_attr = fill(missing, size(features)[1])
 
     if length(node_data) < attr_column_start
         return node_attr

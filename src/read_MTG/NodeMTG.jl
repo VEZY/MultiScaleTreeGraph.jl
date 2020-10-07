@@ -1,6 +1,6 @@
 """
-    NodeMTG(link::AbstractString, symbol::Union{Missing,AbstractString}, index::Union{Missing,Integer})
-    NodeMTG(link::AbstractString)
+    NodeMTG(link, symbol, index, scale)
+    NodeMTG(link)
 
 # NodeMTG structure
 
@@ -23,19 +23,17 @@ NodeMTG("<", missing, missing)
 ```
 """
 struct NodeMTG
-    link::Union{AbstractChar,AbstractString}
-    symbol::Union{Missing,AbstractString}
-    index::Union{Missing,Integer}
-    scale::Union{Missing,Integer}
+    link::Union{String,Char}
+    symbol::Union{Nothing,String,Char}
+    index::Union{Nothing,Int}
+    scale::Union{Nothing,Int}
 end
 
 NodeMTG(link) = NodeMTG(link,missing,missing)
 
-
-
-mutable struct Node
+mutable struct Node{T <: MutableNamedTuple}
     MTG::NodeMTG
-    attributes
+    attributes::T
 end
 
-Node(MTG) = Node(MTG,missing)
+Node(MTG) = Node(MTG,MutableNamedTuple())
