@@ -54,7 +54,8 @@ function parse_mtg!(f,classes,description,features,line,l)
 
     # node_data = splitted_MTG[1] ; 
     attrs = parse_MTG_node_attr(splitted_MTG,features,attr_column_start,line)
-    node_1_attr
+    Node(node_1_element, node_1_attr)
+    
     # Continue here !!!
 end
 
@@ -69,14 +70,14 @@ end
 
 # Return  
 
-A parsed node in the form of a list of three:
+A parsed node in the form of a Dict of three:
  - the link
  - the symbol
  - and the index
 """
 function parse_MTG_node(l)
     if any(l .== ("^","<.","+."))
-        return(NodeMTG(l))
+        return((l))
     end
 
     link = l[1]
@@ -87,7 +88,7 @@ function parse_MTG_node(l)
     # Use the index at which the MTG index was found to retreive the MTG symbol: 
     symbol = l[2:stringmatch.offset]
     index = parse(Int,stringmatch.match)
-    NodeMTG(link, symbol, index)
+    (link, symbol, index)
 end
 
 

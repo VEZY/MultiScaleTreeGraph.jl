@@ -7,7 +7,9 @@ version = "0.1.0"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
+MutableNamedTuples = "af6c499f-54b4-48cc-bbd2-094bba7533c7"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
 BenchmarkTools = "0.5"

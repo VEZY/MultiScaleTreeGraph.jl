@@ -26,6 +26,7 @@ struct NodeMTG
     link::Union{AbstractChar,AbstractString}
     symbol::Union{Missing,AbstractString}
     index::Union{Missing,Integer}
+    scale::Union{Missing,Integer}
 end
 
 NodeMTG(link) = NodeMTG(link,missing,missing)

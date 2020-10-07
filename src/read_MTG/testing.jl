@@ -1,5 +1,5 @@
 using MTG
-using BenchmarkTools
+# using BenchmarkTools
 
 # read_mtg("test/files/simple_plant.mtg")
 file = "test/files/simple_plant.mtg"
@@ -17,6 +17,16 @@ section = "DESCRIPTION"
 line = [0]
 # l = [""]
 # l[1] = next_line!(f,line)
+
+test = (a=1, b=2)
+test.a
+test[1]
+test.a = 2
+sx = StructArray((test,(a=1, b=2)))
+
+x = [(a=1, b=2), (a=3, b=4)]
+sx = StructArray(x)
+sx.b .= 1
 
 
 mtg,classes,description,features = read_mtg("test/files/simple_plant.mtg")

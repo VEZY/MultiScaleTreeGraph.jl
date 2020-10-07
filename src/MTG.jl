@@ -3,6 +3,8 @@ module MTG
 using LightGraphs
 using Printf
 using DataFrames
+using StructArrays
+
 # Write your package code here.
 include("read_MTG/read_MTG.jl")
 include("read_MTG/strip_comments.jl")
