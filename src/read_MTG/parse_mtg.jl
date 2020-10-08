@@ -35,11 +35,11 @@ function parse_mtg!(f,classes,description,features,line,l)
     common_features = occursin.(columns, features.NAME)
 
     if !all(common_features)
-     error("Unknown column in the ENTITY-CODE (column names) in MTG: ",join(columns[.!common_features],", "))
+        error("Unknown column in the ENTITY-CODE (column names) in MTG: ",join(columns[.!common_features],", "))
     end
 
     if features.NAME != columns
-     error("FEATURES names should be in the same order as column names in the ENTITY-CODE.")
+        error("FEATURES names should be in the same order as column names in the ENTITY-CODE.")
     end
 
     attr_column_start = findfirst(x -> x == columns[1], l_header)
@@ -57,13 +57,15 @@ function parse_mtg!(f,classes,description,features,line,l)
 
     scale = classes.SCALE[symbol .== classes.SYMBOL][1]
     attrs = parse_MTG_node_attr(splitted_MTG,features,attr_column_start,line)
-    MutableNamedTuple(zip(keys(attrs), values(attrs)))
-    
 
-    root_node = Node(NodeMTG(link,symbol,index,scale), )
-    
-    Node(node_1_element, node_1_attr)
-    
+    root_node = Node(join([symbol,"1"],"_"), NodeMTG(link,symbol,index,scale), attrs)
+
+    # Initializing the last column to which MTG was attached to keep track of which column
+    # to attach the new MTG line 
+    max_columns = attr_column_start - 1
+    last_node_column = c(1,rep(NA_integer_, max_columns - 1))
+
+    node_id = 2
     # Continue here !!!
 end
 
@@ -118,52 +120,68 @@ A list of attributes
 """
 function parse_MTG_node_attr(node_data,features,attr_column_start,line;force = false)
 
-    node_attr = Dict{String,Any}(zip(features.NAME, fill(missing, size(features)[1])))
-
+    
     if length(node_data) < attr_column_start
-        return node_attr
+        return missing
     end
 
     node_data_attr = node_data[attr_column_start:end]
+    
     if length(node_data_attr) > size(features)[1]
         error("Found more columns for features in MTG than declared in the FEATURE section",
         ". Please check line ",line, " of the MTG:\n",join(node_data, "\t"))
     end
     
+    node_attr = Dict{String,Any}(zip(features.NAME[1:length(node_data_attr)],
+                                 fill(missing, length(node_data_attr))))
+ 
     node_type = features.TYPE
 
+    # node_data_attr is always read in order so names and types correspond to values in features
     for i in 1:length(node_data_attr)
         if node_data_attr[i] == "" || node_data_attr[i] == "NA"
-            node_attr[features.NAME[i]] = missing
+            pop!(node_attr,features.NAME[i])
             continue
         end
 
         if node_type[i] == "INT"
-            node_attr[features.NAME[i]] = try
-                parse(Int,node_data_attr[i])
+            try
+               node_attr[features.NAME[i]] = parse(Int,node_data_attr[i])
             catch e
                 if !force
                     error("Found issue in the MTG when converting column $(features[i,1]) ",
                     "with value $(node_data_attr[i]) into integer.",
                     " Please check line ",line," of the MTG:\n",join(node_data, "\t"))
                 end
-                missing
-            end 
+                pop!(node_attr,features.NAME[i])
+
+            end
         elseif node_type[i] == "REAL" || (node_type[i] == "ALPHA" && in(features.NAME[i],("Width","Length")))
-            node_attr[features.NAME[i]] = try
-                parse(Float64,node_data_attr[i])
+            try
+                node_attr[features.NAME[i]] = parse(Float64,node_data_attr[i])
             catch e
                 if !force
                     error("Found issue in the MTG when converting column $(features[i,1]) ",
                     "with value $(node_data_attr[i]) into Float64.",
                     " Please check line ",line," of the MTG:\n",join(node_data, "\t"))
                 end
-                missing
+                pop!(node_attr,features.NAME[i])
             end 
         else
             node_attr[features.NAME[i]] = node_data_attr[i]
         end
     end
 
-    node_attr
+    MutableNamedTuple{tuple(Symbol.(keys(node_attr))...)}(tuple(values(node_attr)...))
 end
+
+
+    # Dict{String,Any}(zip(features.NAME, fill(missing, size(features)[1])))
+    # # node_attr = fill(missing, size(features)[1])
+    
+    # test = MutableNamedTuple(;zip(Symbol.(features.NAME), fill(missing, size(features)[1]))...)
+    # typeof(test)
+    # test.YY = 1
+
+    # NamedTuple{tuple(Symbol.(features.NAME)...)}(fill(missing, size(features)[1]))
+    # MutableNamedTuple{tuple(Symbol.(features.NAME)...)}(fill(missing, size(features)[1]))

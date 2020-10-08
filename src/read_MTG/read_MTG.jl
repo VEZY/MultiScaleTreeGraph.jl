@@ -58,7 +58,7 @@ function read_mtg(file)
             # Parse the mtg DESCRIPTION section:
             if issection(l[1],"DESCRIPTION")
                 description = parse_section!(f,["LEFT","RIGHT","RELTYPE","MAX"],"DESCRIPTION",line,l,allow_empty=true)
-                if description != nothing
+                if description !== nothing
                     description.RIGHT = split.(description.RIGHT,",")
                     if !all(occursin.(description.RELTYPE, ("+","<")))
                         error("Unknown relation type(s) in DESCRITPION section: ",

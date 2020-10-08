@@ -1,5 +1,6 @@
 using MTG
 # using BenchmarkTools
+using MutableNamedTuples
 
 # read_mtg("test/files/simple_plant.mtg")
 file = "test/files/simple_plant.mtg"
@@ -10,6 +11,9 @@ f = open(file, "r")
 for i in 1:27
     l[1] = next_line!(f,line)
 end
+
+mtg,classes,description,features = read_mtg("test/files/simple_plant.mtg")
+
 close(f)
 
 header = ["LEFT","RIGHT","RELTYPE","MAX"]
@@ -18,18 +22,19 @@ line = [0]
 # l = [""]
 # l[1] = next_line!(f,line)
 
-test = (a=1, b=2)
-test.a
-test[1]
-test.a = 2
+x = MutableNamedTuple(a=1, b=2)
+x.a
+x[1]
+x.a = 2
+
 sx = StructArray((test,(a=1, b=2)))
 
-x = [(a=1, b=2), (a=3, b=4)]
-sx = StructArray(x)
-sx.b .= 1
+function testfn()
+    return
+end
 
+testfn() === nothing
 
-mtg,classes,description,features = read_mtg("test/files/simple_plant.mtg")
 
 any(node_1_node[1] .== ("^","<.","+."))
 
@@ -48,3 +53,30 @@ read_mtg("test/files/simple_plant_2.mtg")
 
 using DataFrames
 DataFrame(classes, ["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"])
+
+
+test = Dict{String,Union{Missing, String, Int, Float64}}("a" => 1, "b" => 1.2)
+
+try
+  test["a"] = parse(Int,"3")
+catch e
+    # error("issue")
+    pop!(test,"a")
+    nothing
+end
+
+test["a"] = missing
+
+
+mutable struct Foo
+    bar::Int
+    baz::Int
+    maz::Int
+    function Foo(maz=2)
+        foo = new()
+        foo.maz = maz
+        return foo
+    end
+end
+
+foo=Foo()

@@ -1,6 +1,6 @@
 module MTG
 
-using LightGraphs
+using AbstractTrees
 using Printf
 using DataFrames
 using MutableNamedTuples
@@ -14,6 +14,10 @@ include("read_MTG/parse_mtg.jl")
 include("read_MTG/NodeMTG.jl")
 
 export read_mtg
+export printnode
+
+# Not sure to keep as export
+export Node
 
 # Just for testing:
 export strip_comments
