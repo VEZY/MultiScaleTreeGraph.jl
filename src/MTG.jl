@@ -12,6 +12,7 @@ include("read_MTG/utils-string.jl")
 include("read_MTG/parse_section.jl")
 include("read_MTG/parse_mtg.jl")
 include("read_MTG/NodeMTG.jl")
+include("read_MTG/expand_node.jl")
 
 export read_mtg
 export printnode
@@ -29,5 +30,6 @@ export split_MTG_elements
 export NodeMTG
 export parse_MTG_node
 export parse_MTG_node_attr
+export expand_node!
 
 end
