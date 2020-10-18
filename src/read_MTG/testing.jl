@@ -1,6 +1,6 @@
 using MTG
 # using BenchmarkTools
-using MutableNamedTuples
+# using MutableNamedTuples
 
 # read_mtg("test/files/simple_plant.mtg")
 file = "test/files/simple_plant.mtg"
@@ -8,11 +8,18 @@ file = "test/files/simple_plant.mtg"
 line = [0]
 l = [""]
 f = open(file, "r")
-for i in 1:27
-    l[1] = next_line!(f,line)
+for i in 1:33
+    l[1] = next_line!(f,line;whitespace=false)
 end
 
-mtg,classes,description,features = read_mtg("test/files/simple_plant.mtg")
+mtg,classes,description,features = read_mtg("test/files/simple_plant.mtg");
+
+isleaf(node.children["node_2"].children["node_3"].children["node_4"].children["node_5"])
+node.children["node_2"].children["node_3"].children["node_4"].children["node_5"].children
+
+isleaf(mtg)
+isroot(mtg)
+children(mtg)
 
 close(f)
 

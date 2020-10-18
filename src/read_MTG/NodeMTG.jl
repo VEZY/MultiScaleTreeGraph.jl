@@ -19,38 +19,36 @@ julia> NodeMTG("<","Leaf",2)
 NodeMTG("<", "Leaf", 2)
 
 julia> NodeMTG("<")
-NodeMTG("<", missing, missing)
+NodeMTG("<", nothing, nothing)
 ```
 """
 struct NodeMTG
     link::Union{String,Char}
-    symbol::Union{Nothing,String,Char}
+    symbol::Union{Nothing,String,SubString,Char}
     index::Union{Nothing,Int}
     scale::Union{Nothing,Int}
 end
 
-NodeMTG(link) = NodeMTG(link,missing,missing)
-
-mutable struct Node{T <: Union{Missing,MutableNamedTuple}}
+mutable struct Node{T <: Union{Nothing,MutableNamedTuple}}
     name::String
-    parent::Union{Missing,Node}
-    children::Union{Missing,Vector{Node}}
-    siblings::Union{Missing,Vector{Node}}
+    parent::Union{Nothing,Node}
+    children::Union{Nothing,Dict{String,Node}}
+    siblings::Union{Nothing,Dict{String,Node}}
     MTG::NodeMTG
     attributes::T
 end
 
 # For the root node:
 # - No attributes
-Node(name::String,MTG::NodeMTG) = Node(name,missing,missing,missing,MTG,missing)
+Node(name::String,MTG::NodeMTG) = Node(name,nothing,nothing,nothing,MTG,nothing)
 # - with attributes
-Node(name::String,MTG::NodeMTG,attributes::Union{Missing,MutableNamedTuple}) = Node(name,missing,missing,missing,MTG,attributes)
+Node(name::String,MTG::NodeMTG,attributes::Union{Nothing,MutableNamedTuple}) = Node(name,nothing,nothing,nothing,MTG,attributes)
 
 # For the others:
 # - No attributes
-Node(name::String,parent::Missing,MTG::NodeMTG) = Node(name,parent,missing,missing,MTG,missing)
+Node(name::String,parent::Node,MTG::NodeMTG) = Node(name,parent,nothing,nothing,MTG,nothing)
 # - with attributes
-Node(name::String,parent::Node,MTG::NodeMTG,attributes::Union{Missing,MutableNamedTuple}) = Node(name,parent,missing,missing,MTG,attributes)
+Node(name::String,parent::Node,MTG::NodeMTG,attributes::Union{Nothing,MutableNamedTuple}) = Node(name,parent,nothing,nothing,MTG,attributes)
 
 
 #  Next lines are adapted from either:

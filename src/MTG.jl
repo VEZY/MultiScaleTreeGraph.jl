@@ -13,9 +13,15 @@ include("read_MTG/parse_section.jl")
 include("read_MTG/parse_mtg.jl")
 include("read_MTG/NodeMTG.jl")
 include("read_MTG/expand_node.jl")
+include("read_MTG/Tree_funs.jl")
 
 export read_mtg
 export printnode
+export isleaf
+export isroot
+export children
+export addchild! 
+export traverse!
 
 # Not sure to keep as export
 export Node

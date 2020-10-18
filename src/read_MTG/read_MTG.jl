@@ -16,8 +16,8 @@ and MTG. The MTG is a [data.tree] data structure.
 # Examples
 
 ```jldoctest
-file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg")
-read_mtg(file)
+julia> file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
+julia> mtg,classes,description,features = read_mtg(file);
 ```
 """
 function read_mtg(file)
@@ -76,8 +76,8 @@ function read_mtg(file)
 
             # Parse the mtg FEATURES section:
             if issection(l[1],"MTG")
-                # mtg = parse_mtg!(f,classes,description,features,line,l)
-                mtg = next_line!(f,line)
+                mtg = parse_mtg!(f,classes,features,line,l)
+                # mtg = next_line!(f,line)
                 continue
             end
 

@@ -18,7 +18,7 @@ The buffered IO stream (`f`) should start at the line of the section.
 
 The parsed MTG section
 """
-function parse_mtg!(f,classes,description,features,line,l)
+function parse_mtg!(f,classes,features,line,l)
     l[1] = next_line!(f,line)
 
     if length(l[1]) == 0 
@@ -58,19 +58,24 @@ function parse_mtg!(f,classes,description,features,line,l)
     scale = classes.SCALE[symbol .== classes.SYMBOL][1]
     attrs = parse_MTG_node_attr(splitted_MTG,features,attr_column_start,line)
 
-    root_node = Node(join([symbol,"1"],"_"), NodeMTG(link,symbol,index,scale), attrs)
+    # root_node = Node(join([symbol,"1"],"_"), NodeMTG(link,symbol,index,scale), attrs)
+    root_node = Node("node_1", NodeMTG(link,symbol,index,scale), attrs)
 
     # Initializing the last column to which MTG was attached to keep track of which column
     # to attach the new MTG line 
     max_columns = attr_column_start - 1
-    last_node_column = repeat([1], max_columns)
-
+    last_node_column = zeros(Integer,max_columns)
+    last_node_column[1] = 1
     node_id = 2
 
+    tree_dict = Dict{String,Node}("node_1" => root_node)
     # for i in Iterators.drop(1:length(splitted_MTG), 1)
     while !eof(f)
         node_name = join(["node_",node_id])
-        l[1] = next_line!(f,line)
+        l[1] = next_line!(f,line;whitespace = false)
+        if length(l[1]) == 0
+            continue
+        end
         splitted_MTG = split(l[1], "\t")
         
         node_column = findfirst(x -> length(x) > 0, splitted_MTG)
@@ -87,68 +92,63 @@ function parse_mtg!(f,classes,description,features,line,l)
         node_attr_column_start = attr_column_start - node_column + 1
         node = split_MTG_elements(node_data[1])
         node, shared = expand_node!(node,1)
-        
-        ####### Continuer ici !!!!!!!!
 
         # Get node attributes:
-        node_attr = parse_MTG_node_attr(node_data,features,node_attr_column_start,i+first_line+1)
-        
-        # Declare a new node as object (because the methods associated to nodes are OO):
-        # assign(node_name, data.tree::Node$new(node_name))
-        
+        node_attr = parse_MTG_node_attr(node_data,features,node_attr_column_start,line)
+
         if node[1] == "^"
             # The parent node is the last one built on the same column
             parent_column = last_node_column[node_column]
-            if (is.na(parent_column))
-                stop("Node defined at line ",i+first_line+1,
-                " uses the '<' notation but is the first on its column")
+            if parent_column == 0
+                error("Node defined at line ",line,
+                " uses the '<' notation but is the first on its column.")
             end
         else
             # The parent node is the last one built on column - 1.
             parent_column = last_node_column[node_column - 1]
-            
-            if is.na(parent_column)
-                stop("Can't find the parent of Node defined at line ",i+first_line+1,
-                ". It may be defined on a column that is too far right.")
+
+            if parent_column == 0
+                error("Can't find the parent of Node defined at line ",line,
+                ". You may check the number of leading tabs.")
             end
         end
-        
-        # building_nodes = seq_along(node)[node != "^"]
-        # for k in building_nodes
-        #     node_element = parse_MTG_node(node[k])
+
+        building_nodes = (1:length(node))[node .!= "^"]
+
+        for k in building_nodes
+            node_element = parse_MTG_node(node[k])
+            # NB: if several nodes are declared on the same line, the attributes are defined
+            # for the last node only, unless "<.<" or "+.+" are used
             
-        #     # NB: if several nodes are declared on the same line, the attributes are defined
-        #     # for the last node only, unless "<.<" or "+.+" are used
-        #     if k == length(node) || k %in% attr(node,"shared")
-        #         node_k_attr= c(node_attr,
-        #         .link = node_element$link,
-        #         .symbol = node_element$symbol,
-        #         .index = node_element$index,
-        #         .scale = classes$SCALE[node_element$symbol == classes$SYMBOL])
-        #     else
-        #         node_k_attr= (.link = node_element$link,
-        #         .symbol = node_element$symbol,
-        #         .index = node_element$index,
-        #         .scale = classes$SCALE[node_element$symbol == classes$SYMBOL])
-        #     end
-        #     if k == min(building_nodes)
-        #         parent_node = paste0("node_",parent_column)
-        #     else 
-        #         parent_node = paste0("node_",node_id-1)
-        #     end
-        #     node_name = paste0("node_",node_id)
+            if k == length(node) || findfirst(x -> x == k, shared) !== nothing
+                node_k_attr = node_attr
+            else
+                node_k_attr = nothing
+            end
+
+            if k == minimum(building_nodes)
+                parent_node = join(["node_",parent_column])
+            else 
+                parent_node = join(["node_",node_id-1])
+            end
+
+            # Instantiating the current node MTG (immutable):
+            childMTG = NodeMTG(node_element[1],node_element[2],node_element[3],classes.SCALE[node_element[2] .== classes.SYMBOL][1])
+
+            # Instantiating the current node (mutable): 
+            child = Node(node_name,tree_dict[parent_node],childMTG,node_k_attr)
             
-        #     # Call the "AddChild" method from the parent to add our new node as its child:
-        #     # eval(parse(text=parent_node))[["AddChild"]](node_name)
-        #     assign(node_name,eval(parse(text=parent_node))[["AddChild"]](node_name))
-        #     # Assign the attributes to the current node :
-        #     for j in names(node_k_attr)
-        #         assign(j, node_k_attr[[j]], j, eval(parse(text=node_name)))
-        #     end
+            # Add the current node as a child to the parent and the parent to the current node
+            addchild!(tree_dict[parent_node],child;force = true)
+            # Add the node to tree_dict to be able to access it by name: 
+            push!(tree_dict, node_name => child)
             
-        #     last_node_column[node_column] = node_id
-        #     node_id = node_id + 1
-        # end
+            # Keeping track of the last node used in the current MTG column
+            last_node_column[node_column] = node_id
+
+            # Increment node unique ID:
+            node_id = node_id + 1
+        end
     end
 
   root_node
@@ -207,7 +207,7 @@ function parse_MTG_node_attr(node_data,features,attr_column_start,line;force = f
 
     
     if length(node_data) < attr_column_start
-        return missing
+        return
     end
 
     node_data_attr = node_data[attr_column_start:end]
@@ -259,14 +259,3 @@ function parse_MTG_node_attr(node_data,features,attr_column_start,line;force = f
 
     MutableNamedTuple{tuple(Symbol.(keys(node_attr))...)}(tuple(values(node_attr)...))
 end
-
-
-    # Dict{String,Any}(zip(features.NAME, fill(missing, size(features)[1])))
-    # # node_attr = fill(missing, size(features)[1])
-    
-    # test = MutableNamedTuple(;zip(Symbol.(features.NAME), fill(missing, size(features)[1]))...)
-    # typeof(test)
-    # test.YY = 1
-
-    # NamedTuple{tuple(Symbol.(features.NAME)...)}(fill(missing, size(features)[1]))
-    # MutableNamedTuple{tuple(Symbol.(features.NAME)...)}(fill(missing, size(features)[1]))
