@@ -11,6 +11,7 @@ MutableNamedTuples = "af6c499f-54b4-48cc-bbd2-094bba7533c7"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
+AbstractTrees = "0.3"
 BenchmarkTools = "0.5"
 DataFrames = "0.21"
 MutableNamedTuples = "0.1"
