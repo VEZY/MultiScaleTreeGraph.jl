@@ -31,7 +31,10 @@ To do before v1:
 - [x] Functions to read the MTG (`read_mtg()`)  
 - [x] Functions to mutate the MTG (`traverse()`)  
 - [ ] Easy handling of the scales in tree traversal  
-- [ ] Functions to plot the MTG
+- [ ] Functions to plot the MTG  
+- [ ] Add documentation
+- [ ] Add tests
+- [ ] Better tree printing. See [DataTrees.jl implementation](https://github.com/vh-d/DataTrees.jl/blob/master/src/printing.jl)
 
 ## 4. Acknowledgments
 

@@ -57,18 +57,18 @@ Node(name::String,parent::Node,MTG::NodeMTG,attributes::Union{Nothing,MutableNam
 # <https://github.com/vh-d/DataTrees.jl/blob/master/src/indexing.jl>
 
 # AbstractTrees.children(node::Node) = node
-AbstractTrees.printnode(io::IO, node::Node) = print(io, join(["Node: ",node.name,", Link: ",node.MTG.link,
-                                                                "Index: ", node.MTG.index]))
-
+function AbstractTrees.printnode(io::IO, node::Node)
+    print(io, join(["Node: ",node.name,", Link: ",node.MTG.link,"Index: ", node.MTG.index]))
+end
 Base.eltype(::Type{<:TreeIterator{Node{T}}}) where T = Node{T}
 Base.IteratorEltype(::Type{<:TreeIterator{Node{T}}}) where T = Base.HasEltype()
 
 # # Implement iteration over the immediate children of a node
-# function Base.iterate(node::Node)
-#     isdefined(node, :chilren) && return (node.chilren)
-#     return nothing
-# end
-# Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
+function Base.iterate(node::Node)
+    isdefined(node, :chilren) && return (node.chilren)
+    return nothing
+end
+Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
 
 ## Things we need to define to leverage the native iterator over children
 ## for the purposes of AbstractTrees.
@@ -77,13 +77,13 @@ AbstractTrees.parentlinks(::Type{Node{T}}) where T = AbstractTrees.StoredParents
 AbstractTrees.siblinglinks(::Type{Node{T}}) where T = AbstractTrees.StoredSiblings()
 # Use the native iteration for the children
 
-Base.parent(root::Node, node::Node) = isdefined(node, :parent) ? node.parent : nothing
+Base.parent(node::Node) = isdefined(node, :parent) ? node.parent : nothing
 
-function AbstractTrees.nextsibling(tree::Node, child::Node)
-    isdefined(child, :parent) || return nothing
-    p = child.parent
+function AbstractTrees.nextsibling(node::Node)
+    isdefined(node, :parent) || return nothing
+    p = node.parent
     if isdefined(p, :right)
-        child === p.right && return nothing
+        node === p.right && return nothing
         return p.right
     end
     return nothing
@@ -94,5 +94,5 @@ end
 #   Base.pairs(node::BinaryNode) = BinaryNodePairs(node)
 # and have its iteration return, e.g., `:left=>node.left` and `:right=>node.right` when defined.
 # But the following is easy:
-Base.pairs(node::Node) = enumerate(Node)
+Base.pairs(node::Node) = enumerate(node)
 
