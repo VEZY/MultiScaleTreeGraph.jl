@@ -40,17 +40,18 @@ function parse_section!(f,header,section,line,l;allow_empty=false)
     if l_header != header
         error("The header of the MTG `",section,"` section is different than:\n",join(header, "\t"))
     end
+
     l[1] = next_line!(f,line)
-    section_l = split(l[1], "\t") 
-    
+    section_l = strip.(split(l[1], "\t"))
     classes = [section_l]
+
     while (length(section_l) == length(header)) & !issection(l[1]) & !eof(f)
         l[1] = next_line!(f,line)
 
         # Break if empty line:
         (length(l[1]) == 0) && break
 
-        section_l = split(l[1], "\t")
+        section_l = strip.(split(l[1], "\t"))
         append!(classes, [section_l])
     end
 

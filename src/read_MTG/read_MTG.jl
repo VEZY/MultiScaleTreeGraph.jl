@@ -16,8 +16,8 @@ and MTG. The MTG is a [data.tree] data structure.
 # Examples
 
 ```jldoctest
-file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg")
-read_mtg(file)
+julia> file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
+julia> mtg,classes,description,features = read_mtg(file);
 ```
 """
 function read_mtg(file)
@@ -51,12 +51,20 @@ function read_mtg(file)
             # Parse the mtg CLASSES section, and then continue to next while loop iteration:
             if issection(l[1],"CLASSES")
                 classes = parse_section!(f,["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"],"CLASSES",line,l)
+                classes.SCALE = parse.(Int,classes.SCALE)
                 continue
             end
 
             # Parse the mtg DESCRIPTION section:
             if issection(l[1],"DESCRIPTION")
                 description = parse_section!(f,["LEFT","RIGHT","RELTYPE","MAX"],"DESCRIPTION",line,l,allow_empty=true)
+                if description !== nothing
+                    description.RIGHT = split.(description.RIGHT,",")
+                    if !all(occursin.(description.RELTYPE, ("+","<")))
+                        error("Unknown relation type(s) in DESCRITPION section: ",
+                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+","<")) .== 0]),", "))
+                    end
+                end
                 continue
             end
 
@@ -68,8 +76,8 @@ function read_mtg(file)
 
             # Parse the mtg FEATURES section:
             if issection(l[1],"MTG")
-                # mtg = parse_mtg!(f,classes,description,features,line,l)
-                mtg = next_line!(f,line)
+                mtg = parse_mtg!(f,classes,features,line,l)
+                # mtg = next_line!(f,line)
                 continue
             end
 

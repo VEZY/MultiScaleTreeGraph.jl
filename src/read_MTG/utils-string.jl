@@ -47,10 +47,11 @@ Read the next line in the IO stream, strip the comments, and increment the line 
 # Arguments  
 - `f::IOStream`: A buffered IO stream to the mtg file, *e.g.* `f = open(file, "r")`.
 - `line::Array{Int64,1}`: The line number at which f is at the start of the funtion (mutated).
+- `whitespace::Bool`: remove leading whitespaces.
 """
-function next_line!(f,line)
+function next_line!(f,line;whitespace = true)
     line[1] = line[1] + 1
-    strip_comments(readline(f))
+    strip_comments(readline(f);whitespace = whitespace)
 end
 
 
