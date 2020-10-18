@@ -54,7 +54,7 @@ function getroot(node::Node)
     if isroot(node)
         return(node)
     else
-        getroot(get(node.parent))
+        getroot(node.parent)
     end
 end
 

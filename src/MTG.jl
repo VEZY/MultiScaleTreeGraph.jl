@@ -23,6 +23,7 @@ export children
 export addchild! 
 export traverse!
 export printnode
+export getroot
 export nextsibling
 
 # Not sure to keep as export

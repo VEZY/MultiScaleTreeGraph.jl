@@ -17,6 +17,8 @@ mtg,classes,description,features = read_mtg("test/files/simple_plant.mtg");
 printnode(mtg)
 
 isleaf(node.children["node_2"].children["node_3"].children["node_4"].children["node_5"])
+getroot(node.children["node_2"].children["node_3"].children["node_4"].children["node_5"])
+
 node.children["node_2"].children["node_3"].children["node_4"].children["node_5"].children
 
 isleaf(mtg)
