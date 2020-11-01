@@ -14,6 +14,7 @@ include("read_MTG/parse_mtg.jl")
 include("read_MTG/NodeMTG.jl")
 include("read_MTG/expand_node.jl")
 include("read_MTG/Tree_funs.jl")
+include("print_MTG/print.jl")
 
 export read_mtg
 export printnode
@@ -25,11 +26,15 @@ export traverse!
 export printnode
 export getroot
 export nextsibling
+export print
+export show
 
 # Not sure to keep as export
 export Node
 
 # Just for testing:
+export get_printing_
+export get_printing
 export strip_comments
 export issection
 export parse_section!

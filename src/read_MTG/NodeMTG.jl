@@ -51,6 +51,13 @@ Node(name::String,parent::Node,MTG::NodeMTG) = Node(name,parent,nothing,nothing,
 Node(name::String,parent::Node,MTG::NodeMTG,attributes::Union{Nothing,MutableNamedTuple}) = Node(name,parent,nothing,nothing,MTG,attributes)
 
 
+"""
+Indexing Node attributes from node, e.g. node[:length] or node["length"]
+"""
+Base.getindex(node::Node, key::Symbol) = getproperty(node.attributes,key)
+
+Base.getindex(node::Node, key::String) = getproperty(node.attributes,Symbol(key))
+
 #  Next lines are adapted from either:
 # <https://github.com/JuliaCollections/AbstractTrees.jl>
 # <https://github.com/dellison/ConstituencyTrees.jl/blob/master/src/trees.jl>

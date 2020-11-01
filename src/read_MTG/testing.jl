@@ -1,6 +1,27 @@
 using MTG
+using AbstractTrees
+
+mtg,classes,description,features = read_mtg("test/files/simple_plant.mtg");
+mtg
+
+test = get_printing(mtg)
+
+for i in test
+    print(i*"\n")
+end
+
+using DataFrames
+
+test = DataFrame(nodes = test)
+print(test)
+
+
 # using BenchmarkTools
 # using MutableNamedTuples
+
+print_vec = []
+
+push!(print_vec,"test")
 
 # read_mtg("test/files/simple_plant.mtg")
 file = "test/files/simple_plant.mtg"
