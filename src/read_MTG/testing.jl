@@ -6,13 +6,17 @@ mtg
 
 test = get_printing(mtg)
 
+descendants(mtg, :Width; type = Union{Nothing,Float64})
+
+traverse!(mtg, x -> x[:XX])
+
 for i in test
     print(i*"\n")
 end
 
 using DataFrames
 
-test = DataFrame(nodes = test)
+test = DataFrame(nodes = test[2:end])
 print(test)
 
 

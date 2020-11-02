@@ -15,6 +15,7 @@ include("read_MTG/NodeMTG.jl")
 include("read_MTG/expand_node.jl")
 include("read_MTG/Tree_funs.jl")
 include("print_MTG/print.jl")
+include("compute_MTG/descendants.jl")
 
 export read_mtg
 export printnode
@@ -28,11 +29,15 @@ export getroot
 export nextsibling
 export print
 export show
+export length
+export DataFrame
 
 # Not sure to keep as export
 export Node
 
 # Just for testing:
+export descendants
+export unsafe_getindex
 export get_printing_
 export get_printing
 export strip_comments

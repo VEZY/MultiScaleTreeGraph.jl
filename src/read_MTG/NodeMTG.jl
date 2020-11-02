@@ -56,7 +56,37 @@ Indexing Node attributes from node, e.g. node[:length] or node["length"]
 """
 Base.getindex(node::Node, key::Symbol) = getproperty(node.attributes,key)
 
-Base.getindex(node::Node, key::String) = getproperty(node.attributes,Symbol(key))
+Base.getindex(node::Node, key) = getproperty(node.attributes,Symbol(key))
+
+function unsafe_getindex(node::Node, key::Symbol)
+    try
+        getproperty(node.attributes,key)
+    catch err
+        if err.msg == "type NamedTuple has no field $key" || err.msg == "type Nothing has no field $key"
+            nothing
+        else
+            error(err.msg)
+        end
+    end
+end
+
+unsafe_getindex(node::Node, key) = unsafe_getindex(node,Symbol(key))
+
+function Base.length(node::Node)
+    i = [1]
+    length_tree(node::Node,i)
+    return i[1]
+end
+
+function length_tree(node::Node,i)
+    if !isleaf(node)
+        for (name, chnode) in node.children
+            i[1] = i[1] + 1
+            length_tree(chnode,i)
+        end
+    end
+end
+
 
 #  Next lines are adapted from either:
 # <https://github.com/JuliaCollections/AbstractTrees.jl>
