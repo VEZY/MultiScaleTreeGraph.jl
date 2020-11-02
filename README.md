@@ -29,12 +29,21 @@ mtg,classes,description,features = read_mtg(file);
 To do before v1:
 
 - [x] Functions to read the MTG (`read_mtg()`)  
-- [x] Functions to mutate the MTG (`traverse()`)  
-- [ ] Easy handling of the scales in tree traversal  
+- [x] Functions to mutate the MTG:
+  - [ ] `traverse()`  
+  - [ ] `descendants()`
+  - [ ] `ancestors()`
+- [ ] Easy handling of the scales in:
+  - [ ]  tree traversal  
+  - [ ]  Printing
+  - [ ]  Plotting
 - [ ] Functions to plot the MTG  
 - [ ] Add documentation
 - [ ] Add tests
-- [ ] Better tree printing. See [DataTrees.jl implementation](https://github.com/vh-d/DataTrees.jl/blob/master/src/printing.jl)
+- [ ] Better tree printing:
+  - [x] Tree printing
+  - [x] Link + symbol + unique ID
+  - [ ] Color for scales
 
 ## 4. Acknowledgments
 

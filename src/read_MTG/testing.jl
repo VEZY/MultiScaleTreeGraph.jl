@@ -6,6 +6,9 @@ mtg
 
 test = get_printing(mtg)
 
+df = tree_to_dataframe(mtg, [:YY,:XX,:Length])
+print(df)
+
 descendants(mtg, :Width; type = Union{Nothing,Float64})
 
 traverse!(mtg, x -> x[:XX])
@@ -20,7 +23,12 @@ test = DataFrame(nodes = test[2:end])
 print(test)
 
 
-# using BenchmarkTools
+using BenchmarkTools
+
+@btime descendants(mtg,:Length);
+
+
+
 # using MutableNamedTuples
 
 print_vec = []

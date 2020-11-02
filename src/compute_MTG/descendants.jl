@@ -3,7 +3,7 @@ function descendants(node::Node,key;type=Any)
     if !isleaf(node)
         for (name, chnode) in node.children
             push!(val, unsafe_getindex(chnode,key))
-            append!(val, descendants(chnode,key;type=Any))
+            append!(val, descendants(chnode,key;type=type))
         end
     end
     val
