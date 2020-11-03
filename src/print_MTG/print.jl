@@ -18,15 +18,17 @@ node_1
 
 ```
 """
-function Base.print(node::Node; leading::AbstractString = "", io::IO = stdout)
+function Base.print(node::Node; leading::AbstractString = "", io::IO = stdout, limit = true)
     node_vec = get_printing(node; leading = leading)
-    for i in node_vec
-        print(io,i*"\n")
+
+    for (i,j) in enumerate(node_vec)
+        print(io,j*"\n")
+        limit && i >= displaysize(io)[1] && (print(io, "…"); break)
     end
 end
 
 function Base.print(node::Node,vars; leading::AbstractString = "", io::IO = stdout)
-    print(DataFrame(node,vars))
+    DataFrame(node,vars)
 end
 
 function Base.show(io::IO, node::Node)

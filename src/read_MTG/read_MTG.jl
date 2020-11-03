@@ -2,6 +2,7 @@
 Read an MTG file
 
 # Arguments
+
 - `file::String`: The path to the MTG file.
 
 # Note
@@ -60,9 +61,9 @@ function read_mtg(file)
                 description = parse_section!(f,["LEFT","RIGHT","RELTYPE","MAX"],"DESCRIPTION",line,l,allow_empty=true)
                 if description !== nothing
                     description.RIGHT = split.(description.RIGHT,",")
-                    if !all(occursin.(description.RELTYPE, ("+","<")))
+                    if !all([i in description.RELTYPE for i in ("+","<")])
                         error("Unknown relation type(s) in DESCRITPION section: ",
-                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+","<")) .== 0]),", "))
+                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+<")) .== 0]),", "))
                     end
                 end
                 continue

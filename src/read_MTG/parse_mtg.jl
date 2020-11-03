@@ -32,7 +32,7 @@ function parse_mtg!(f,classes,features,line,l)
     end
 
     columns = l_header[l_header .!= ""][2:end]
-    common_features = occursin.(columns, features.NAME)
+    common_features = [i in features.NAME for i in columns]
 
     if !all(common_features)
         error("Unknown column in the ENTITY-CODE (column names) in MTG: ",join(columns[.!common_features],", "))
@@ -171,7 +171,7 @@ A parsed node in the form of a Dict of three:
  - and the index
 """
 function parse_MTG_node(l)
-    if any(l .== ("^","<.","+."))
+    if l in ("^","<.","+.")
         return((l,missing,missing))
     end
 
@@ -179,10 +179,14 @@ function parse_MTG_node(l)
 
     # Match the index at the end of the string:
     stringmatch = match(r"[^[:alpha:]]+$",l[2:end])
-
+    if stringmatch === nothing
+        symbol = l[2:end]
+        index = nothing
+    else
+        symbol = l[2:stringmatch.offset]
+        index = parse(Int,stringmatch.match)
+    end
     # Use the index at which the MTG index was found to retreive the MTG symbol: 
-    symbol = l[2:stringmatch.offset]
-    index = parse(Int,stringmatch.match)
     (link, symbol, index)
 end
 

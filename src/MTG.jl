@@ -16,6 +16,7 @@ include("read_MTG/expand_node.jl")
 include("read_MTG/Tree_funs.jl")
 include("print_MTG/print.jl")
 include("compute_MTG/descendants.jl")
+include("compute_MTG/DataFrame.jl")
 
 export read_mtg
 export printnode

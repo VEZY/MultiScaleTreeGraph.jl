@@ -25,7 +25,7 @@ julia> nodes, shared = expand_node!(x,1)
 """
 function expand_node!(x,line)
     
-    node_to_expand = findall(y -> any(occursin.(y,("<","<.","+","+."))),x)
+    node_to_expand = findall(y -> y in ("<","<.","+","+."),x)
     relative_index = 0
     shared = []
     for i in node_to_expand
