@@ -12,6 +12,7 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 AbstractTrees = "0.3"
+BenchmarkTools = "0.5"
 DataFrames = "0.21"
 MutableNamedTuples = "0.1"
 julia = "1"
