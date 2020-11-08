@@ -33,6 +33,10 @@ To do before v1:
   - [x] `traverse!()`  
   - [x] `descendants()`
   - [ ] `ancestors()`
+- [ ] Make a tree type
+- [ ] Make the tree type ((see [Julia doc](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration))
+  - [ ] indexable
+  - [ ] iterable
 - [ ] Tree printing:
   - [x] Tree printing
   - [x] Link + symbol + unique ID

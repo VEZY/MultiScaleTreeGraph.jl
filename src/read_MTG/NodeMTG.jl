@@ -58,6 +58,12 @@ Base.getindex(node::Node, key::Symbol) = getproperty(node.attributes,key)
 
 Base.getindex(node::Node, key) = getproperty(node.attributes,Symbol(key))
 
+"""
+Indexing Node attributes from node, e.g. node[:length] or node["length"],
+but in an unsafe way, meaning it returns `nothing` when the key is not found 
+instead of returning an error. It is primarily used when traversing the tree,
+so if a node does not have a field, it does not return an error.
+"""
 function unsafe_getindex(node::Node, key::Symbol)
     try
         getproperty(node.attributes,key)
@@ -72,13 +78,16 @@ end
 
 unsafe_getindex(node::Node, key) = unsafe_getindex(node,Symbol(key))
 
+"""
+Returns the length of the subtree below the node (including it)
+"""
 function Base.length(node::Node)
     i = [1]
-    length_tree(node::Node,i)
+    length_subtree(node::Node,i)
     return i[1]
 end
 
-function length_tree(node::Node,i)
+function length_subtree(node::Node,i)
     if !isleaf(node)
         for (name, chnode) in node.children
             i[1] = i[1] + 1
@@ -102,7 +111,7 @@ Base.IteratorEltype(::Type{<:TreeIterator{Node{T}}}) where T = Base.HasEltype()
 
 # # Implement iteration over the immediate children of a node
 function Base.iterate(node::Node)
-    isdefined(node, :chilren) && return (node.chilren)
+    isdefined(node, :children) && return (node.children)
     return nothing
 end
 Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
