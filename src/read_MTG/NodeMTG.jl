@@ -91,7 +91,7 @@ function length_subtree(node::Node,i)
     if !isleaf(node)
         for (name, chnode) in node.children
             i[1] = i[1] + 1
-            length_tree(chnode,i)
+            length_subtree(chnode,i)
         end
     end
 end
@@ -109,11 +109,19 @@ end
 Base.eltype(::Type{<:TreeIterator{Node{T}}}) where T = Node{T}
 Base.IteratorEltype(::Type{<:TreeIterator{Node{T}}}) where T = Base.HasEltype()
 
-# # Implement iteration over the immediate children of a node
-function Base.iterate(node::Node)
-    isdefined(node, :children) && return (node.children)
+function Base.iterate(node::T) where T <: Node
+    !isleaf(node) && return (children(node))
     return nothing
 end
+# # Implement iteration over the immediate children of a node
+# function Base.iterate(node::T) where T <: Node
+#     (children(node),node)
+# end
+
+# function Base.iterate(node::Node, state)
+#     isleaf(node) ? nothing : (children(node),node)
+# end
+
 Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
 
 ## Things we need to define to leverage the native iterator over children

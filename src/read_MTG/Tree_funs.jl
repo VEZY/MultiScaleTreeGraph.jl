@@ -16,7 +16,9 @@ isroot(node::Node) = node.parent === nothing
 
 Return the immediate children of `node`.
 """
-AbstractTrees.children(node::Node) = node.children
+function AbstractTrees.children(node::Node)
+    isleaf(node) ? nothing : collect(values(node.children))
+end
 
 """
 Add a new child to a parent node, and add the parent node as the parent.

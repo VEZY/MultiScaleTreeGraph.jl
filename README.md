@@ -12,6 +12,7 @@ You can install the development version of MTG.jl from [GitHub](https://github.c
 using Pkg
 Pkg.add(url="https://github.com/VEZY/MTG.jl", rev="master")
 ```
+
 ## 2. Example
 
 Read a simple MTG file:
@@ -37,6 +38,7 @@ To do before v1:
 - [ ] Make the tree type ((see [Julia doc](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration))
   - [ ] indexable
   - [ ] iterable
+- [ ] Use MutableNamedTuple for `node.children`
 - [ ] Tree printing:
   - [x] Tree printing
   - [x] Link + symbol + unique ID

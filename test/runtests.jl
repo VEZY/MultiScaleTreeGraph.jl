@@ -3,7 +3,7 @@ using DataFrames
 using Test
 
 @testset "read_mtg" begin
-    mtg,classes,description,features = read_mtg("test/files/simple_plant.mtg");
+    mtg,classes,description,features = read_mtg("files/simple_plant.mtg");
     @test length(mtg) == 7
 
     @testset "test classes" begin
@@ -33,5 +33,6 @@ using Test
 end
 
 @testset "descendants" begin
-    @test descendants(mtg, :Width; type = Union{Nothing,Float64}) ==  [nothing,nothing,1.0,6.0,nothing,7.0]
+    mtg,classes,description,features = read_mtg("files/simple_plant.mtg");
+    @test descendants(mtg, :Width, Union{Nothing,Float64}) ==  [nothing,nothing,1.0,6.0,nothing,7.0]
 end

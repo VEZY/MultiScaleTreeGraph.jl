@@ -32,6 +32,8 @@ export print
 export show
 export length
 export DataFrame
+export printnode
+export iterate
 
 # Not sure to keep as export
 export Node
