@@ -16,19 +16,21 @@ isroot(node::Node) = node.parent === nothing
 
 Return the immediate children of `node`.
 """
-AbstractTrees.children(node::Node) = node.children
+function AbstractTrees.children(node::Node)
+    isleaf(node) ? nothing : collect(values(node.children))
+end
 
 """
 Add a new child to a parent node, and add the parent node as the parent.
 """
 function addchild!(parent::Node,name::String,MTG::NodeMTG,attributes::Union{Missing,MutableNamedTuple})
   child = Node(name,parent,MTG,attributes)
-  push!(parent.children, child.name => child)
+  addchild!(parent, child)
 end
 
 function addchild!(parent::Node,name::String,MTG::NodeMTG)
   child = Node(name,parent,MTG)
-  push!(parent.children, child.name => child)
+  addchild!(parent, child)
 end
 
 function addchild!(parent::Node,child::Node;force = false)

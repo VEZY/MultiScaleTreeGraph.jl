@@ -11,7 +11,7 @@ Get attribute values from the descendants (acropetal).
 
 [`eigvals`](@ref)
 """
-function descendants(node::Node,key,type)
+function descendants(node::Node,key,type::Union{Union,DataType})
     val = Array{type,1}()
     if !isleaf(node)
         for (name, chnode) in node.children
