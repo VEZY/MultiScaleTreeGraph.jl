@@ -136,6 +136,7 @@ Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
 AbstractTrees.parentlinks(::Type{Node{T}}) where T = AbstractTrees.StoredParents()
 AbstractTrees.siblinglinks(::Type{Node{T}}) where T = AbstractTrees.StoredSiblings()
 AbstractTrees.children(node::Node) = node
+AbstractTrees.nodetype(::Node) = Node
 
 Base.parent(node::Node) = isdefined(node, :parent) ? node.parent : nothing
 Base.parent(root::Node, node::Node) = isdefined(node, :parent) ? node.parent : nothing
