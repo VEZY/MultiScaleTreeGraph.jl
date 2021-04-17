@@ -42,8 +42,14 @@ Format the printing of the tree according to link: follow or branching
 """
 function get_printing(node::Node; leading::AbstractString = "")
     node_vec = [node.MTG.link * " " * node.name[6:end] * ": " * node.MTG.symbol]
-    append!(node_vec,get_printing_(node; leading = ""))
+    print_below = get_printing_(node; leading = "")
+    if print_below !== nothing
+        append!(node_vec,print_below)
+    else
+        node_vec
+    end
 end
+
 
 function get_printing_(node::Node; leading::AbstractString = "")
     child_vec = Array{String,1}()
@@ -68,4 +74,3 @@ function get_printing_(node::Node; leading::AbstractString = "")
         return child_vec
     end
 end
-
