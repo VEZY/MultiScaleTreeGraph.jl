@@ -16,8 +16,8 @@ isroot(node::Node) = node.parent === nothing
 
 Return the immediate children of `node`.
 """
-function AbstractTrees.children(node::Node)
-    isleaf(node) ? nothing : collect(values(node.children))
+function children(node::Node)
+    isleaf(node) ? () : collect(values(node.children))
 end
 
 """

@@ -23,7 +23,7 @@ export printnode
 export isleaf
 export isroot
 export children
-export addchild! 
+export addchild!
 export traverse!
 export printnode
 export getroot
@@ -34,6 +34,7 @@ export length
 export DataFrame
 export printnode
 export iterate
+export siblings
 
 # Not sure to keep as export
 export Node

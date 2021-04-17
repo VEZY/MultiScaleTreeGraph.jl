@@ -55,8 +55,14 @@ Node(name::String,parent::Node,MTG::NodeMTG,attributes::Union{Nothing,MutableNam
 Indexing Node attributes from node, e.g. node[:length] or node["length"]
 """
 Base.getindex(node::Node, key::Symbol) = getproperty(node.attributes,key)
-
 Base.getindex(node::Node, key) = getproperty(node.attributes,Symbol(key))
+
+"""
+Indexing a Node using an integer will index in its children
+"""
+Base.getindex(n::Node, i::Integer) = n.children[collect(keys(n.children))[i]]
+Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
+Base.getindex(x::Node, ::AbstractTrees.ImplicitRootState) = x
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"],
@@ -105,24 +111,22 @@ end
 function AbstractTrees.printnode(io::IO, node::Node)
     print(io, join(["Node: ",node.name,", Link: ",node.MTG.link,"Index: ", node.MTG.index]))
 end
-Base.eltype(::Type{<:TreeIterator{Node{T}}}) where T = Node{T}
-Base.IteratorEltype(::Type{<:TreeIterator{Node{T}}}) where T = Base.HasEltype()
+# Base.eltype(::Type{<:TreeIterator{Node{T}}}) where T = Node{T}
+# Base.IteratorEltype(::Type{<:TreeIterator{Node{T}}}) where T = Base.HasEltype()
 
-# Help Julia infer what's inside a Node (another node)
+# Help Julia infer what's inside a Node when doing iteration (another node)
 Base.eltype(::Type{Node{T}}) where T = Node{T}
 
-function Base.iterate(node::T) where T <: Node
-    !isleaf(node) && return (children(node))
-    return nothing
-end
-# # Implement iteration over the immediate children of a node
-# function Base.iterate(node::T) where T <: Node
-#     (children(node),node)
-# end
 
-# function Base.iterate(node::Node, state)
-#     isleaf(node) ? nothing : (children(node),node)
-# end
+# Iteartion over the immediate children:
+function Base.iterate(node::T) where T <: Node
+    isleaf(node) ? nothing : (node[1], 1)
+end
+
+function Base.iterate(node::T, state::Int) where T <: Node
+    state += 1
+    state > length(children(node)) ? nothing : (node[state], state)
+end
 
 Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
 
@@ -131,14 +135,13 @@ Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
 # Set the traits of this kind of tree
 AbstractTrees.parentlinks(::Type{Node{T}}) where T = AbstractTrees.StoredParents()
 AbstractTrees.siblinglinks(::Type{Node{T}}) where T = AbstractTrees.StoredSiblings()
-# AbstractTrees.children(node::Node) = node
-# AbstractTrees.children is moved in Tree_funs.jl
+AbstractTrees.children(node::Node) = node
 
 Base.parent(node::Node) = isdefined(node, :parent) ? node.parent : nothing
 Base.parent(root::Node, node::Node) = isdefined(node, :parent) ? node.parent : nothing
 
-function AbstractTrees.nextsibling(node::Node)
-    nextsibling(node)
+function AbstractTrees.nextsibling(tree::Node, child::Node)
+    nextsibling(child)
 end
 
 # We also need `pairs` to return something sensible.
