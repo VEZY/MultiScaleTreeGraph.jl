@@ -29,16 +29,20 @@ mtg,classes,description,features = read_mtg(file);
 
 To do before v1:
 
-- [x] Functions to read the MTG (`read_mtg()`)  
+- [x] Functions to read the MTG (`read_mtg()`)
 - [x] Helpers to mutate the MTG:
-  - [x] `traverse!()`  
+  - [x] `traverse!()`
   - [x] `descendants()`
   - [ ] `ancestors()`
-- [ ] Make a tree type
-- [ ] Make the tree type ((see [Julia doc](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration))
-  - [ ] indexable
-  - [ ] iterable
-- [ ] Use MutableNamedTuple for `node.children`
+- [ ] Use `sizehint!` in descendants, etc...
+- [x] Make `Node` compatible with `AbstractTrees.jl`
+- [x] Make `Node` indexable for:
+  - [x] children using `Int`
+  - [x] attributes using Symbols or anything else
+  - [x] node fields using the dot notation
+- [x] iterable
+- [ ] Work by default at the finer scale. Hence we can make a function to dump the scales ze don't want to work with, which would speed-up the computations. Careful though, we probably have to change the links between nodes then.
+- [x] Use MutableNamedTuple for `node.children` by default
 - [ ] Tree printing:
   - [x] Tree printing
   - [x] Link + symbol + unique ID
@@ -48,9 +52,17 @@ To do before v1:
   - [ ]  tree traversal
   - [ ]  Printing
   - [ ]  Plotting
+  - [ ]  Get stats for scales:
+    - [ ]  nb scales
+    - [ ]  min/max scale
+    - [ ]  nb nodes in total / for a given scale
 - [ ] Add documentation
-- [ ] Add tests
+- [x] Add tests
 
 ## 4. Acknowledgments
 
 Several tree-related functions in use are adapted from [DataTrees.jl](https://github.com/vh-d/DataTrees.jl/).
+
+The first implementations for handling the MTG:
+
+- OpenAlea's Python implementation
