@@ -24,18 +24,18 @@ NodeMTG("<", nothing, nothing)
 """
 struct NodeMTG
     link::Union{String,Char}
-    symbol::Union{Nothing,String,SubString,Char}
-    index::Union{Nothing,Int}
-    scale::Union{Nothing,Int}
+    symbol::Union{String,SubString,Char}
+    index::Int
+    scale::Int
 end
 
-mutable struct Node{T <: Union{Nothing,MutableNamedTuple}}
+mutable struct Node{T<:NodeMTG}
     name::String
     parent::Union{Nothing,Node}
     children::Union{Nothing,Dict{String,Node}}
     siblings::Union{Nothing,Dict{String,Node}}
-    MTG::NodeMTG
-    attributes::T
+    MTG::T
+    attributes::Union{Nothing,MutableNamedTuple}
 end
 
 # For the root node:

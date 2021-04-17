@@ -21,7 +21,7 @@ The parsed MTG section
 function parse_mtg!(f,classes,features,line,l)
     l[1] = next_line!(f,line)
 
-    if length(l[1]) == 0 
+    if length(l[1]) == 0
         error("No header was found for MTG section `MTG`. Did you put an empty line in-between ",
         "the section name and its header?")
     end
@@ -49,7 +49,7 @@ function parse_mtg!(f,classes,features,line,l)
     node_1_node = split_MTG_elements(splitted_MTG[1])
     # node_1_element = parse_MTG_node(node_1_node[1])
     link, symbol, index = parse_MTG_node(node_1_node[1])
-    
+
     # Handling special case of the scene node:
     if symbol == "Scene"
          symbol = "\$"
@@ -62,7 +62,7 @@ function parse_mtg!(f,classes,features,line,l)
     root_node = Node("node_1", NodeMTG(link,symbol,index,scale), attrs)
 
     # Initializing the last column to which MTG was attached to keep track of which column
-    # to attach the new MTG line 
+    # to attach the new MTG line
     max_columns = attr_column_start - 1
     last_node_column = zeros(Integer,max_columns)
     last_node_column[1] = 1
@@ -77,11 +77,11 @@ function parse_mtg!(f,classes,features,line,l)
             continue
         end
         splitted_MTG = split(l[1], "\t")
-        
+
         node_column = findfirst(x -> length(x) > 0, splitted_MTG)
         # node_data= splitted_MTG[[i]]
         node_data = splitted_MTG[node_column:end]
-        
+
         if attr_column_start < node_column
             error("Error in MTG at line ",line,": Found an MTG node declared at column ",
                 node_column,", but attributes are declared to start at column ",
@@ -119,7 +119,7 @@ function parse_mtg!(f,classes,features,line,l)
             node_element = parse_MTG_node(node[k])
             # NB: if several nodes are declared on the same line, the attributes are defined
             # for the last node only, unless "<.<" or "+.+" are used
-            
+
             if k == length(node) || findfirst(x -> x == k, shared) !== nothing
                 node_k_attr = node_attr
             else
@@ -128,21 +128,21 @@ function parse_mtg!(f,classes,features,line,l)
 
             if k == minimum(building_nodes)
                 parent_node = join(["node_",parent_column])
-            else 
+            else
                 parent_node = join(["node_",node_id-1])
             end
 
             # Instantiating the current node MTG (immutable):
             childMTG = NodeMTG(node_element[1],node_element[2],node_element[3],classes.SCALE[node_element[2] .== classes.SYMBOL][1])
 
-            # Instantiating the current node (mutable): 
+            # Instantiating the current node (mutable):
             child = Node(node_name,tree_dict[parent_node],childMTG,node_k_attr)
-            
+
             # Add the current node as a child to the parent and the parent to the current node
             addchild!(tree_dict[parent_node],child;force = true)
-            # Add the node to tree_dict to be able to access it by name: 
+            # Add the node to tree_dict to be able to access it by name:
             push!(tree_dict, node_name => child)
-            
+
             # Keeping track of the last node used in the current MTG column
             last_node_column[node_column] = node_id
 
@@ -159,11 +159,11 @@ end
 
  Parse MTG nodes (called from `parse_mtg!()`)
 
-# Arguments  
+# Arguments
 
 - `l::String`: An MTG node (e.g. "/Individual0")
 
-# Return  
+# Return
 
 A parsed node in the form of a Dict of three:
  - the link
@@ -186,7 +186,7 @@ function parse_MTG_node(l)
         symbol = l[2:stringmatch.offset]
         index = parse(Int,stringmatch.match)
     end
-    # Use the index at which the MTG index was found to retreive the MTG symbol: 
+    # Use the index at which the MTG index was found to retreive the MTG symbol:
     (link, symbol, index)
 end
 
@@ -209,21 +209,21 @@ A list of attributes
 """
 function parse_MTG_node_attr(node_data,features,attr_column_start,line;force = false)
 
-    
+
     if length(node_data) < attr_column_start
-        return
+        return MutableNamedTuple()
     end
 
     node_data_attr = node_data[attr_column_start:end]
-    
+
     if length(node_data_attr) > size(features)[1]
         error("Found more columns for features in MTG than declared in the FEATURE section",
         ". Please check line ",line, " of the MTG:\n",join(node_data, "\t"))
     end
-    
+
     node_attr = Dict{String,Any}(zip(features.NAME[1:length(node_data_attr)],
                                  fill(missing, length(node_data_attr))))
- 
+
     node_type = features.TYPE
 
     # node_data_attr is always read in order so names and types correspond to values in features
@@ -255,7 +255,7 @@ function parse_MTG_node_attr(node_data,features,attr_column_start,line;force = f
                     " Please check line ",line," of the MTG:\n",join(node_data, "\t"))
                 end
                 pop!(node_attr,features.NAME[i])
-            end 
+            end
         else
             node_attr[features.NAME[i]] = node_data_attr[i]
         end
