@@ -5,12 +5,12 @@
 # NodeMTG structure
 
 Builds an MTG node to hold data about the link to the previous node,
-the symbol of the node, and its index. 
+the symbol of the node, and its index.
 
 # Note
 
 - The symbol should match the possible values listed in the `SYMBOL` column of the `CLASSES` section
- in the mtg file if read from a file. 
+ in the mtg file if read from a file.
 
 - The index is totaly free, and can be used as a way to *e.g.* keep track of the branching order.
 
@@ -60,7 +60,7 @@ Base.getindex(node::Node, key) = getproperty(node.attributes,Symbol(key))
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"],
-but in an unsafe way, meaning it returns `nothing` when the key is not found 
+but in an unsafe way, meaning it returns `nothing` when the key is not found
 instead of returning an error. It is primarily used when traversing the tree,
 so if a node does not have a field, it does not return an error.
 """
@@ -102,12 +102,14 @@ end
 # <https://github.com/dellison/ConstituencyTrees.jl/blob/master/src/trees.jl>
 # <https://github.com/vh-d/DataTrees.jl/blob/master/src/indexing.jl>
 
-# AbstractTrees.children(node::Node) = node
 function AbstractTrees.printnode(io::IO, node::Node)
     print(io, join(["Node: ",node.name,", Link: ",node.MTG.link,"Index: ", node.MTG.index]))
 end
 Base.eltype(::Type{<:TreeIterator{Node{T}}}) where T = Node{T}
 Base.IteratorEltype(::Type{<:TreeIterator{Node{T}}}) where T = Base.HasEltype()
+
+# Help Julia infer what's inside a Node (another node)
+Base.eltype(::Type{Node{T}}) where T = Node{T}
 
 function Base.iterate(node::T) where T <: Node
     !isleaf(node) && return (children(node))
@@ -124,23 +126,19 @@ end
 
 Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
 
-## Things we need to define to leverage the native iterator over children
-## for the purposes of AbstractTrees.
+## Things we need to define to leverage the native iterator from AbstractTrees over children
+
 # Set the traits of this kind of tree
 AbstractTrees.parentlinks(::Type{Node{T}}) where T = AbstractTrees.StoredParents()
 AbstractTrees.siblinglinks(::Type{Node{T}}) where T = AbstractTrees.StoredSiblings()
-# Use the native iteration for the children
+# AbstractTrees.children(node::Node) = node
+# AbstractTrees.children is moved in Tree_funs.jl
 
 Base.parent(node::Node) = isdefined(node, :parent) ? node.parent : nothing
+Base.parent(root::Node, node::Node) = isdefined(node, :parent) ? node.parent : nothing
 
 function AbstractTrees.nextsibling(node::Node)
-    isdefined(node, :parent) || return nothing
-    p = node.parent
-    if isdefined(p, :right)
-        node === p.right && return nothing
-        return p.right
-    end
-    return nothing
+    nextsibling(node)
 end
 
 # We also need `pairs` to return something sensible.
@@ -149,4 +147,3 @@ end
 # and have its iteration return, e.g., `:left=>node.left` and `:right=>node.right` when defined.
 # But the following is easy:
 Base.pairs(node::Node) = enumerate(node)
-

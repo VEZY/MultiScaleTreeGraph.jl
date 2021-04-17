@@ -34,7 +34,7 @@ function addchild!(parent::Node,name::String,MTG::NodeMTG)
 end
 
 function addchild!(parent::Node,child::Node;force = false)
-    
+
     if child.parent === missing || force == true
         child.parent = parent
     elseif child.parent != parent && force == false
@@ -61,6 +61,38 @@ function getroot(node::Node)
 end
 
 """
+    siblings(node::Node)
+
+Return the siblings of `node` as a vector of nodes (or `nothing` if non-existant).
+"""
+function siblings(node::Node)
+    # If there is no parent, no siblings, return nothing:
+    node.parent !== nothing || return nothing
+    # If the siblings field is not empty, return its value:
+    node.siblings !== nothing && return node.siblings
+    # Else, compute the siblings:
+    all_siblings = children(node.parent)
+
+    all_siblings[findall(x -> x != node, all_siblings)]
+end
+
+function nextsibling(node::Node)
+    # If there is no parent, no siblings, return nothing:
+    node.parent !== nothing || return nothing
+    # If the siblings field is not empty, return its value:
+    node.siblings !== nothing && return node.siblings
+    # Else, compute the siblings:
+    all_siblings = children(node.parent)
+    # Get the index of the current node in the siblings:
+    node_index = findfirst(x -> x == node, all_siblings)
+    if node_index < length(all_siblings)
+        all_siblings[node_index + 1]
+    else
+        nothing
+    end
+end
+
+"""
     traverse!(node::Node, f::Function, args...)
 
 Traverse the nodes of a (sub-)tree, given any starting node in the tree.
@@ -69,7 +101,7 @@ Traverse the nodes of a (sub-)tree, given any starting node in the tree.
 
 - `node::Node`: An MTG node (*e.g.* the whole mtg returned by `read_mtg()`).
 - `f::Function`: a function to apply over each node
-- `args::Any`: any argument to pass to the function 
+- `args::Any`: any argument to pass to the function
 
 # Returns
 
