@@ -35,3 +35,7 @@ end
 @testset "descendants()" begin
     include("test-descendants.jl")
 end
+
+@testset "ancestors()" begin
+    include("test-ancestors.jl")
+end

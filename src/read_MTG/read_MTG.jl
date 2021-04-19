@@ -17,7 +17,7 @@ and MTG. The MTG is a [data.tree] data structure.
 # Examples
 
 ```jldoctest
-julia> file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
+julia> mtg,classes,description,features = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 julia> mtg,classes,description,features = read_mtg(file);
 ```
 """
