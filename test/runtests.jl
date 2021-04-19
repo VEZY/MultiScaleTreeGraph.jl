@@ -15,7 +15,7 @@ using Test
         @test classes.INDEXATION == ["FREE" for i in 1:5]
         @test classes.DEFINITION == ["IMPLICIT" for i in 1:5]
     end
-    
+
     @testset "test description" begin
         @test typeof(description) == DataFrame
         @test size(description) == (2,4)
@@ -32,7 +32,6 @@ using Test
     end
 end
 
-@testset "descendants" begin
-    mtg,classes,description,features = read_mtg("files/simple_plant.mtg");
-    @test descendants(mtg, :Width, Union{Nothing,Float64}) ==  [nothing,nothing,1.0,6.0,nothing,7.0]
+@testset "descendants()" begin
+    include("test-descendants.jl")
 end
