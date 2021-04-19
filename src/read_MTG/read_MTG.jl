@@ -83,11 +83,7 @@ function read_mtg(file)
     end
 
     # Adding overall classes and symbols information to the root node (used for checks):
-    mtg_info = MutableNamedTuple(symbols = classes.SYMBOL, scales = classes.SCALE,mtg.attributes...)
-    root_node = Node(mtg.name,mtg.parent,mtg.children,mtg.siblings,mtg.MTG,mtg_info)
-    for (name, chnode) in mtg.children
-        chnode.parent = root_node
-    end
+    mtg.attributes = MutableNamedTuple(symbols = classes.SYMBOL, scales = classes.SCALE,mtg.attributes...)
 
-    (root_node,classes,description,features)
+    (mtg,classes,description,features)
 end
