@@ -19,6 +19,7 @@ include("compute_MTG/descendants.jl")
 include("compute_MTG/ancestors.jl")
 include("compute_MTG/DataFrame.jl")
 include("compute_MTG/check_filters.jl")
+include("compute_MTG/mutation.jl")
 
 export read_mtg
 export printnode
@@ -37,6 +38,7 @@ export DataFrame
 export printnode
 export iterate
 export siblings
+export append!
 
 # Not sure to keep as export
 export Node
