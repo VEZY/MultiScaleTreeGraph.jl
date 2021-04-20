@@ -1,6 +1,5 @@
 """
     NodeMTG(link, symbol, index, scale)
-    NodeMTG(link)
 
 # NodeMTG structure
 
@@ -15,11 +14,8 @@ the symbol of the node, and its index.
 - The index is totaly free, and can be used as a way to *e.g.* keep track of the branching order.
 
 ```jldoctest
-julia> NodeMTG("<","Leaf",2)
-NodeMTG("<", "Leaf", 2)
-
-julia> NodeMTG("<")
-NodeMTG("<", nothing, nothing)
+julia> NodeMTG("<", "Leaf", 2, 0)
+NodeMTG("<", "Leaf", 2, 0)
 ```
 """
 struct NodeMTG
@@ -29,26 +25,27 @@ struct NodeMTG
     scale::Int
 end
 
-mutable struct Node{T<:NodeMTG}
+# mutable struct Node{T<:NodeMTG,A<:Union{MutableNamedTuple,Dict}}
+mutable struct Node{T<:NodeMTG,A}
     name::String
     parent::Union{Nothing,Node}
     children::Union{Nothing,Dict{String,Node}}
     siblings::Union{Nothing,Dict{String,Node}}
     MTG::T
-    attributes::Union{Nothing,MutableNamedTuple}
+    attributes::A
 end
 
 # For the root node:
 # - No attributes
 Node(name::String,MTG::NodeMTG) = Node(name,nothing,nothing,nothing,MTG,nothing)
 # - with attributes
-Node(name::String,MTG::NodeMTG,attributes::Union{Nothing,MutableNamedTuple}) = Node(name,nothing,nothing,nothing,MTG,attributes)
+Node(name::String,MTG::NodeMTG,attributes) = Node(name,nothing,nothing,nothing,MTG,attributes)
 
 # For the others:
 # - No attributes
 Node(name::String,parent::Node,MTG::NodeMTG) = Node(name,parent,nothing,nothing,MTG,nothing)
 # - with attributes
-Node(name::String,parent::Node,MTG::NodeMTG,attributes::Union{Nothing,MutableNamedTuple}) = Node(name,parent,nothing,nothing,MTG,attributes)
+Node(name::String,parent::Node,MTG::NodeMTG,attributes) = Node(name,parent,nothing,nothing,MTG,attributes)
 
 
 """
@@ -111,11 +108,12 @@ end
 function AbstractTrees.printnode(io::IO, node::Node)
     print(io, join(["Node: ",node.name,", Link: ",node.MTG.link,"Index: ", node.MTG.index]))
 end
-# Base.eltype(::Type{<:TreeIterator{Node{T}}}) where T = Node{T}
-# Base.IteratorEltype(::Type{<:TreeIterator{Node{T}}}) where T = Base.HasEltype()
+
+Base.eltype(::Type{<:TreeIterator{Node{T,D}}}) where {T,D} = Node{T,D}
+Base.IteratorEltype(::Type{<:TreeIterator{Node{T,D}}}) where {T,D} = Base.HasEltype()
 
 # Help Julia infer what's inside a Node when doing iteration (another node)
-Base.eltype(::Type{Node{T}}) where T = Node{T}
+Base.eltype(::Type{Node{T,D}}) where {T,D} = Node{T,D}
 
 
 # Iteartion over the immediate children:
@@ -128,13 +126,13 @@ function Base.iterate(node::T, state::Int) where T <: Node
     state > length(children(node)) ? nothing : (node[state], state)
 end
 
-Base.IteratorSize(::Type{Node{T}}) where T = Base.SizeUnknown()
+Base.IteratorSize(::Type{Node{T,D}}) where {T,D} = Base.SizeUnknown()
 
 ## Things we need to define to leverage the native iterator from AbstractTrees over children
 
 # Set the traits of this kind of tree
-AbstractTrees.parentlinks(::Type{Node{T}}) where T = AbstractTrees.StoredParents()
-AbstractTrees.siblinglinks(::Type{Node{T}}) where T = AbstractTrees.StoredSiblings()
+AbstractTrees.parentlinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredParents()
+AbstractTrees.siblinglinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredSiblings()
 AbstractTrees.children(node::Node) = MTG.children(node)
 AbstractTrees.nodetype(::Node) = Node
 

@@ -1,5 +1,5 @@
 """
-    check_filters(node::Node{T}; scale = nothing, symbol = nothing, link = nothing)
+    check_filters(node; scale = nothing, symbol = nothing, link = nothing)
 
 Check if the filters are consistant with the mtg onto which they are applied
 
