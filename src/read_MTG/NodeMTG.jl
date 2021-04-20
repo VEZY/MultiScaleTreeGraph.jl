@@ -35,18 +35,23 @@ mutable struct Node{T<:NodeMTG,A}
     attributes::A
 end
 
-# For the root node:
-# - No attributes
-Node(name::String,MTG::NodeMTG) = Node(name,nothing,nothing,nothing,MTG,nothing)
-# - with attributes
+# Shorter way of instantiating a Node:
+
+# - for the root:
 Node(name::String,MTG::NodeMTG,attributes) = Node(name,nothing,nothing,nothing,MTG,attributes)
 
-# For the others:
-# - No attributes
-Node(name::String,parent::Node,MTG::NodeMTG) = Node(name,parent,nothing,nothing,MTG,nothing)
-# - with attributes
+# Special case for the MutableNamedTuple, else it overspecializes and we can't mutate attrs:
+function Node(name::String,MTG::NodeMTG,attributes::T) where T<:MutableNamedTuple
+    Node{NodeMTG,MutableNamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
+end
+
+# - for all others:
 Node(name::String,parent::Node,MTG::NodeMTG,attributes) = Node(name,parent,nothing,nothing,MTG,attributes)
 
+# Idem for MutableNamedTuple here:
+function Node(name::String,parent::Node,MTG::NodeMTG,attributes::T) where T<:MutableNamedTuple
+    Node{NodeMTG,MutableNamedTuple}(name,parent,nothing,nothing,MTG,attributes)
+end
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"]
