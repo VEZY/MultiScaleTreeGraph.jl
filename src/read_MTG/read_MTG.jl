@@ -33,6 +33,8 @@ and MTG. The MTG is a [data.tree] data structure.
 ```jldoctest
 julia> mtg,classes,description,features = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 julia> mtg,classes,description,features = read_mtg(file);
+# Or using a `Dict` for the attributes to be able to add one if needed:
+julia> mtg,classes,description,features = read_mtg(file,Dict);
 ```
 """
 function read_mtg(file,attr_type = MutableNamedTuple)
