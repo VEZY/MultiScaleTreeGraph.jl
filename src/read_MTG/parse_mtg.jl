@@ -9,6 +9,7 @@ Parse MTG section
 - `features::Array`: The features section data as returned by `parse_section!`
 - `line::Array{Int64,1}`: The current line index (mutated). Must be given as line of `MTG:`
 - `l::Array{String,1}`: the current line
+- `attr_type::DataType`: the type of the structure used to hold the attributes
 
 # Note
 
@@ -18,7 +19,7 @@ The buffered IO stream (`f`) should start at the line of the section.
 
 The parsed MTG section
 """
-function parse_mtg!(f,classes,features,line,l)
+function parse_mtg!(f,classes,features,line,l,attr_type)
     l[1] = next_line!(f,line)
 
     if length(l[1]) == 0
@@ -56,7 +57,7 @@ function parse_mtg!(f,classes,features,line,l)
     end
 
     scale = classes.SCALE[symbol .== classes.SYMBOL][1]
-    attrs = parse_MTG_node_attr(splitted_MTG,features,attr_column_start,line)
+    attrs = parse_MTG_node_attr(splitted_MTG,attr_type,features,attr_column_start,line)
 
     # root_node = Node(join([symbol,"1"],"_"), NodeMTG(link,symbol,index,scale), attrs)
     root_node = Node("node_1", NodeMTG(link,symbol,index,scale), attrs)
@@ -94,7 +95,7 @@ function parse_mtg!(f,classes,features,line,l)
         node, shared = expand_node!(node,1)
 
         # Get node attributes:
-        node_attr = parse_MTG_node_attr(node_data,features,node_attr_column_start,line)
+        node_attr = parse_MTG_node_attr(node_data,attr_type,features,node_attr_column_start,line)
 
         if node[1] == "^"
             # The parent node is the last one built on the same column
@@ -196,10 +197,11 @@ end
 Parse MTG node attributes names, values and type
 
 # Arguments
-- `l::String`: An MTG node (e.g. "/Individual0")
+- `node_data::String`: A splitted mtg node data (attributes)
+- `attr_type::DataType`: the type of the structure used to hold the attributes
 - `features::DataFrame`: The features data.frame
-- `attr_column_start::DataFrame`: The index of the column of the first attribute
-- `line::Integer`: The line of the mtg file
+- `attr_column_start::Integer`: The index of the column of the first attribute
+- `line::Integer`: The current line of the mtg file
 - `force::Bool`: force data reading even if errors are met during conversion ?
 
 # Return
@@ -207,11 +209,10 @@ Parse MTG node attributes names, values and type
 A list of attributes
 
 """
-function parse_MTG_node_attr(node_data,features,attr_column_start,line;force = false)
-
+function parse_MTG_node_attr(node_data,attr_type,features,attr_column_start,line;force = false)
 
     if length(node_data) < attr_column_start
-        return MutableNamedTuple()
+        return init_empty_attr(attr_type)
     end
 
     node_data_attr = node_data[attr_column_start:end]
@@ -261,5 +262,31 @@ function parse_MTG_node_attr(node_data,features,attr_column_start,line;force = f
         end
     end
 
-    MutableNamedTuple{tuple(Symbol.(keys(node_attr))...)}(tuple(values(node_attr)...))
+    node_attributes(attr_type,node_attr)
+end
+
+"""
+
+Instantiate a `attr_type` struct with `node_attr` keys and values
+
+# Arguments
+
+- `attr_type::DataType`: the type of the structure used to hold the attributes
+- `node_attr::String`: The node attributes as a [`Dict`](@ref)
+"""
+function node_attributes(attr_type::Type{T},node_attr) where T<:Union{NamedTuple,MutableNamedTuple}
+    attr_type{tuple(Symbol.(keys(node_attr))...)}(tuple(values(node_attr)...))
+end
+
+function node_attributes(attr_type::Type{T},node_attr) where T<:Union{AbstractDict}
+    Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)),values(node_attr)))
+end
+
+
+function init_empty_attr(attr_type)
+    attr_type()
+end
+
+function init_empty_attr(attr_type::Type{T}) where T<:Union{AbstractDict}
+    attr_type{Symbol,Any}()
 end

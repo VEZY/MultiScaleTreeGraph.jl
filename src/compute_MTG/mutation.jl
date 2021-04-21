@@ -7,8 +7,12 @@
 
 Append new attributes to a node attributes.
 """
-function Base.append!(node::Node{NodeMTG, T}, attr) where T<:Union{MutableNamedTuple,NamedTuple}
+function Base.append!(node::Node{NodeMTG, T}, attr) where T<:MutableNamedTuple
     node.attributes = MutableNamedTuple{(keys(node.attributes)...,keys(attr)...)}((values(node.attributes)...,values(attr)...))
+end
+
+function Base.append!(node::Node{NodeMTG, T}, attr) where T<:NamedTuple
+    node.attributes = NamedTuple{(keys(node.attributes)...,keys(attr)...)}((values(node.attributes)...,values(attr)...))
 end
 
 # [...] or with attributes as Dict:

@@ -24,8 +24,6 @@ struct NodeMTG
     index::Int
     scale::Int
 end
-
-# mutable struct Node{T<:NodeMTG,A<:Union{MutableNamedTuple,Dict}}
 mutable struct Node{T<:NodeMTG,A}
     name::String
     parent::Union{Nothing,Node}
@@ -40,9 +38,16 @@ end
 # - for the root:
 Node(name::String,MTG::NodeMTG,attributes) = Node(name,nothing,nothing,nothing,MTG,attributes)
 
-# Special case for the MutableNamedTuple, else it overspecializes and we can't mutate attrs:
+# Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
+# can't mutate attributes, i.e. we get somthing like
+# Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
+# Node{NodeMTG,MutableNamedTuple}
 function Node(name::String,MTG::NodeMTG,attributes::T) where T<:MutableNamedTuple
     Node{NodeMTG,MutableNamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
+end
+
+function Node(name::String,MTG::NodeMTG,attributes::T) where T<:NamedTuple
+    Node{NodeMTG,NamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
 end
 
 # - for all others:

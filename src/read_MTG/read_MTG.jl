@@ -1,9 +1,22 @@
 """
+    read_mtg(file,attr_type::DataType = MutableNamedTuple)
+
 Read an MTG file
 
 # Arguments
 
 - `file::String`: The path to the MTG file.
+- `attr_type::DataType`: the type used to hold the attribute values for each node.
+
+# Details
+
+`attr_type` should be:
+
+- `NamedTuple` if you don't plan to modify the attributes of the mtg, *e.g.* to use them for
+plotting or computing statistics...
+- `MutableNamedTuple` if you plan to modify the attributes values but not adding new attributes
+very often, *e.g.* recompute an attribute value...
+- `Dict` if you plan to modify heavily the attributes, *e.g.* adding/removing attibutes a lot
 
 # Note
 
@@ -11,6 +24,7 @@ See the documentation for the MTG format from the [OpenAlea webpage](http://open
 for further details.
 
 # Returns
+
 A named list of four sections: the MTG classes, description, features,
 and MTG. The MTG is a [data.tree] data structure.
 
@@ -21,7 +35,7 @@ julia> mtg,classes,description,features = read_mtg(download("https://raw.githubu
 julia> mtg,classes,description,features = read_mtg(file);
 ```
 """
-function read_mtg(file)
+function read_mtg(file,attr_type = MutableNamedTuple)
 
     sections = ("CODE", "CLASSES", "DESCRIPTION", "FEATURES","MTG")
 
@@ -75,7 +89,7 @@ function read_mtg(file)
 
             # Parse the mtg FEATURES section:
             if issection(l[1],"MTG")
-                mtg = parse_mtg!(f,classes,features,line,l)
+                mtg = parse_mtg!(f,classes,features,line,l,attr_type)
                 continue
             end
         end
