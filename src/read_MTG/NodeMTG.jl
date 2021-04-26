@@ -91,6 +91,35 @@ end
 
 unsafe_getindex(node::Node, key) = unsafe_getindex(node,Symbol(key))
 
+function unsafe_getindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key::Symbol)
+    try
+        getindex(node.attributes,key)
+    catch err
+        if typeof(err) == KeyError
+            nothing
+        else
+            error(err.msg)
+        end
+    end
+end
+
+unsafe_getindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key) = unsafe_getindex(node,Symbol(key))
+
+
+# function setindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key::Symbol)
+#     try
+#         getindex(node.attributes,key)
+#     catch err
+#         if typeof(err) == KeyError
+#             nothing
+#         else
+#             error(err.msg)
+#         end
+#     end
+# end
+
+# getindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key) = getindex(node,Symbol(key))
+
 """
 Returns the length of the subtree below the node (including it)
 """
