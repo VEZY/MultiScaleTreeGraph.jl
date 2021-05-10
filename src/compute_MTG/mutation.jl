@@ -1,9 +1,56 @@
 """
-    @mutate_node!(node, exprs...)
+    @mutate_mtg!(node, args...)
 
-Mutate a node in place.
+Mutate the mtg nodes in place.
 
 # Arguments
+
+- `mtg`: the mtg to mutate
+- `args...`: The computations to apply to the nodes (see examples)
+
+# Examples
+
+```julia
+# Importing the mtg from the github repo:
+mtg,classes,description,features =
+    read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+
+# Compute a new attribute with the scales and add 2 to its values:
+@mutate_mtg!(mtg, scaling = node.scales .+ 2)
+
+# Compute several new attributes, some based on others:
+@mutate_mtg!(mtg, x = length(node.name), y = node.x + 2, z = sum(node.y))
+
+# We can also use it without parenthesis:
+
+@mutate_mtg! mtg x = length(node.name)
+```
+"""
+macro mutate_mtg!(mtg, args...)
+    arguments = (args...,)
+    expr = quote
+        traversed_mtg = PreOrderDFS(mtg)
+        for i in traversed_mtg
+            @mutate_node!(i, x = length(node.name), y = node.x + 2, z = sum(node.y))
+        end
+    end
+    esc(expr)
+end
+
+
+"""
+    @mutate_node!(node, args...)
+
+Mutate a single node in place.
+
+# Arguments
+
+- `node`: the node to mutate
+- `args...`: The computations to apply to the node (see examples)
+
+# See also
+
+[`@mutate_mtg!`](@ref) to mutate all nodes of an mtg.
 
 # Examples
 
@@ -15,12 +62,19 @@ mtg,classes,description,features =
 # Compute a new attribute with the scales and add 2 to its values:
 @mutate_node!(mtg, scaling = node.scales .+ 2)
 
+# The computation is only applied to the root node. To apply it to all nodes,
+# see @mutate_mtg!
+
 # Compute several new attributes, some based on others:
 @mutate_node!(mtg, x = length(node.name), y = node.x + 2, z = sum(node.y))
+
+# We can also use it without parenthesis:
+
+@mutate_node! mtg x = length(node.name)
 ```
 """
-macro mutate_node!(node, exprs...)
-    arguments = (exprs...,)
+macro mutate_node!(node, args...)
+    arguments = (args...,)
     rewrite_expr!(:($node),arguments)
     expr = quote $(arguments...); nothing end
     esc(expr)
