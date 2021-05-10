@@ -21,7 +21,7 @@ NodeMTG("<", "Leaf", 2, 0)
 struct NodeMTG
     link::Union{String,Char}
     symbol::Union{String,SubString,Char}
-    index::Int
+    index::Union{Int,Nothing}
     scale::Int
 end
 mutable struct Node{T<:NodeMTG,A}
