@@ -33,7 +33,8 @@ To do before v1:
 - [x] Helpers to mutate the MTG:
   - [x] `traverse!()`
   - [x] `descendants()`
-  - [ ] `ancestors()`
+  - [x] `ancestors()`
+  - [x] `@mutate_mtg!()`
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
 - [x] Make `Node` indexable for:
@@ -42,14 +43,14 @@ To do before v1:
   - [x] node fields using the dot notation
 - [x] iterable
 - [ ] Work by default at the finer scale. Hence we can make a function to dump the scales ze don't want to work with, which would speed-up the computations. Careful though, we probably have to change the links between nodes then.
-- [x] Use MutableNamedTuple for `node.children` by default
+- [x] Use MutableNamedTuple for `node.children` by default -> rolled back to Dict instead
 - [ ] Tree printing:
   - [x] Tree printing
   - [x] Link + symbol + unique ID
   - [ ] Color for scales
 - [ ] Functions to plot the MTG
 - [ ] Easy handling of the scales in:
-  - [ ]  tree traversal
+  - [x]  tree traversal
   - [ ]  Printing
   - [ ]  Plotting
   - [ ]  Get stats for scales:
