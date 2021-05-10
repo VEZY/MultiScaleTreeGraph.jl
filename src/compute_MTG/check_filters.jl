@@ -40,7 +40,11 @@ function check_filter(nodetype,type::Symbol,filter::T,filters) where T<:Union{Tu
 end
 
 
+"""
+    is_filtered(node, scale, symbol, link, filter_fun)
 
+Is a node filtered in ? Returns `true` if the node is kept, `false` if it is filtered-out.
+"""
 function is_filtered(node, scale, symbol, link, filter_fun)
 
     link_keep = is_filtered(link,node.MTG.link)
@@ -62,4 +66,45 @@ end
 
 function is_filtered(filter,value::T) where T<:Union{Tuple,Array}
     all(map(x -> is_filtered(filter,x), value))
+end
+
+
+"""
+    parse_macro_args(args)
+
+Parse filters and arguments given as a collection of expressions. This function is used to
+get the filters as keyword arguments in macros.
+
+# Examples
+
+```julia
+args = (:(x = length(node.name)), :(y = node.x + 2), :(scale = 2))
+MTG.parse_args_filters(args)
+```
+"""
+function parse_macro_args(args)
+    filters = Dict{Symbol,Any}(
+        :scale => nothing,
+        :symbol => nothing,
+        :link => nothing,
+        :filter_fun => nothing
+    )
+
+    kwargs = Dict{Symbol,Any}(
+        :all => true,
+        :traversal => AbstractTrees.PreOrderDFS,
+    )
+
+    args_array = []
+
+    for i in args
+        if i.head == :(=) && i.args[1] in keys(filters)
+            filters[i.args[1]] = i.args[2]
+        elseif i.head == :(=) && i.args[1] in keys(kwargs)
+            kwargs[i.args[1]] = i.args[2]
+        else
+            push!(args_array,i)
+        end
+    end
+    return (;filters...), (;kwargs...), (args_array...,)
 end

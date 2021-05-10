@@ -41,6 +41,7 @@ export iterate
 export siblings
 export append!
 export @mutate_node!
+export is_filtered
 
 # Not sure to keep as export
 export Node

@@ -17,6 +17,7 @@ Get attribute values from the ancestors (basipetal).
 - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
 - `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that
 is filtered out (`false`).
+- `self = false`: is the value for the current node needed ?
 - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
 - `type::Union{Union,DataType}`: The type of the attribute. Makes the function run much
 faster if provided (≈4x faster).
