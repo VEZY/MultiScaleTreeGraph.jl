@@ -26,12 +26,10 @@ function Base.append!(node::Node{NodeMTG, <:AbstractDict}, attr)
     merge!(node.attributes, Dict(zip(keys(attr),values(attr))))
 end
 
-
-
-macro format_expr(node, args...)
+macro mutate_node(node, args...)
     arguments = (args...,)
-    rewrite_expr!(arguments)
-    println(arguments)
+    exprs = rewrite_expr!(arguments)
+
 end
 
 """
@@ -59,7 +57,7 @@ function rewrite_expr!(arguments::Expr)
 
     # For the Left-Hand Side (LHS)
     if isa(arguments,Expr) && arguments.head == :(=) && isa(arguments.args[1],Symbol)
-        arguments.args[1] = :(node.attributes.$(arguments.args[1]))
+        arguments.args[1] = :(node.attributes[$(QuoteNode(arguments.args[1]))])
         # if !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
         # x.args[1] = :(node.attributes)
     end
@@ -69,6 +67,7 @@ function rewrite_expr!(arguments::Expr)
         arg = string(x)
         if isa(x,Expr) && x.head == :. && occursin("node.",arg) && !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
             x.args[1] = :(node.attributes)
+            x.head = :ref
         else
             rewrite_expr!(x)
         end

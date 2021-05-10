@@ -61,8 +61,10 @@ end
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"]
 """
-Base.getindex(node::Node, key::Symbol) = getproperty(node.attributes,key)
-Base.getindex(node::Node, key) = getproperty(node.attributes,Symbol(key))
+Base.getindex(node::Node, key) = getindex(node.attributes,Symbol(key))
+Base.getindex(node::Node, key::Symbol) = getindex(node.attributes,key)
+Base.getindex(node::Node{NodeMTG, MutableNamedTuple}, key::Symbol) = getproperty(node.attributes,key)
+Base.getindex(node::Node{NodeMTG, MutableNamedTuple}, key) = getproperty(node.attributes,Symbol(key))
 
 """
 Indexing a Node using an integer will index in its children
