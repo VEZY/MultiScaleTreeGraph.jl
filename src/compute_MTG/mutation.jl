@@ -91,14 +91,14 @@ an attribute.
 
 ```
 >julia test = :(x = node.name)
->julia rewrite_expr!(test)
+>julia MTG.rewrite_expr!(:mtg,test)
 >julia test
-:(node.attributes.x = node.name)
+:(mtg.attributes[:x] = mtg.name)
 
 >julia test = :(x = node.foo)
->julia rewrite_expr!(test)
+>julia MTG.rewrite_expr!(:mtg,test)
 >julia test
-:(node.attributes.x = node.attributes.foo)
+:(mtg.attributes[:x] = mtg.attributes[:foo])
 ```
 """
 function rewrite_expr!(node_name,arguments::Expr)

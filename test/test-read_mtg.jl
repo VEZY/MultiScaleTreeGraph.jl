@@ -29,8 +29,8 @@ end
     @test length(mtg) == 7
     @test typeof(mtg) == Node{NodeMTG, MutableNamedTuple}
     @test mtg.name == "node_1"
-    @test mtg.attributes.scales == [0, 1, 2, 3, 3]
-    @test mtg.attributes.symbols == ["\$", "Individual", "Axis", "Internode", "Leaf"]
+    @test mtg.attributes[:scales] == [0, 1, 2, 3, 3]
+    @test mtg.attributes[:symbols] == ["\$", "Individual", "Axis", "Internode", "Leaf"]
     @test mtg.MTG == NodeMTG('/', "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String, Node}
     @test typeof(mtg[1]) == Node{NodeMTG, MutableNamedTuple}
@@ -40,7 +40,7 @@ end
 
 @testset "test mtg mutation" begin
     @test (mtg.name = "first_node") == "first_node"
-    @test (mtg.attributes.scales = [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
+    @test (mtg.attributes[:scales] = [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
     @test (mtg.MTG = NodeMTG("<", "Leaf", 2, 0)) == NodeMTG("<", "Leaf", 2, 0)
     @test (mtg[1].parent = nothing) === nothing
     node2 = mtg[1]
