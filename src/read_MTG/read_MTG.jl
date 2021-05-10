@@ -1,5 +1,5 @@
 """
-    read_mtg(file,attr_type::DataType = MutableNamedTuple)
+    read_mtg(file,attr_type::DataType = Dict)
 
 Read an MTG file
 
@@ -37,7 +37,7 @@ julia> mtg,classes,description,features = read_mtg(file);
 julia> mtg,classes,description,features = read_mtg(file,Dict);
 ```
 """
-function read_mtg(file,attr_type = MutableNamedTuple)
+function read_mtg(file,attr_type = Dict)
 
     sections = ("CODE", "CLASSES", "DESCRIPTION", "FEATURES","MTG")
 

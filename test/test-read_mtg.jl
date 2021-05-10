@@ -1,4 +1,4 @@
-mtg,classes,description,features = read_mtg("files/simple_plant.mtg");
+mtg,classes,description,features = read_mtg("files/simple_plant.mtg",MutableNamedTuple);
 
 @testset "test classes" begin
     @test typeof(classes) == DataFrame
