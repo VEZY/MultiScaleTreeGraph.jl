@@ -1,43 +1,29 @@
-
-# Mutation of the attributes of a node at the node level, with attributes as MutableNamedTuple:
-
 """
-    append!(node::Node{NodeMTG, <:MutableNamedTuple}, attr)
-    append!(node::Node{NodeMTG, <:Dict}, attr)
+    @mutate_node!(node, exprs...)
 
-Append new attributes to a node attributes.
+Mutate a node in place.
+
+# Arguments
+
+# Examples
+
+```julia
+# Importing the mtg from the github repo:
+mtg,classes,description,features =
+    read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+
+# Compute a new attribute with the scales and add 2 to its values:
+@mutate_node!(mtg, scaling = node.scales .+ 2)
+
+# Compute several new attributes, some based on others:
+@mutate_node!(mtg, x = length(node.name), y = node.x + 2, z = sum(node.y))
+```
 """
-function Base.append!(node::Node{NodeMTG, T}, attr) where T<:MutableNamedTuple
-    node.attributes = MutableNamedTuple{(keys(node.attributes)...,keys(attr)...)}((values(node.attributes)...,values(attr)...))
-end
-
-function Base.append!(node::Node{NodeMTG, T}, attr) where T<:NamedTuple
-    node.attributes = NamedTuple{(keys(node.attributes)...,keys(attr)...)}((values(node.attributes)...,values(attr)...))
-end
-
-# [...] or with attributes as Dict:
-function Base.append!(node::Node{NodeMTG, T}, attr::T) where T<:AbstractDict
-    merge!(node.attributes, attr)
-end
-
-# And ensure compatibility between both so a script wouldn't be broken if we just change the
-# type of the attributes:
-function Base.append!(node::Node{NodeMTG, <:AbstractDict}, attr)
-    merge!(node.attributes, Dict(zip(keys(attr),values(attr))))
-end
-
-macro format_expr(node, args...)
-    arguments = (args...,)
-    rewrite_expr!(arguments)
-    return arguments
-end
-
-macro mutate_node!(node, args...)
-    arguments = (args...,)
-    rewrite_expr!(arguments)
-    for expr in arguments
-        eval(expr)
-    end
+macro mutate_node!(node, exprs...)
+    arguments = (exprs...,)
+    rewrite_expr!(:($node),arguments)
+    expr = quote $(arguments...); nothing end
+    esc(expr)
 end
 
 """
@@ -61,11 +47,11 @@ an attribute.
 :(node.attributes.x = node.attributes.foo)
 ```
 """
-function rewrite_expr!(arguments::Expr)
+function rewrite_expr!(node_name,arguments::Expr)
 
     # For the Left-Hand Side (LHS)
     if isa(arguments,Expr) && arguments.head == :(=) && isa(arguments.args[1],Symbol)
-        arguments.args[1] = :(node.attributes[$(QuoteNode(arguments.args[1]))])
+        arguments.args[1] = :($(node_name).attributes[$(QuoteNode(arguments.args[1]))])
         # if !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
         # x.args[1] = :(node.attributes)
     end
@@ -73,21 +59,25 @@ function rewrite_expr!(arguments::Expr)
     # For the RHS:
     for x in arguments.args
         arg = string(x)
-        if isa(x,Expr) && x.head == :. && occursin("node.",arg) && !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
-            x.args[1] = :(node.attributes)
-            x.head = :ref
+        if isa(x,Expr) && x.head == :. && occursin("node.",arg)
+            if !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
+                x.args[1] = :($(node_name).attributes)
+                x.head = :ref
+            else
+                x.args[1] = :($(node_name))
+            end
         else
-            rewrite_expr!(x)
+            rewrite_expr!(node_name,x)
         end
     end
 end
 
-function rewrite_expr!(arguments)
+function rewrite_expr!(node_name,arguments)
     nothing
 end
 
-function rewrite_expr!(arguments::Tuple)
+function rewrite_expr!(node_name,arguments::Tuple)
     for x in arguments
-        rewrite_expr!(x)
+        rewrite_expr!(node_name,x)
     end
 end
