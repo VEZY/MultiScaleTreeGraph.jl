@@ -40,7 +40,7 @@ end
 
 @testset "test mtg mutation" begin
     @test (mtg.name = "first_node") == "first_node"
-    @test (mtg.attributes[:scales] = [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
+    @test (mtg.attributes[:scales] .= [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
     @test (mtg.MTG = NodeMTG("<", "Leaf", 2, 0)) == NodeMTG("<", "Leaf", 2, 0)
     @test (mtg[1].parent = nothing) === nothing
     node2 = mtg[1]

@@ -70,6 +70,7 @@ Base.getindex(node::Node{NodeMTG, MutableNamedTuple}, key) = getproperty(node.at
 Indexing a Node using an integer will index in its children
 """
 Base.getindex(n::Node, i::Integer) = n.children[collect(keys(n.children))[i]]
+Base.getindex(n::Node{NodeMTG, MutableNamedTuple}, i::Integer) = n.children[collect(keys(n.children))[i]]
 Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
 Base.getindex(x::Node, ::AbstractTrees.ImplicitRootState) = x
 
