@@ -31,7 +31,7 @@ macro mutate_mtg!(mtg, args...)
     expr = quote
         traversed_mtg = PreOrderDFS(mtg)
         for i in traversed_mtg
-            @mutate_node!(i, x = length(node.name), y = node.x + 2, z = sum(node.y))
+            @mutate_node!(i, $(arguments...))
         end
     end
     esc(expr)
