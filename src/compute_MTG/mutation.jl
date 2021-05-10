@@ -26,10 +26,18 @@ function Base.append!(node::Node{NodeMTG, <:AbstractDict}, attr)
     merge!(node.attributes, Dict(zip(keys(attr),values(attr))))
 end
 
-macro mutate_node(node, args...)
+macro format_expr(node, args...)
     arguments = (args...,)
-    exprs = rewrite_expr!(arguments)
+    rewrite_expr!(arguments)
+    return arguments
+end
 
+macro mutate_node!(node, args...)
+    arguments = (args...,)
+    rewrite_expr!(arguments)
+    for expr in arguments
+        eval(expr)
+    end
 end
 
 """
