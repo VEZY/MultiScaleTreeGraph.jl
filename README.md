@@ -36,6 +36,8 @@ To do before v1:
   - [x] `ancestors()`
   - [x] `@mutate_mtg!()`
   - [x] `traverse!()` for a more julian way
+  - [x] `delete_nodes!()` to delete nodes in the tree based on filters
+  - [ ] `add_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_name()` for naming them.
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
 - [x] Make `Node` indexable for:

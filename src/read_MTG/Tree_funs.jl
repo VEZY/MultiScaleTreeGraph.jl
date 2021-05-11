@@ -91,3 +91,35 @@ function nextsibling(node::Node)
         nothing
     end
 end
+
+"""
+    max_name(mtg)
+
+Returns the maximum name of the mtg based on its index
+"""
+function max_name(mtg)
+    maxname = [0]
+
+    function update_maxname(name,maxname)
+        name_int = parse(Int,name[6:end])
+        parse(Int,name[6:end]) > maxname[1] ? maxname[1] = name_int : nothing
+    end
+    traverse!(mtg, x -> update_maxname(x.name,maxname))
+    string(mtg.name[1:5], maxname[1])
+end
+
+"""
+    new_name(mtg)
+    new_name(mtg,max_name)
+
+Make a new unique name by incrementing on the maximum name (names are names+index).
+Hint: prefer using `max_name = max_name(mtg)` and then `new_name(mtg,max_name)` for performance
+if you do it repeatidely.
+"""
+function new_name(mtg,max_name)
+    string(mtg.name[1:5], parse(Int,max_name[6:end]+1))
+end
+
+function new_name(mtg)
+    new_name(mtg,max_name(mtg))
+end
