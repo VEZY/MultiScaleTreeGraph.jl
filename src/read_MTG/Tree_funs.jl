@@ -112,7 +112,7 @@ end
     new_name(mtg)
     new_name(mtg,max_name)
 
-Make a new unique name by incrementing on the maximum name (names are names+index).
+Make a new unique identifier by incrementing on the maximum name (names are names+index).
 Hint: prefer using `max_name = max_name(mtg)` and then `new_name(mtg,max_name)` for performance
 if you do it repeatidely.
 """

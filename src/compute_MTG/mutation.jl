@@ -48,7 +48,7 @@ macro mutate_mtg!(mtg, args...)
 
     expr = quote
         # Check the filters consistency with the mtg:
-        check_filters(mtg,scale = $(flt.scale), symbol = $(flt.symbol), link = $(flt.link))
+        check_filters(mtg, scale = $(flt.scale), symbol = $(flt.symbol), link = $(flt.link))
         # Traverse the mtg:
         traversed_mtg = $(kwargs[:traversal])(mtg)
         for i in traversed_mtg
@@ -103,7 +103,7 @@ mtg,classes,description,features =
 """
 macro mutate_node!(node, args...)
     arguments = (args...,)
-    rewrite_expr!(:($node),arguments)
+    rewrite_expr!(:($node), arguments)
     expr = quote $(arguments...); nothing end
     esc(expr)
 end
@@ -129,10 +129,10 @@ an attribute.
 :(mtg.attributes[:x] = mtg.attributes[:foo])
 ```
 """
-function rewrite_expr!(node_name,arguments::Expr)
+function rewrite_expr!(node_name, arguments::Expr)
 
     # For the Left-Hand Side (LHS)
-    if isa(arguments,Expr) && arguments.head == :(=) && isa(arguments.args[1],Symbol)
+    if isa(arguments, Expr) && arguments.head == :(=) && isa(arguments.args[1], Symbol)
         arguments.args[1] = :($(node_name).attributes[$(QuoteNode(arguments.args[1]))])
         # if !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
         # x.args[1] = :(node.attributes)
@@ -141,25 +141,33 @@ function rewrite_expr!(node_name,arguments::Expr)
     # For the RHS:
     for x in arguments.args
         arg = string(x)
-        if isa(x,Expr) && x.head == :. && occursin("node.",arg) && !occursin(string(node_name),arg)
-            if !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
+        if isa(x, Expr) && x.head == :. && occursin("node", arg) && !occursin(string(node_name), arg)
+            if !(Symbol(replace(arg, "node." => "")) in fieldnames(Node))
                 x.args[1] = :($(node_name).attributes)
                 x.head = :ref
             else
                 x.args[1] = :($(node_name))
             end
+        elseif isa(x, Expr) && x.head == :call && occursin("node", arg)
+            # Call to a function, and we pass node as argument
+            for i in 1:length(x.args)
+                arg_i = string(x.args[i])
+                # The node is given as is to the function, e.g. fn(node):
+                x.args[i] == :node ? x.args[i] = :($(node_name)) : nothing
+            end
+            rewrite_expr!(node_name, x)
         else
-            rewrite_expr!(node_name,x)
+            rewrite_expr!(node_name, x)
         end
     end
 end
 
-function rewrite_expr!(node_name,arguments)
+function rewrite_expr!(node_name, arguments)
     nothing
 end
 
-function rewrite_expr!(node_name,arguments::Tuple)
+function rewrite_expr!(node_name, arguments::Tuple)
     for x in arguments
-        rewrite_expr!(node_name,x)
+        rewrite_expr!(node_name, x)
     end
 end
