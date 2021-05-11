@@ -147,10 +147,6 @@ end
 # <https://github.com/dellison/ConstituencyTrees.jl/blob/master/src/trees.jl>
 # <https://github.com/vh-d/DataTrees.jl/blob/master/src/indexing.jl>
 
-function AbstractTrees.printnode(io::IO, node::Node)
-    print(io, join(["Node: ",node.name,", Link: ",node.MTG.link,"Index: ", node.MTG.index]))
-end
-
 Base.eltype(::Type{<:TreeIterator{Node{T,D}}}) where {T,D} = Node{T,D}
 Base.IteratorEltype(::Type{<:TreeIterator{Node{T,D}}}) where {T,D} = Base.HasEltype()
 

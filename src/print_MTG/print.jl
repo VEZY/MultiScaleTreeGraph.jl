@@ -1,3 +1,6 @@
+function AbstractTrees.printnode(io::IO, node::Node)
+    print(io, join(["Node: ",node.name,", Link: ",node.MTG.link,"Index: ", node.MTG.index]))
+end
 
 """
 Print a node to io using an UTF-8 formatted representation of the `tree`.
