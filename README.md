@@ -35,6 +35,7 @@ To do before v1:
   - [x] `descendants()`
   - [x] `ancestors()`
   - [x] `@mutate_mtg!()`
+  - [x] `traverse!()` for a more julian way
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
 - [x] Make `Node` indexable for:

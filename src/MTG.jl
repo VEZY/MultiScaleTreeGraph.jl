@@ -21,6 +21,8 @@ include("compute_MTG/DataFrame.jl")
 include("compute_MTG/check_filters.jl")
 include("compute_MTG/mutation.jl")
 include("compute_MTG/append_attributes.jl")
+include("compute_MTG/traverse.jl")
+include("compute_MTG/delete_nodes.jl")
 
 export read_mtg
 export printnode
@@ -43,6 +45,8 @@ export append!
 export @mutate_node!
 export @mutate_mtg!
 export is_filtered
+export delete_nodes!
+
 
 # Not sure to keep as export
 export Node
