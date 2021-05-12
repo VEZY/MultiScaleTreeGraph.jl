@@ -141,14 +141,14 @@ function rewrite_expr!(node_name, arguments::Expr)
     # For the RHS:
     for x in arguments.args
         arg = string(x)
-        if isa(x, Expr) && x.head == :. && occursin("node", arg) && !occursin(string(node_name), arg)
+        if isa(x, Expr) && x.head == :. && occursin(r"^node", arg) && !occursin(string(node_name), arg)
             if !(Symbol(replace(arg, "node." => "")) in fieldnames(Node))
                 x.args[1] = :($(node_name).attributes)
                 x.head = :ref
             else
                 x.args[1] = :($(node_name))
             end
-        elseif isa(x, Expr) && x.head == :call && occursin("node", arg)
+        elseif isa(x, Expr) && x.head == :call && occursin(r"^node", arg)
             # Call to a function, and we pass node as argument
             for i in 1:length(x.args)
                 arg_i = string(x.args[i])
