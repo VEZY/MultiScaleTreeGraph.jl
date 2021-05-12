@@ -58,9 +58,9 @@ end
 function paste_node_mtg(mtg, features)
     @mutate_mtg!(
         mtg,
-        lead = get_leading_tabs(node),
-        mtg_print = paste_mtg_node(node),
-        mtg_refer = get_reference(node)
+        lead = MTG.get_leading_tabs(node),
+        mtg_print = MTG.paste_mtg_node(node),
+        mtg_refer = MTG.get_reference(node)
     )
 
 
