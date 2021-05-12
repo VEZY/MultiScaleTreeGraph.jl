@@ -18,6 +18,10 @@ Delete nodes in mtg following filters rules.
 is filtered out (`false`).
 - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
 
+# Notes
+
+If the node to delete is branhing ("+"), it will pass it to its parent
+
 # Examples
 
 ```julia
@@ -39,7 +43,8 @@ function delete_nodes!(
     symbol = nothing,
     link = nothing,
     all::Bool = true, # like continue in the R package, but actually the opposite
-    filter_fun = nothing
+    filter_fun = nothing,
+    branch = "parent"
     )
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
@@ -60,7 +65,7 @@ end
 
 function delete_nodes!_(node, scale, symbol, link, all, filter_fun)
     if !isleaf(node)
-        for (name, chnode) in node.children
+        for chnode in ordered_children(node)
             # Is there any filter happening for the current node? (true is deleted):
             filtered = is_filtered(chnode, scale, symbol, link, filter_fun)
 

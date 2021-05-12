@@ -83,7 +83,6 @@ end
 function descendants_(node, key, scale, symbol, link, all, filter_fun, val)
     if !isleaf(node)
         for chnode in ordered_children(node)
-
             # Is there any filter happening for the current node? (FALSE if filtered out):
             keep = is_filtered(chnode, scale, symbol, link, filter_fun)
 
