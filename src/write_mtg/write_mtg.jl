@@ -13,6 +13,14 @@ function write_mtg(file, mtg, classes, description, features)
         # Description section:
         writedlm(io, [""])
         writedlm(io, ["DESCRIPTION:"])
+        # Reformat the RIGHT column to match how it is written in an MTG
+        right = fill("", size(description)[1])
+
+        for i in 1:length(description.RIGHT)
+            right = join(description.RIGHT[i], ",")
+        end
+        description[!,:RIGHT] .= right
+
         writedlm(io, reshape(names(description), (1, :)))
 
         writedlm(io, eachrow(description))
