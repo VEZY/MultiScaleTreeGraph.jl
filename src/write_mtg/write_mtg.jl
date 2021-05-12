@@ -1,3 +1,16 @@
+"""
+    write_mtg(file, mtg, classes, description, features)
+
+Write an mtg file to disk.
+
+# Arguments
+
+- `file::String`: The path to the MTG file to write.
+- `mtg`: the mtg
+- `classes`: the classes section
+- `description`: the description section
+- `features`: the features section
+"""
 function write_mtg(file, mtg, classes, description, features)
 
     open(file, "w") do io
