@@ -4,6 +4,8 @@ using AbstractTrees
 using Printf
 using DataFrames
 using MutableNamedTuples
+using DelimitedFiles
+using OrderedCollections
 
 # Write your package code here.
 include("read_MTG/read_MTG.jl")
@@ -23,22 +25,20 @@ include("compute_MTG/mutation.jl")
 include("compute_MTG/append_attributes.jl")
 include("compute_MTG/traverse.jl")
 include("compute_MTG/delete_nodes.jl")
+include("write_mtg/write_mtg.jl")
 
 export read_mtg
-export printnode
 export isleaf
 export isroot
 export children
 export addchild!
 export traverse!
-export printnode
 export getroot
 export nextsibling
 export print
 export show
 export length
 export DataFrame
-export printnode
 export iterate
 export siblings
 export append!

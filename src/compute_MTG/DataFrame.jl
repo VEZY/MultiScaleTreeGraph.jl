@@ -19,21 +19,21 @@ mtg,classes,description,features =
 DataFrame(mtg, :Length)
 ```
 """
-function DataFrames.DataFrame(mtg::Node,key::T) where T <: Union{AbstractArray, Tuple}
+function DataFrames.DataFrame(mtg::Node, key::T) where T <: Union{AbstractArray,Tuple}
     node_vec = get_printing(mtg)
     df = DataFrame(tree = node_vec)
 
     for var in key
-        insertcols!(df, var => [descendants(mtg,var,self=true)...])
+        insertcols!(df, var => [descendants(mtg, var, self = true)...])
     end
     df
 end
 
-function DataFrames.DataFrame(mtg::Node,key::T) where T <: Symbol
-    DataFrame([get_printing(mtg), [descendants(mtg,key,self=true)...]],[:tree,key])
+function DataFrames.DataFrame(mtg::Node, key::T) where T <: Symbol
+    DataFrame([get_printing(mtg), [descendants(mtg, key, self = true)...]], [:tree,key])
 end
 
-function DataFrames.DataFrame(mtg::Node,key::T) where T <: AbstractString
+function DataFrames.DataFrame(mtg::Node, key::T) where T <: AbstractString
     key = Symbol(key)
-    DataFrame([get_printing(mtg), [descendants(mtg,key,self=true)...]],[:tree,key])
+    DataFrame([get_printing(mtg), [descendants(mtg, key, self = true)...]], [:tree,key])
 end
