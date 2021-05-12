@@ -46,6 +46,7 @@ export @mutate_node!
 export @mutate_mtg!
 export is_filtered
 export delete_nodes!
+export write_mtg
 
 
 # Not sure to keep as export
