@@ -94,7 +94,7 @@ end
 
 unsafe_getindex(node::Node, key) = unsafe_getindex(node,Symbol(key))
 
-function unsafe_getindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key::Symbol)
+function unsafe_getindex(node::Node{NodeMTG, T} where T<: AbstractDict{Symbol, Any}, key::Symbol)
     try
         getindex(node.attributes,key)
     catch err
@@ -106,7 +106,7 @@ function unsafe_getindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key::Symbol)
     end
 end
 
-unsafe_getindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key) = unsafe_getindex(node,Symbol(key))
+unsafe_getindex(node::Node{NodeMTG, T} where T<: AbstractDict{Symbol, Any}, key) = unsafe_getindex(node,Symbol(key))
 
 
 # function setindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key::Symbol)
