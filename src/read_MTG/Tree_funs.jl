@@ -21,19 +21,36 @@ function children(node::Node)
 end
 
 """
+    ordered_children(node)
+
+Return the children as an array, ordered first by "+"
+"""
+function ordered_children(node)
+    links_chnodes = Array{Node,1}()
+    for (name, chnode) in node.children
+        if chnode.MTG.link == '+'
+            pushfirst!(links_chnodes, chnode)
+        else
+            push!(links_chnodes, chnode)
+    end
+    end
+    return links_chnodes
+end
+
+"""
 Add a new child to a parent node, and add the parent node as the parent.
 """
-function addchild!(parent::Node,name::String,MTG::NodeMTG,attributes)
-  child = Node(name,parent,MTG,attributes)
+function addchild!(parent::Node, name::String, MTG::NodeMTG, attributes)
+  child = Node(name, parent, MTG, attributes)
   addchild!(parent, child)
 end
 
-function addchild!(parent::Node,name::String,MTG::NodeMTG)
-  child = Node(name,parent,MTG)
+function addchild!(parent::Node, name::String, MTG::NodeMTG)
+  child = Node(name, parent, MTG)
   addchild!(parent, child)
 end
 
-function addchild!(parent::Node,child::Node;force = false)
+function addchild!(parent::Node, child::Node;force = false)
 
     if child.parent === missing || force == true
         child.parent = parent
@@ -100,11 +117,11 @@ Returns the maximum name of the mtg based on its index
 function max_name(mtg)
     maxname = [0]
 
-    function update_maxname(name,maxname)
-        name_int = parse(Int,name[6:end])
-        parse(Int,name[6:end]) > maxname[1] ? maxname[1] = name_int : nothing
+    function update_maxname(name, maxname)
+        name_int = parse(Int, name[6:end])
+        parse(Int, name[6:end]) > maxname[1] ? maxname[1] = name_int : nothing
     end
-    traverse!(mtg, x -> update_maxname(x.name,maxname))
+    traverse!(mtg, x -> update_maxname(x.name, maxname))
     string(mtg.name[1:5], maxname[1])
 end
 
@@ -116,10 +133,10 @@ Make a new unique identifier by incrementing on the maximum name (names are name
 Hint: prefer using `max_name = max_name(mtg)` and then `new_name(mtg,max_name)` for performance
 if you do it repeatidely.
 """
-function new_name(mtg,max_name)
-    string(mtg.name[1:5], parse(Int,max_name[6:end]+1))
+function new_name(mtg, max_name)
+    string(mtg.name[1:5], parse(Int, max_name[6:end] + 1))
 end
 
 function new_name(mtg)
-    new_name(mtg,max_name(mtg))
+    new_name(mtg, max_name(mtg))
 end

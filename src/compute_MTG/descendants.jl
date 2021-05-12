@@ -68,27 +68,27 @@ function descendants(
         keep = is_filtered(node, scale, symbol, link, filter_fun)
 
         if keep
-            push!(val, unsafe_getindex(node,key))
+            push!(val, unsafe_getindex(node, key))
         elseif !all
             # We don't keep the value and we have to stop at the first filtered-out value
             return val
         end
     end
 
-    descendants_(node,key,scale,symbol,link,all,filter_fun,val)
+    descendants_(node, key, scale, symbol, link, all, filter_fun, val)
     return val
 end
 
 
-function descendants_(node,key,scale,symbol,link,all,filter_fun,val)
+function descendants_(node, key, scale, symbol, link, all, filter_fun, val)
     if !isleaf(node)
-        for (name, chnode) in node.children
+        for chnode in ordered_children(node)
 
             # Is there any filter happening for the current node? (FALSE if filtered out):
             keep = is_filtered(chnode, scale, symbol, link, filter_fun)
 
             if keep
-                push!(val, unsafe_getindex(chnode,key))
+                push!(val, unsafe_getindex(chnode, key))
             end
 
             # If we want to continue even if the current node is filtered-out
