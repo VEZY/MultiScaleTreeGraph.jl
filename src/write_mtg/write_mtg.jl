@@ -63,7 +63,6 @@ function paste_node_mtg(mtg, features)
         mtg_refer = MTG.get_reference(node)
     )
 
-
     attributes = Dict_attrs(mtg, ["mtg_print",features.NAME...,"lead","mtg_refer"])
     max_tabs = maximum(attributes["lead"])
 
@@ -98,7 +97,8 @@ end
 Parse the mtg node as it should appear in the mtg file.
 """
 function paste_mtg_node(node)
-    node.MTG.link * node.MTG.symbol * string(node.MTG.index)
+    index = node.MTG.index === nothing ? "" : string(node.MTG.index)
+    node.MTG.link * node.MTG.symbol * index
 end
 
 """
