@@ -52,13 +52,13 @@ function delete_nodes!(
         all ? nothing : return nothing
     end
 
-    delete_nodes!_(node,scale,symbol,link,all,filter_fun)
+    delete_nodes!_(node, scale, symbol, link, all, filter_fun)
 
     return node
 end
 
 
-function delete_nodes!_(node,scale,symbol,link,all,filter_fun)
+function delete_nodes!_(node, scale, symbol, link, all, filter_fun)
     if !isleaf(node)
         for (name, chnode) in node.children
             # Is there any filter happening for the current node? (true is deleted):
@@ -81,39 +81,39 @@ Delete a node and re-parent the children to its own parent. If the node is a roo
 only one child, the child becomes the root, if it has several children, it returns an error.
 
 The function returns the parent node (or the new root if the node is a root)
-    """
-    function delete_node!(node)
-        if isroot(node)
-            if length(node.children) == 1
-                # If it has only one child, make it the new root:
-                chnode = children(node)[1]
-                chnode.parent = nothing
-                # Add to the new root the mandatory root attributes:
-                root_attrs = Dict(:symbols => node[:symbols], :scales => node[:scales])
-                append!(chnode,root_attrs)
+"""
+function delete_node!(node)
+    if isroot(node)
+        if length(node.children) == 1
+            # If it has only one child, make it the new root:
+            chnode = children(node)[1]
+            chnode.parent = nothing
+            # Add to the new root the mandatory root attributes:
+            root_attrs = Dict(:symbols => node[:symbols], :scales => node[:scales])
+            append!(chnode, root_attrs)
 
-                node_return = chnode
-            else
-                error("Can't delete the root node if it has several children")
-            end
+            node_return = chnode
         else
-            parent_node = node.parent
-
-            # Delete the node as child of his parent:
-            pop!(node.parent.children, node.name)
-
-            if !isleaf(node)
-                # We re-parent the children to the parent of the node.
-                for (name, chnode) in node.children
-                    addchild!(parent_node, chnode; force = true)
-                end
-            end
-            node_return = parent_node
+            error("Can't delete the root node if it has several children")
         end
+    else
+        parent_node = node.parent
 
-        node.parent = nothing
-        node.children = nothing
-        node = nothing
+        # Delete the node as child of his parent:
+        pop!(node.parent.children, node.name)
 
-        return node_return
+        if !isleaf(node)
+            # We re-parent the children to the parent of the node.
+            for (name, chnode) in node.children
+                addchild!(parent_node, chnode; force = true)
+            end
+        end
+        node_return = parent_node
     end
+
+    node.parent = nothing
+    node.children = nothing
+    node = nothing
+
+    return node_return
+end
