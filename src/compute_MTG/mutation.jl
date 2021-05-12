@@ -148,7 +148,7 @@ function rewrite_expr!(node_name, arguments::Expr)
             else
                 x.args[1] = :($(node_name))
             end
-        elseif isa(x, Expr) && x.head == :call && occursin(r"^node", arg)
+        elseif isa(x, Expr) && x.head == :call && occursin("node", arg)
             # Call to a function, and we pass node as argument
             for i in 1:length(x.args)
                 arg_i = string(x.args[i])
