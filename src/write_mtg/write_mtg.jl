@@ -35,19 +35,32 @@ function write_mtg(file, mtg, classes, description, features)
 end
 
 function paste_node_mtg(mtg, features)
-    @mutate_mtg!(mtg, lead = get_leading_tabs(node), mtg_print = paste_mtg_node(node))
-    attributes = Dict_attrs(mtg, ["mtg_print",features.NAME...,"lead"])
+    @mutate_mtg!(
+        mtg,
+        lead = get_leading_tabs(node),
+        mtg_print = paste_mtg_node(node),
+        mtg_refer = get_reference(node)
+    )
+
+
+    attributes = Dict_attrs(mtg, ["mtg_print",features.NAME...,"lead","mtg_refer"])
     max_tabs = maximum(attributes["lead"])
+
+    # Build the "ENTITY-CODE" column with necessary "^", leading and trailing tabs
     attributes["mtg_print"] = string.(
+        # Add the leading tabulations:
         repeat.("\t", attributes["lead"]),
+        # Add the "^" keyword before mtg print in case we refer to the column above:
+        attributes["mtg_refer"],
+        # Add the mtg printing (e.g. "/Axis0"):
         attributes["mtg_print"],
+        # Add the trailing tabulations:
         repeat.("\t", max_tabs .- attributes["lead"])
     )
-    # Remove the lead column now that we used it:
+    # Remove the lead and mtg_refer columns now that we used it:
     pop!(attributes, "lead")
+    pop!(attributes, "mtg_refer")
 
-    # Array{Float64,1}()
-    # attributes["mtg_print"] =
     # Replacing all nothing values by tabulations:
     for (key, val) in attributes
         replace!(val, nothing => "")
@@ -81,6 +94,20 @@ function get_leading_tabs(node)
     end
 end
 
+
+"""
+    get_reference(node)
+
+Get the preceding "^" keyword if needed, *i.e.* in case we refer to the parent node in the
+same mtg file column.
+"""
+function get_reference(node)
+    if isroot(node)
+        return ""
+    else
+        node.MTG.link == '+' ? "" : "^"
+    end
+end
 
 function Dict_attrs(mtg, attrs)
     df = OrderedDict()
