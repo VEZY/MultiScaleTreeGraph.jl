@@ -65,6 +65,7 @@ end
 
 function delete_nodes!_(node, scale, symbol, link, all, filter_fun)
     if !isleaf(node)
+        # First we see if we have to delete any child and reparent their children
         for chnode in ordered_children(node)
             # Is there any filter happening for the current node? (true is deleted):
             filtered = is_filtered(chnode, scale, symbol, link, filter_fun)
@@ -74,6 +75,9 @@ function delete_nodes!_(node, scale, symbol, link, all, filter_fun)
                 # Don't go further if all == false
                 all ? nothing : return nothing
             end
+        end
+        # Then we apply the algorithm recursively on the children:
+        for chnode in ordered_children(node)
             delete_nodes!_(chnode, scale, symbol, link, all, filter_fun)
         end
     end
@@ -105,11 +109,11 @@ function delete_node!(node)
         parent_node = node.parent
 
         # Delete the node as child of his parent:
-        pop!(node.parent.children, node.name)
+        pop!(parent_node.children, node.name)
 
         if !isleaf(node)
             # We re-parent the children to the parent of the node.
-            for (name, chnode) in node.children
+            for chnode in ordered_children(node)
                 addchild!(parent_node, chnode; force = true)
             end
         end

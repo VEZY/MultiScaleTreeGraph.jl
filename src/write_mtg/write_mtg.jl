@@ -12,7 +12,7 @@ Write an mtg file to disk.
 - `features`: the features section
 """
 function write_mtg(file, mtg, classes, description, features)
-
+    @info "Writing mtg to $file"
     open(file, "w") do io
         # Code section:
         writedlm(io, ["CODE:" "FORM-A"])
