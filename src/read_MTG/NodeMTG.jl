@@ -13,8 +13,7 @@ the symbol of the node, and its index.
 
 - The index is totaly free, and can be used as a way to *e.g.* keep track of the branching order.
 
-```jldoctest
-julia> NodeMTG("<", "Leaf", 2, 0)
+```julia
 NodeMTG("<", "Leaf", 2, 0)
 ```
 """

@@ -15,10 +15,10 @@ Nothing, mutates the (sub-)tree.
 
 # Examples
 
-```jldoctest
-julia> file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
-julia> mtg,classes,description,features = read_mtg(file);
-julia> traverse!(mtg, x -> isleaf(x) ? println(x.name," is a leaf") : nothing)
+```julia
+file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
+mtg,classes,description,features = read_mtg(file);
+traverse!(mtg, x -> isleaf(x) ? println(x.name," is a leaf") : nothing)
 node_5 is a leaf
 node_7 is a leaf
 ```

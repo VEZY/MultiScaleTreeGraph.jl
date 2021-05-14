@@ -30,76 +30,76 @@ and MTG. The MTG is a [data.tree] data structure.
 
 # Examples
 
-```jldoctest
-julia> mtg,classes,description,features = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
-julia> mtg,classes,description,features = read_mtg(file);
-# Or using a `Dict` for the attributes to be able to add one if needed:
-julia> mtg,classes,description,features = read_mtg(file,Dict);
+```julia
+mtg,classes,description,features = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+
+# Or using another `MutableNamedTuple` for the attributes to be able to add one if needed:
+mtg,classes,description,features = read_mtg(file,Dict);
 ```
 """
-function read_mtg(file,attr_type = Dict)
+function read_mtg(file, attr_type = Dict)
 
-    sections = ("CODE", "CLASSES", "DESCRIPTION", "FEATURES","MTG")
+    sections = ("CODE", "CLASSES", "DESCRIPTION", "FEATURES", "MTG")
 
     # read the mtg file
-    mtg,classes,description,features =
+    mtg, classes, description, features =
     open(file, "r") do f
         line = [0]
         l = [""]
-        l[1] = next_line!(f,line)
+        l[1] = next_line!(f, line)
 
         while !eof(f)
             # Ignore empty lines between sections:
-            while !issection(l[1]) & !eof(f)
-                l[1] = next_line!(f,line)
+            while !issection(l[1]) && !eof(f)
+                l[1] = next_line!(f, line)
             end
 
             # Parse the mtg CODE section, and then continue to next while loop iteration:
-            if issection(l[1],"CODE")
+            if issection(l[1], "CODE")
                 code = replace(l[1], r"^CODE[[:blank:]]*:[[:blank:]]*" => "")
 
                 # read next line before continuing the while loop
-                l[1] = next_line!(f,line)
+                l[1] = next_line!(f, line)
                 continue
             end
 
             # Parse the mtg CLASSES section, and then continue to next while loop iteration:
-            if issection(l[1],"CLASSES")
-                classes = parse_section!(f,["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"],"CLASSES",line,l)
-                classes.SCALE = parse.(Int,classes.SCALE)
+            if issection(l[1], "CLASSES")
+                classes = parse_section!(f, ["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"], "CLASSES", line, l)
+                classes.SCALE = parse.(Int, classes.SCALE)
                 continue
             end
 
             # Parse the mtg DESCRIPTION section:
-            if issection(l[1],"DESCRIPTION")
-                description = parse_section!(f,["LEFT","RIGHT","RELTYPE","MAX"],"DESCRIPTION",line,l,allow_empty=true)
+            if issection(l[1], "DESCRIPTION")
+                description = parse_section!(f, ["LEFT","RIGHT","RELTYPE","MAX"], "DESCRIPTION", line, l, allow_empty = true)
                 if description !== nothing
-                    description.RIGHT = split.(description.RIGHT,",")
-                    if !all([i in description.RELTYPE for i in ("+","<")])
+                    description.RIGHT = split.(description.RIGHT, ",")
+                    if !all([i in description.RELTYPE for i in ("+", "<")])
                         error("Unknown relation type(s) in DESCRITPION section: ",
-                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+<")) .== 0]),", "))
+                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+<")) .== 0]), ", "))
                     end
                 end
                 continue
             end
 
             # Parse the mtg FEATURES section:
-            if issection(l[1],"FEATURES")
-                features = parse_section!(f,["NAME","TYPE"],"FEATURES",line,l)
+            if issection(l[1], "FEATURES")
+                features = parse_section!(f, ["NAME","TYPE"], "FEATURES", line, l)
                 continue
             end
 
             # Parse the mtg FEATURES section:
-            if issection(l[1],"MTG")
-                mtg = parse_mtg!(f,classes,features,line,l,attr_type)
+            if issection(l[1], "MTG")
+                mtg = parse_mtg!(f, classes, features, line, l, attr_type)
                 continue
             end
         end
-        (mtg,classes,description,features)
+        (mtg, classes, description, features)
     end
 
     # Adding overall classes and symbols information to the root node (used for checks):
     append!(mtg, (symbols = classes.SYMBOL, scales = classes.SCALE))
 
-    (mtg,classes,description,features)
+    (mtg, classes, description, features)
 end
