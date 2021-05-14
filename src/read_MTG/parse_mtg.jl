@@ -272,7 +272,7 @@ Instantiate a `attr_type` struct with `node_attr` keys and values
 # Arguments
 
 - `attr_type::DataType`: the type of the structure used to hold the attributes
-- `node_attr::String`: The node attributes as a [`Dict`](@ref)
+- `node_attr::String`: The node attributes as a [`Base.Dict`](@ref)
 """
 function node_attributes(attr_type::Type{T},node_attr) where T<:Union{NamedTuple,MutableNamedTuple}
     attr_type{tuple(Symbol.(keys(node_attr))...)}(tuple(values(node_attr)...))

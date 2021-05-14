@@ -26,7 +26,7 @@ that one pass is enough and we don't repeat the process of visiting already visi
 deleting nodes. So if you delete a branching node, the whole subtree will be modified and take
 the link of the children. This process is left to the user becaue it highly depends on the mtg
 structure.
-1. The package provides some pre-made functions for filtering. See for example [`is_segment`](@ref)
+1. The package provides some pre-made functions for filtering. See for example [`is_segment!`](@ref)
 to re-compute the mtg at a given scale to have only nodes at branching points. This is often used
 to match automatic reconstructions from e.g. LiDAR point cloud with manual measurements.
 
