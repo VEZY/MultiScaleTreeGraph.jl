@@ -32,8 +32,7 @@ only. See examples for more details.
 
 ```julia
 # Importing the mtg from the github repo:
-mtg,classes,description,features =
-    read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 
 # Using a leaf node from the mtg:
 leaf_node = mtg.children["node_2"].children["node_3"].children["node_4"].children["node_5"]
@@ -71,19 +70,19 @@ function ancestors(
         keep = is_filtered(node, scale, symbol, link, filter_fun)
 
         if keep
-            push!(val, unsafe_getindex(node,key))
+            push!(val, unsafe_getindex(node, key))
         elseif !all
             # We don't keep the value and we have to stop at the first filtered-out value
             return val
         end
     end
 
-    ancestors_(node,key,scale,symbol,link,all,filter_fun,val)
+    ancestors_(node, key, scale, symbol, link, all, filter_fun, val)
     return val
 end
 
 
-function ancestors_(node,key,scale,symbol,link,all,filter_fun,val)
+function ancestors_(node, key, scale, symbol, link, all, filter_fun, val)
 
     if !isroot(node)
         parent = node.parent
@@ -92,7 +91,7 @@ function ancestors_(node,key,scale,symbol,link,all,filter_fun,val)
         keep = is_filtered(parent, scale, symbol, link, filter_fun)
 
         if keep
-            push!(val, unsafe_getindex(parent,key))
+            push!(val, unsafe_getindex(parent, key))
         end
 
         # If we want to continue even if the current node is filtered-out

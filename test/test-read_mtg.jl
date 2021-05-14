@@ -1,4 +1,6 @@
-mtg, classes, description, features = read_mtg("files/simple_plant.mtg", MutableNamedTuple);
+mtg = read_mtg("files/simple_plant.mtg", MutableNamedTuple);
+classes = get_classes(mtg)
+features = get_features(mtg)
 
 @testset "test classes" begin
     @test typeof(classes) == DataFrame
@@ -11,18 +13,18 @@ mtg, classes, description, features = read_mtg("files/simple_plant.mtg", Mutable
 end
 
 @testset "test description" begin
-    @test typeof(description) == DataFrame
-    @test size(description) == (2, 4)
-    @test description.LEFT == ["Internode","Internode"]
-    @test description.RELTYPE == ["+","<"]
-    @test description.MAX == ["?","?"]
+    @test typeof(mtg[:description]) == DataFrame
+    @test size(mtg[:description]) == (2, 4)
+    @test mtg[:description].LEFT == ["Internode","Internode"]
+    @test mtg[:description].RELTYPE == ["+","<"]
+    @test mtg[:description].MAX == ["?","?"]
 end
 
 @testset "test features" begin
     @test typeof(features) == DataFrame
     @test size(features) == (7, 2)
-    @test features.NAME == ["XX","YY","ZZ","FileName","Length","Width","XEuler"]
-    @test features.TYPE == ["REAL","REAL","REAL","ALPHA","ALPHA","ALPHA","REAL"]
+    @test features.NAME == [:FileName, :YY, :XX, :ZZ, :Length, :Width, :XEuler]
+    @test features.TYPE == ["STRING", "REAL", "REAL", "REAL", "REAL", "REAL", "REAL"]
 end
 
 @testset "test mtg content" begin
@@ -50,12 +52,11 @@ end
 end
 
 @testset "test mtg with NamedTuples" begin
-    mtg, classes, description, features = read_mtg("files/simple_plant.mtg", NamedTuple);
+    mtg = read_mtg("files/simple_plant.mtg", NamedTuple);
 
     @test length(mtg) == 7
     @test typeof(mtg) == Node{MTG.NodeMTG,NamedTuple}
     @test mtg.name == "node_1"
-    @test mtg.attributes == (symbols = SubString{String}["\$", "Individual", "Axis", "Internode", "Leaf"], scales = [0, 1, 2, 3, 3])
     @test mtg.MTG == MTG.NodeMTG('/', "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
     @test mtg[1].name == "node_2"
@@ -64,12 +65,12 @@ end
 
 
 @testset "test mtg with Dict" begin
-    mtg, classes, description, features = read_mtg("files/simple_plant.mtg", Dict);
+    mtg = read_mtg("files/simple_plant.mtg", Dict);
     @test length(mtg) == 7
     @test typeof(mtg) == Node{MTG.NodeMTG,Dict{Symbol,Any}}
     @test mtg.name == "node_1"
     @test mtg.attributes == Dict(:symbols => ["\$", "Individual", "Axis", "Internode", "Leaf"],
-        :scales => [0, 1, 2, 3, 3])
+        :scales => [0, 1, 2, 3, 3], :description => mtg[:description])
     @test mtg.MTG == MTG.NodeMTG('/', "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
     @test mtg[1].name == "node_2"
@@ -78,7 +79,7 @@ end
 
 
 @testset "test mtg with Dict: mutation" begin
-    mtg, classes, description, features = read_mtg("files/simple_plant.mtg", Dict);
+    mtg = read_mtg("files/simple_plant.mtg", Dict);
     @test (mtg.name = "first_node") == "first_node"
     @test (mtg.attributes[:scales] = [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
     @test (mtg.MTG = MTG.NodeMTG("<", "Leaf", 2, 0)) == MTG.NodeMTG("<", "Leaf", 2, 0)

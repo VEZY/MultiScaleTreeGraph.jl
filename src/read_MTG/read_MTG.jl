@@ -25,16 +25,15 @@ for further details.
 
 # Returns
 
-A named list of four sections: the MTG classes, description, features,
-and MTG. The MTG is a [data.tree] data structure.
+The MTG data.
 
 # Examples
 
 ```julia
-mtg,classes,description,features = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 
 # Or using another `MutableNamedTuple` for the attributes to be able to add one if needed:
-mtg,classes,description,features = read_mtg(file,Dict);
+mtg = read_mtg(file,Dict);
 ```
 """
 function read_mtg(file, attr_type = Dict)
@@ -99,7 +98,7 @@ function read_mtg(file, attr_type = Dict)
     end
 
     # Adding overall classes and symbols information to the root node (used for checks):
-    append!(mtg, (symbols = classes.SYMBOL, scales = classes.SCALE))
+    append!(mtg, (symbols = classes.SYMBOL, scales = classes.SCALE, description = description))
 
-    (mtg, classes, description, features)
+    mtg
 end

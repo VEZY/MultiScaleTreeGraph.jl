@@ -32,8 +32,7 @@ only. See examples for more details.
 
 ```julia
 # Importing the mtg from the github repo:
-mtg,classes,description,features =
-    read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 
 descendants(mtg, :Length) # Short to write, but slower to execute
 

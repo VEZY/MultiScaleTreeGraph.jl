@@ -10,7 +10,7 @@ Most of the code from [DataTrees.jl](https://github.com/vh-d/DataTrees.jl/blob/m
 
 ```julia
 file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
-mtg, classes, description, features = read_mtg(file);
+mtg = read_mtg(file);
 mtg
 # / 1: \$
 # └─ / 2: Individual

@@ -27,8 +27,7 @@ is filtered out (`false`).
 
 ```julia
 # Importing the mtg from the github repo:
-mtg,classes,description,features =
-    read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 
 # Compute a new attribute with the scales and add 2 to its values:
 @mutate_mtg!(mtg, scaling = node.scales .+ 2)
@@ -84,8 +83,7 @@ Mutate a single node in place.
 
 ```julia
 # Importing the mtg from the github repo:
-mtg,classes,description,features =
-    read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 
 # Compute a new attribute with the scales and add 2 to its values:
 @mutate_node!(mtg, scaling = node.scales .+ 2)

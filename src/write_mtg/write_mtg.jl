@@ -1,4 +1,5 @@
 """
+    write_mtg(file, mtg; kwargs...)
     write_mtg(file, mtg, classes, description, features)
 
 Write an mtg file to disk.
@@ -10,7 +11,39 @@ Write an mtg file to disk.
 - `classes`: the classes section
 - `description`: the description section
 - `features`: the features section
+
+# Note
+
+kwargs can be used to give zero, one or two of the classes, description and features
+instead of all. In this case the missing ones are recomputed using [`get_classes`](@ref),
+[`get_features`](@ref) or [`get_description`](@ref).
+
+# Examples
+
+```julia
+file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
+mtg = read_mtg(file);
+write_mtg("test.mtg",mtg)
+```
 """
+function write_mtg(file, mtg; kwargs...)
+    kwargs = (;kwargs...)
+
+    if !haskey(kwargs, :classes)
+        classes = get_classes(mtg)
+    end
+
+    if !haskey(kwargs, :description)
+        description = nothing
+    end
+
+    if !haskey(kwargs, :features)
+        features = get_features(mtg)
+    end
+
+    write_mtg(file, mtg, classes, description, features)
+end
+
 function write_mtg(file, mtg, classes, description, features)
     @info "Writing mtg to $file"
     open(file, "w") do io
@@ -26,17 +59,23 @@ function write_mtg(file, mtg, classes, description, features)
         # Description section:
         writedlm(io, [""])
         writedlm(io, ["DESCRIPTION:"])
-        # Reformat the RIGHT column to match how it is written in an MTG
-        right = fill("", size(description)[1])
 
-        for i in 1:length(description.RIGHT)
-            right = join(description.RIGHT[i], ",")
+        # Description is optional
+        if description !== nothing
+            # Reformat the RIGHT column to match how it is written in an MTG
+            right = fill("", size(description)[1])
+
+            for i in 1:length(description.RIGHT)
+                right = join(description.RIGHT[i], ",")
+            end
+            description[!,:RIGHT] .= right
+
+            writedlm(io, reshape(names(description), (1, :)))
+
+            writedlm(io, eachrow(description))
+        else
+            writedlm(io, ["LEFT" "RIGHT" "RELTYPE" "MAX"])
         end
-        description[!,:RIGHT] .= right
-
-        writedlm(io, reshape(names(description), (1, :)))
-
-        writedlm(io, eachrow(description))
 
         # Features section:
         writedlm(io, [""])

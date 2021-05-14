@@ -1,5 +1,5 @@
 @testset "mutate_node!" begin
-    mtg,classes,description,features = read_mtg("files/simple_plant.mtg",Dict);
+    mtg = read_mtg("files/simple_plant.mtg", Dict);
 
     # Using a leaf node from the mtg:
     leaf_node = mtg.children["node_2"].children["node_3"].children["node_4"].children["node_5"]
@@ -20,7 +20,7 @@ end
 
 
 @testset "mutate_mtg!" begin
-    mtg,classes,description,features = read_mtg("files/simple_plant.mtg", Dict);
+    mtg = read_mtg("files/simple_plant.mtg", Dict);
     # Using a leaf node from the mtg:
     leaf_node = mtg.children["node_2"].children["node_3"].children["node_4"].children["node_5"]
 

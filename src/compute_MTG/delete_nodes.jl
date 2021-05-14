@@ -34,8 +34,7 @@ to match automatic reconstructions from e.g. LiDAR point cloud with manual measu
 
 ```julia
 # Importing the mtg from the github repo:
-mtg,classes,description,features =
-read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/A1B1.mtg"))
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/A1B1.mtg"))
 
 delete_nodes!(mtg, scale = 2) # Will remove all nodes of scale 2
 
@@ -109,8 +108,13 @@ function delete_node!(node)
             chnode = children(node)[1]
             chnode.parent = nothing
             # Add to the new root the mandatory root attributes:
-            root_attrs = Dict(:symbols => node[:symbols], :scales => node[:scales])
-            append!(chnode, root_attrs)
+            root_attrs = Dict(
+                :symbols => node[:symbols],
+                :scales => node[:scales],
+                :description => node[:description]
+            )
+
+                append!(chnode, root_attrs)
 
             node_return = chnode
         else

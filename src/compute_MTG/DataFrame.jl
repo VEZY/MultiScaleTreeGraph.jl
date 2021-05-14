@@ -13,8 +13,7 @@ Convert an MTG into a DataFrame.
 
 ```julia
 # Importing the mtg from the github repo:
-mtg,classes,description,features =
-    read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 
 DataFrame(mtg, :Length)
 ```

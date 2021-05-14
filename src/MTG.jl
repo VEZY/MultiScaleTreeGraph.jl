@@ -26,6 +26,7 @@ include("compute_MTG/append_attributes.jl")
 include("compute_MTG/traverse.jl")
 include("compute_MTG/delete_nodes.jl")
 include("compute_MTG/filter/filter-funs.jl")
+include("write_mtg/update_sections.jl")
 include("write_mtg/write_mtg.jl")
 
 export read_mtg
@@ -53,5 +54,8 @@ export is_segment!
 export descendants, ancestors
 export Node
 export check_filters
+export get_features
+export get_classes
+export get_description
 
 end
