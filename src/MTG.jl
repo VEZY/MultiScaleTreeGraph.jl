@@ -25,6 +25,7 @@ include("compute_MTG/mutation.jl")
 include("compute_MTG/append_attributes.jl")
 include("compute_MTG/traverse.jl")
 include("compute_MTG/delete_nodes.jl")
+include("compute_MTG/filter/filter-funs.jl")
 include("write_mtg/write_mtg.jl")
 
 export read_mtg
@@ -47,6 +48,7 @@ export @mutate_mtg!
 export is_filtered
 export delete_nodes!
 export write_mtg
+export is_segment!
 
 
 # Not sure to keep as export

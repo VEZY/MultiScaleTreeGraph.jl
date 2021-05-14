@@ -20,21 +20,32 @@ is filtered out (`false`).
 
 # Notes
 
-If the node to delete is branhing ("+"), it will pass it to its parent
+1. The function is acropetal, meaning it will apply the deletion from leaves to the root to ensure
+that one pass is enough and we don't repeat the process of visiting already visited children.
+1. The function does not do anything fancy, it let the user take care of its own rules when
+deleting nodes. So if you delete a branching node, the whole subtree will be modified and take
+the link of the children. This process is left to the user becaue it highly depends on the mtg
+structure.
+1. The package provides some pre-made functions for filtering. See for example [`is_segment`](@ref)
+to re-compute the mtg at a given scale to have only nodes at branching points. This is often used
+to match automatic reconstructions from e.g. LiDAR point cloud with manual measurements.
 
 # Examples
 
 ```julia
 # Importing the mtg from the github repo:
 mtg,classes,description,features =
-read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/A1B1.mtg"))
 
-delete_nodes!(mtg,  scale = 2) # Will remove all nodes of scale 2
+delete_nodes!(mtg, scale = 2) # Will remove all nodes of scale 2
 
 # Delete the leaves:
-descendants(mtg, :Length, symbol = "Leaf")
-# Delete the and internodes:
-descendants(mtg, :Length, symbol = ("Leaf","Internode"))
+delete_nodes!(mtg, symbol = "Leaf")
+# Delete the leaves and internodes:
+delete_nodes!(mtg, symbol = ("Leaf","Internode"))
+
+# Make the mtg match field measurements made only at branching points for the scales 1 + 2:
+mtg = delete_nodes!(mtg, filter_fun = is_segment!, scale = 2)
 ```
 """
 function delete_nodes!(
@@ -43,8 +54,7 @@ function delete_nodes!(
     symbol = nothing,
     link = nothing,
     all::Bool = true, # like continue in the R package, but actually the opposite
-    filter_fun = nothing,
-    branch = "parent"
+    filter_fun = nothing
     )
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
@@ -65,21 +75,22 @@ end
 
 function delete_nodes!_(node, scale, symbol, link, all, filter_fun)
     if !isleaf(node)
-        # First we see if we have to delete any child and reparent their children
-        for chnode in ordered_children(node)
-            # Is there any filter happening for the current node? (true is deleted):
-            filtered = is_filtered(chnode, scale, symbol, link, filter_fun)
-
-            if filtered
-                chnode = delete_node!(chnode)
-                # Don't go further if all == false
-                all ? nothing : return nothing
-            end
-        end
-        # Then we apply the algorithm recursively on the children:
+        # First we apply the algorithm recursively on the children:
         for chnode in ordered_children(node)
             delete_nodes!_(chnode, scale, symbol, link, all, filter_fun)
         end
+    end
+
+    # Then we work on the node itself. This ensures that its children will not be deleted
+    # afterwards (the deletion is acropetal, i.e. from leaves to root)
+
+    # Is there any filter happening for the current node? (true is deleted):
+    filtered = is_filtered(node, scale, symbol, link, filter_fun)
+
+    if filtered
+        node = delete_node!(node)
+        # Don't go further if all == false
+all ? nothing : return nothing
     end
 end
 
