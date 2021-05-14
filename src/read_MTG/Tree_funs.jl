@@ -32,7 +32,7 @@ function ordered_children(node)
             pushfirst!(links_chnodes, chnode)
         else
             push!(links_chnodes, chnode)
-    end
+        end
     end
     return links_chnodes
 end

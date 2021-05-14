@@ -34,6 +34,7 @@ export isroot
 export children
 export addchild!
 export traverse!
+export traverse
 export getroot
 export nextsibling
 export print
