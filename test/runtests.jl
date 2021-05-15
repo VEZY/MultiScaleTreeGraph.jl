@@ -18,5 +18,5 @@ end
 
 @testset "mutatation" begin
     include("test-mutation.jl")
-    # include("test-insert_node.jl")
+    include("test-insert_node.jl")
 end

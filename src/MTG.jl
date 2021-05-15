@@ -27,6 +27,7 @@ include("compute_MTG/delete_nodes.jl")
 include("compute_MTG/filter/filter-funs.jl")
 include("write_mtg/update_sections.jl")
 include("write_mtg/write_mtg.jl")
+include("compute_MTG/insert_nodes.jl")
 
 export read_mtg
 export isleaf
