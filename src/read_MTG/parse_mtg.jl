@@ -19,7 +19,7 @@ The buffered IO stream (`f`) should start at the line of the section.
 
 The parsed MTG section
 """
-function parse_mtg!(f,classes,features,line,l,attr_type)
+function parse_mtg!(f,classes,features,line,l,attr_type,mtg_type)
     l[1] = next_line!(f,line)
 
     if length(l[1]) == 0
@@ -59,8 +59,7 @@ function parse_mtg!(f,classes,features,line,l,attr_type)
     scale = classes.SCALE[symbol .== classes.SYMBOL][1]
     attrs = parse_MTG_node_attr(splitted_MTG,attr_type,features,attr_column_start,line)
 
-    # root_node = Node(join([symbol,"1"],"_"), NodeMTG(link,symbol,index,scale), attrs)
-    root_node = Node("node_1", NodeMTG(link,symbol,index,scale), attrs)
+    root_node = Node("node_1", mtg_type(link,symbol,index,scale), attrs)
 
     # Initializing the last column to which MTG was attached to keep track of which column
     # to attach the new MTG line
@@ -134,7 +133,12 @@ function parse_mtg!(f,classes,features,line,l,attr_type)
             end
 
             # Instantiating the current node MTG (immutable):
-            childMTG = NodeMTG(node_element[1],node_element[2],node_element[3],classes.SCALE[node_element[2] .== classes.SYMBOL][1])
+            childMTG = mtg_type(
+                node_element[1],
+                node_element[2],
+                node_element[3],
+                classes.SCALE[node_element[2] .== classes.SYMBOL][1]
+            )
 
             # Instantiating the current node (mutable):
             child = Node(node_name,tree_dict[parent_node],childMTG,node_k_attr)

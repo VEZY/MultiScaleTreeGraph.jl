@@ -18,13 +18,13 @@ function is_segment!(node)
         # If it's a node that branches, set its unique child as the branching node instead:
         if node.MTG.link == '+'
             node_MTG = node[1].MTG
-            node[1].MTG = NodeMTG('+', node_MTG.symbol, node_MTG.index, node_MTG.scale)
+            node[1].MTG = typeof(node_MTG)('+', node_MTG.symbol, node_MTG.index, node_MTG.scale)
         end
 
         # If it's a node that decompose ('/'), set its unique child as the decomposing node:
         if node.MTG.link == '/'
             node_MTG = node[1].MTG
-            node[1].MTG = NodeMTG('/', node_MTG.symbol, node_MTG.index, node_MTG.scale)
+            node[1].MTG = typeof(node_MTG)('/', node_MTG.symbol, node_MTG.index, node_MTG.scale)
         end
 
         # And return true to delete it:

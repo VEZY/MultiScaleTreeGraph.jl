@@ -1,5 +1,15 @@
 """
+Abstract supertype for all types describing the MTG coding
+for a node.
+
+See [`NodeMTG`](@ref) and [`MutableNodeMTG`](@ref) for examples
+of implementation.
+"""
+abstract type AbstractNodeMTG end
+
+"""
     NodeMTG(link, symbol, index, scale)
+    MutableNodeMTG(link, symbol, index, scale)
 
 # NodeMTG structure
 
@@ -17,13 +27,22 @@ the symbol of the node, and its index.
 NodeMTG("<", "Leaf", 2, 0)
 ```
 """
-struct NodeMTG
+struct NodeMTG <: AbstractNodeMTG
     link::Union{String,Char}
     symbol::Union{String,SubString,Char}
     index::Union{Int,Nothing}
     scale::Int
 end
-mutable struct Node{T<:NodeMTG,A}
+
+mutable struct MutableNodeMTG <: AbstractNodeMTG
+    link::Union{String,Char}
+    symbol::Union{String,SubString,Char}
+    index::Union{Int,Nothing}
+    scale::Int
+end
+
+
+mutable struct Node{T<:AbstractNodeMTG,A}
     name::String
     parent::Union{Nothing,Node}
     children::Union{Nothing,Dict{String,Node}}
@@ -35,26 +54,28 @@ end
 # Shorter way of instantiating a Node:
 
 # - for the root:
-Node(name::String,MTG::NodeMTG,attributes) = Node(name,nothing,nothing,nothing,MTG,attributes)
+Node(name::String,MTG::T,attributes) where T<:AbstractNodeMTG= Node(name,nothing,nothing,nothing,MTG,attributes)
 
 # Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
 # can't mutate attributes, i.e. we get somthing like
 # Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
 # Node{NodeMTG,MutableNamedTuple}
-function Node(name::String,MTG::NodeMTG,attributes::T) where T<:MutableNamedTuple
-    Node{NodeMTG,MutableNamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
+function Node(name::String,MTG::M,attributes::T) where {M<:AbstractNodeMTG, T<:MutableNamedTuple}
+    Node{typeof(MTG),MutableNamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
 end
 
-function Node(name::String,MTG::NodeMTG,attributes::T) where T<:NamedTuple
-    Node{NodeMTG,NamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
+function Node(name::String,MTG::M,attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
+    Node{typeof(MTG),NamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
 end
 
 # - for all others:
-Node(name::String,parent::Node,MTG::NodeMTG,attributes) = Node(name,parent,nothing,nothing,MTG,attributes)
+function Node(name::String,parent::Node,MTG::M,attributes) where M<:AbstractNodeMTG
+    Node(name,parent,nothing,nothing,MTG,attributes)
+end
 
 # Idem for MutableNamedTuple here:
-function Node(name::String,parent::Node,MTG::NodeMTG,attributes::T) where T<:MutableNamedTuple
-    Node{NodeMTG,MutableNamedTuple}(name,parent,nothing,nothing,MTG,attributes)
+function Node(name::String,parent::Node,MTG::M,attributes::T) where {M<:AbstractNodeMTG, T<:MutableNamedTuple}
+    Node{typeof(MTG),MutableNamedTuple}(name,parent,nothing,nothing,MTG,attributes)
 end
 
 """
@@ -62,15 +83,20 @@ Indexing Node attributes from node, e.g. node[:length] or node["length"]
 """
 Base.getindex(node::Node, key) = getindex(node.attributes,Symbol(key))
 Base.getindex(node::Node, key::Symbol) = getindex(node.attributes,key)
-Base.getindex(node::Node{NodeMTG, MutableNamedTuple}, key::Symbol) = getproperty(node.attributes,key)
-Base.getindex(node::Node{NodeMTG, MutableNamedTuple}, key) = getproperty(node.attributes,Symbol(key))
-
+function Base.getindex(node::Node{T, MutableNamedTuple}, key::Symbol) where T<:AbstractNodeMTG
+    getproperty(node.attributes,key)
+end
+function Base.getindex(node::Node{T, MutableNamedTuple}, key) where T <:AbstractNodeMTG
+    getproperty(node.attributes,Symbol(key))
+end
 """
 Indexing a Node using an integer will index in its children
 """
 Base.getindex(n::Node, i::Integer) = n.children[collect(keys(n.children))[i]]
-Base.getindex(n::Node{NodeMTG, MutableNamedTuple}, i::Integer) = n.children[collect(keys(n.children))[i]]
-Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
+function Base.getindex(n::Node{T, MutableNamedTuple}, i::Integer) where T<:AbstractNodeMTG
+    n.children[collect(keys(n.children))[i]]
+end
+    Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
 Base.getindex(x::Node, ::AbstractTrees.ImplicitRootState) = x
 
 """
@@ -93,7 +119,10 @@ end
 
 unsafe_getindex(node::Node, key) = unsafe_getindex(node,Symbol(key))
 
-function unsafe_getindex(node::Node{NodeMTG, T} where T<: AbstractDict{Symbol, Any}, key::Symbol)
+function unsafe_getindex(
+    node::Node{M, T} where {M<:AbstractNodeMTG, T<: AbstractDict{Symbol, Any}},
+    key::Symbol
+    )
     try
         getindex(node.attributes,key)
     catch err
@@ -105,10 +134,11 @@ function unsafe_getindex(node::Node{NodeMTG, T} where T<: AbstractDict{Symbol, A
     end
 end
 
-unsafe_getindex(node::Node{NodeMTG, T} where T<: AbstractDict{Symbol, Any}, key) = unsafe_getindex(node,Symbol(key))
+function unsafe_getindex(node::Node{M, T} where {M<:AbstractNodeMTG, T<: AbstractDict{Symbol, Any}}, key)
+    unsafe_getindex(node,Symbol(key))
+end
 
-
-# function setindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key::Symbol)
+# function setindex(node::Node{M<:AbstractNodeMTG, Dict{Symbol, Any}}, key::Symbol)
 #     try
 #         getindex(node.attributes,key)
 #     catch err
@@ -120,7 +150,7 @@ unsafe_getindex(node::Node{NodeMTG, T} where T<: AbstractDict{Symbol, Any}, key)
 #     end
 # end
 
-# getindex(node::Node{NodeMTG, Dict{Symbol, Any}}, key) = getindex(node,Symbol(key))
+# getindex(node::Node{M<:AbstractNodeMTG, Dict{Symbol, Any}}, key) = getindex(node,Symbol(key))
 
 """
 Returns the length of the subtree below the node (including it)

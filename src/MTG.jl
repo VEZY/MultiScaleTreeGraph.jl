@@ -7,13 +7,12 @@ using MutableNamedTuples
 using DelimitedFiles
 using OrderedCollections
 
-# Write your package code here.
+include("read_MTG/NodeMTG.jl")
 include("read_MTG/read_MTG.jl")
 include("read_MTG/strip_comments.jl")
 include("read_MTG/utils-string.jl")
 include("read_MTG/parse_section.jl")
 include("read_MTG/parse_mtg.jl")
-include("read_MTG/NodeMTG.jl")
 include("read_MTG/expand_node.jl")
 include("read_MTG/Tree_funs.jl")
 include("print_MTG/print.jl")
@@ -53,6 +52,9 @@ export write_mtg
 export is_segment!
 export descendants, ancestors
 export Node
+export AbstractNodeMTG
+export NodeMTG
+export MutableNodeMTG
 export check_filters
 export get_features
 export get_classes

@@ -1,4 +1,4 @@
-mtg = read_mtg("files/simple_plant.mtg", MutableNamedTuple);
+mtg = read_mtg("files/simple_plant.mtg", MutableNamedTuple, NodeMTG);
 classes = get_classes(mtg)
 features = get_features(mtg)
 
@@ -29,13 +29,13 @@ end
 
 @testset "test mtg content" begin
     @test length(mtg) == 7
-    @test typeof(mtg) == Node{MTG.NodeMTG,MutableNamedTuple}
+    @test typeof(mtg) == Node{NodeMTG,MutableNamedTuple}
     @test mtg.name == "node_1"
     @test mtg.attributes[:scales] == [0, 1, 2, 3, 3]
     @test mtg.attributes[:symbols] == ["\$", "Individual", "Axis", "Internode", "Leaf"]
-    @test mtg.MTG == MTG.NodeMTG('/', "\$", 0, 0)
+    @test mtg.MTG == NodeMTG('/', "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
-    @test typeof(mtg[1]) == Node{MTG.NodeMTG,MutableNamedTuple}
+    @test typeof(mtg[1]) == Node{NodeMTG,MutableNamedTuple}
     @test mtg[1].name == "node_2"
     @test mtg[1].parent === mtg
 end
@@ -52,10 +52,10 @@ end
 end
 
 @testset "test mtg with NamedTuples" begin
-    mtg = read_mtg("files/simple_plant.mtg", NamedTuple);
+    mtg = read_mtg("files/simple_plant.mtg", NamedTuple, NodeMTG) ;
 
     @test length(mtg) == 7
-    @test typeof(mtg) == Node{MTG.NodeMTG,NamedTuple}
+    @test typeof(mtg) == Node{NodeMTG,NamedTuple}
     @test mtg.name == "node_1"
     @test mtg.MTG == MTG.NodeMTG('/', "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
@@ -65,7 +65,7 @@ end
 
 
 @testset "test mtg with Dict" begin
-    mtg = read_mtg("files/simple_plant.mtg", Dict);
+    mtg = read_mtg("files/simple_plant.mtg", Dict, NodeMTG);
     @test length(mtg) == 7
     @test typeof(mtg) == Node{MTG.NodeMTG,Dict{Symbol,Any}}
     @test mtg.name == "node_1"
@@ -79,10 +79,10 @@ end
 
 
 @testset "test mtg with Dict: mutation" begin
-    mtg = read_mtg("files/simple_plant.mtg", Dict);
+    mtg = read_mtg("files/simple_plant.mtg", Dict, NodeMTG);
     @test (mtg.name = "first_node") == "first_node"
     @test (mtg.attributes[:scales] = [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
-    @test (mtg.MTG = MTG.NodeMTG("<", "Leaf", 2, 0)) == MTG.NodeMTG("<", "Leaf", 2, 0)
+@test (mtg.MTG = MTG.NodeMTG("<", "Leaf", 2, 0)) == MTG.NodeMTG("<", "Leaf", 2, 0)
     @test (mtg[1].parent = nothing) === nothing
     node2 = mtg[1]
     @test (mtg.children = nothing) === nothing

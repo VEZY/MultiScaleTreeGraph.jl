@@ -40,12 +40,12 @@ end
 """
 Add a new child to a parent node, and add the parent node as the parent.
 """
-function addchild!(parent::Node, name::String, MTG::NodeMTG, attributes)
+function addchild!(parent::Node, name::String, MTG::M, attributes) where M <: AbstractNodeMTG
   child = Node(name, parent, MTG, attributes)
   addchild!(parent, child)
 end
 
-function addchild!(parent::Node, name::String, MTG::NodeMTG)
+function addchild!(parent::Node, name::String, MTG::M) where M <: AbstractNodeMTG
   child = Node(name, parent, MTG)
   addchild!(parent, child)
 end

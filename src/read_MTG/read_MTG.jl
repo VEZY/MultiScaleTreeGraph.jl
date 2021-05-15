@@ -1,12 +1,14 @@
 """
-    read_mtg(file,attr_type::DataType = Dict)
+    read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG)
 
 Read an MTG file
 
 # Arguments
 
 - `file::String`: The path to the MTG file.
-- `attr_type::DataType`: the type used to hold the attribute values for each node.
+- `attr_type::DataType = Dict`: the type used to hold the attribute values for each node.
+- `mtg_type = MutableNodeMTG`: the type used to hold the mtg encoding for each node (*i.e.*
+link, symbol, index, scale). See details section below.
 
 # Details
 
@@ -16,7 +18,13 @@ Read an MTG file
 plotting or computing statistics...
 - `MutableNamedTuple` if you plan to modify the attributes values but not adding new attributes
 very often, *e.g.* recompute an attribute value...
-- `Dict` if you plan to modify heavily the attributes, *e.g.* adding/removing attibutes a lot
+- `Dict` or similar (e.g. `OrderedDict`) if you plan to heavily modify the attributes, *e.g.*
+adding/removing attibutes a lot
+
+The `MTG` package provides two types for `mtg_type`, one immutable ([`NodeMTG`](@ref)), and
+one mutable ([`MutableNodeMTG`](@ref)). If you're planning on modifying the mtg encoding of
+some of your nodes, you should use [`MutableNodeMTG`](@ref), and if you don't want to modify
+anything, use [`NodeMTG`](@ref) instead as it should be faster.
 
 # Note
 
@@ -36,7 +44,7 @@ mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/te
 mtg = read_mtg(file,Dict);
 ```
 """
-function read_mtg(file, attr_type = Dict)
+function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG)
 
     sections = ("CODE", "CLASSES", "DESCRIPTION", "FEATURES", "MTG")
 
@@ -90,7 +98,7 @@ function read_mtg(file, attr_type = Dict)
 
             # Parse the mtg FEATURES section:
             if issection(l[1], "MTG")
-                mtg = parse_mtg!(f, classes, features, line, l, attr_type)
+                mtg = parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 continue
             end
         end
