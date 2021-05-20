@@ -49,6 +49,9 @@ export @mutate_node!
 export @mutate_mtg!
 export is_filtered
 export delete_nodes!
+export delete_node!
+export insert_nodes!
+export insert_node!
 export write_mtg
 export is_segment!
 export descendants, ancestors

@@ -1,3 +1,43 @@
+"""
+insert_nodes!(mtg::Node,template,<keyword arguments>)
+
+Insert new nodes in the mtg following filters rules. It is important to note that it always
+return the root node, whether it is the old one or a new inserted one, so the user is
+encouraged to assign the results to an object.
+
+# Arguments
+
+## Mandatory arguments
+
+- `node::Node`: The node to start at.
+- `template::Node`: A template node used for all inserted nodes.
+
+## Keyword Arguments (filters)
+
+- `scale = nothing`: The scale at which to insert. Usually a Tuple-alike of integers.
+- `symbol = nothing`: The symbol at which to insert. Usually a Tuple-alike of Strings.
+- `link = nothing`: The link with the previous node at which to insert. Usually a Tuple-alike of Char.
+- `all::Bool = true`: Continue after the first insertion (`true`), or stop.
+- `filter_fun = nothing`: Any function taking a node as input, e.g. [`isleaf`](@ref) to decide
+where to insert.
+
+# Notes
+
+1. The nodes are always inserted before a filtered node because we can't decide if a new node would
+be considered a new child or a new parent of the children otherwise.
+1. The function does not do anything fancy, it let the user take care of its own rules when
+inserting nodes. So if you insert a branching node, the whole subtree will be branched.
+
+# Examples
+
+```julia
+# Importing the mtg from the github repo:
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/A1B1.mtg"))
+
+mtg = insert_nodes!(mtg, MTG.MutableNodeMTG("/", "Shoot", 0, 1), scale = 2) # Will insert new nodes before all scale 2
+mtg
+```
+"""
 function insert_nodes!(
     node,
     template;
@@ -8,32 +48,98 @@ function insert_nodes!(
     filter_fun = nothing
     )
 
-    # max_id = parse(Int, max_name(mtg)[6:end])
+    max_id = [parse(Int, max_name(node)[6:end])]
     # # Check the filters once, and then compute the descendants recursively using `descendants_`
-    # check_filters(node, scale = scale, symbol = symbol, link = link)
-    # filtered = is_filtered(node, scale, symbol, link, filter_fun)
+    check_filters(node, scale = scale, symbol = symbol, link = link)
+    filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
-    # if filtered
-    #     node = add_node!(node)
-    #     # Don't go further if all == false
-    #     all ? nothing : return nothing
-    # end
+    if filtered
+        node = insert_node!(node, template, max_id)
+        # Don't go further if all == false
+        all ? nothing : return nothing
+    end
 
-    # insert_nodes!_(node, scale, symbol, link, all, filter_fun, template, max_id)
+    # Always return the root, wheter it is the same one or a new one
+    node = insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)
 
     return node
 end
 
-# Add a new node as a parent of the given node
+function insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)
+
+    # Is there any filter happening for the current node? (true is inserted):
+    filtered = is_filtered(node, scale, symbol, link, filter_fun)
+
+    if filtered
+        node = insert_node!(node, template, max_id)
+        # Don't go further if all == false
+        all ? nothing : return nothing
+    end
+
+    if !isleaf(node)
+        # First we apply the algorithm recursively on the children:
+        for chnode in ordered_children(node)
+            insert_nodes!_(chnode, template, max_id, scale, symbol, link, all, filter_fun)
+        end
+    end
+    return node
+end
+
+"""
+    insert_node!(node, template, max_id)
+
+Insert a node as the new parent of node.
+
+# Arguments
+
+- `node::Node`: The node at which to insert a node as a parent.
+- `template::Node`: A template node used as the inserted nodes.
+- `max_id::Int`: The maximum id of the mtg, used to compute the name of the inserted node.
+
+# Examples
+
+```julia
+# Importing the mtg from the github repo:
+mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/A1B1.mtg"))
+
+template = MTG.MutableNodeMTG("/", "Shoot", 0, 1)
+max_id = parse(Int, MTG.max_name(mtg)[6:end])
+mtg = insert_node!(mtg[1][1], template, max_id)
+mtg
+```
+"""
 function insert_node!(node, template, max_id)
 
-    if !isroot(node)
+    # Using the template MTG to create the new one (except for the name that we increment):
+    new_node_MTG = typeof(node.MTG)(template.link, template.symbol, template.index, template.scale)
 
-        # Using the template MTG to create the new one (except for the name that we increment):
-        new_node_MTG = typeof(node.MTG)(template.link, template.symbol, template.index, template.scale)
+    max_id[1] += 1
+
+    if isroot(node)
 
         new_node = Node(
-            join(["node_", max_id + 1]),
+            join(["node_", max_id[1]]),
+            nothing,
+            Dict{String,Node}(node.name => node),
+            nothing,
+            new_node_MTG,
+            typeof(node.attributes)() # No attributes at the moment
+        )
+
+        # Add to the new root the mandatory root attributes:
+        root_attrs = Dict(
+            :symbols => node[:symbols],
+            :scales => node[:scales],
+            :description => node[:description]
+        )
+
+        append!(new_node, root_attrs)
+
+        # Add the new root node as the parent of the previous one:
+        node.parent = new_node
+    else
+        new_node = Node(
+            join(["node_", max_id[1]]),
             node.parent,
             Dict{String,Node}(node.name => node),
             nothing,
@@ -47,8 +153,7 @@ function insert_node!(node, template, max_id)
 
         # Add the new node as the parent of the previous one:
         node.parent = new_node
-
-        return new_node
     end
 
+    return node
 end

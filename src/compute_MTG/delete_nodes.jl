@@ -11,12 +11,12 @@ Delete nodes in mtg following filters rules.
 
 ## Keyword Arguments (filters)
 
-- `scale = nothing`: The scale to filter-in (i.e. to keep). Usually a Tuple-alike of integers.
-- `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
-- `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
-- `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that
-is filtered out (`false`).
-- `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
+- `scale = nothing`: The scale to delete. Usually a Tuple-alike of integers.
+- `symbol = nothing`: The symbol to delete. Usually a Tuple-alike of Strings.
+- `link = nothing`: The link with the previous node to delete. Usually a Tuple-alike of Char.
+- `all::Bool = true`: Continue after the first deletion (`true`), or stop?
+- `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref)
+to decide whether to delete a node or not.
 
 # Notes
 
@@ -114,7 +114,7 @@ function delete_node!(node)
                 :description => node[:description]
             )
 
-                append!(chnode, root_attrs)
+            append!(chnode, root_attrs)
 
             node_return = chnode
         else
