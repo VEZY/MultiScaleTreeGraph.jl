@@ -94,7 +94,8 @@ Insert a node as the new parent of node.
 
 - `node::Node`: The node at which to insert a node as a parent.
 - `template::Node`: A template node used as the inserted nodes.
-- `max_id::Int`: The maximum id of the mtg, used to compute the name of the inserted node.
+- `max_id::Vector{Int64}`: The maximum id of the mtg as a vector of 1 value, used to compute
+the name of the inserted node. It is incremented in the function.
 
 # Examples
 
