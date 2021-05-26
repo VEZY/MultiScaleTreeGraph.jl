@@ -129,7 +129,11 @@ an attribute.
 """
 function rewrite_expr!(node_name, arguments::Expr)
 
-    # For the Left-Hand Side (LHS)
+    # For the Left-Hand Side (LHS) when using the form `x = RHS`. The LHS is treated
+    # differently here because `x` must be treated as a field or an attribute of the node,
+    # and never as an object from another module.
+    # On the contrary the RHS can use variables from elsewhere, e.g. a constant defined in
+    # the REPL
     if isa(arguments, Expr) && arguments.head == :(=) && isa(arguments.args[1], Symbol)
         arguments.args[1] = :($(node_name).attributes[$(QuoteNode(arguments.args[1]))])
         # if !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
@@ -139,17 +143,28 @@ function rewrite_expr!(node_name, arguments::Expr)
     # For the RHS:
     for x in arguments.args
         arg = string(x)
-        if isa(x, Expr) && x.head == :. && occursin(r"^node", arg) && !occursin(string(node_name), arg)
+        if isa(x, Expr) &&
+            (x.head == :. || x.head == :ref) &&
+            occursin(r"^node", arg) &&
+            !occursin(string(node_name), arg)
+            # x here is defined either as node.variable or node[:variable], we must replace
+            # by node_name[:variable]
             if !(Symbol(replace(arg, "node." => "")) in fieldnames(Node))
-                x.args[1] = :($(node_name).attributes)
-                x.head = :ref
+                if any(match.(Regex.(string.(fieldnames(Node))), arg) .!= nothing)
+                    # If the expression contains node attributes, only replace the node name
+                    # because they are reserved keywords, e.g.: node.MTG.scale becomes
+                    # node_name.MTG.scale
+                    x.args[1].args[1] = :($(node_name))
+                else
+                    x.args[1] = :($(node_name).attributes)
+                    x.head = :ref
+                end
             else
                 x.args[1] = :($(node_name))
             end
         elseif isa(x, Expr) && x.head == :call && occursin("node", arg)
             # Call to a function, and we pass node as argument
             for i in 1:length(x.args)
-                arg_i = string(x.args[i])
                 # The node is given as is to the function, e.g. fn(node):
                 x.args[i] == :node ? x.args[i] = :($(node_name)) : nothing
             end

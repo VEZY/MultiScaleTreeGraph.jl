@@ -1,10 +1,7 @@
 @testset "mutate_node!" begin
     mtg = read_mtg("files/simple_plant.mtg", Dict);
-
     # Using a leaf node from the mtg:
     leaf_node = mtg.children["node_2"].children["node_3"].children["node_4"].children["node_5"]
-
-
     # Add a new attributes, x based on node field, y based on x and z using a function:
     @mutate_node!(mtg, x = length(node.name), y = node.x + 2, z = sum(node.y))
     @test mtg[:x] ==  6
@@ -16,6 +13,15 @@
     @test leaf_node[:x] ==  6
     @test leaf_node[:y] ==  leaf_node[:x] + 3
     @test leaf_node[:z] ==  sum(leaf_node[:y])
+
+    # Test by using node[:variable] format:
+    @mutate_node!(leaf_node, node[:test] = node[:y])
+    @test leaf_node[:test] ==  leaf_node[:y]
+
+    # Test by using node fields instead of attributes:
+    @mutate_node!(leaf_node, node.MTG.scale = 4)
+    @test leaf_node.MTG.scale ==  4
+
 end
 
 
