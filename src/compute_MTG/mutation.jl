@@ -52,7 +52,7 @@ macro mutate_mtg!(mtg, args...)
         traversed_mtg = $(kwargs[:traversal])(mtg)
         for i in traversed_mtg
             if is_filtered(i, $(flt.scale), $(flt.symbol), $(flt.link), $(flt.filter_fun))
-                @mutate_node!(i, $(arguments...))
+                @mutate_node!(i, $(args...))
             elseif !$(kwargs[:all])
                 # In this case (all == false) we stop as soon as we reached the
                 # first filtered-out value. The default behavior is defined in parse_macro_args
