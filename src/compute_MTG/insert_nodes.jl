@@ -59,10 +59,10 @@ function insert_nodes!(
         all ? nothing : return nothing
     end
 
-    # Always return the root, wheter it is the same one or a new one
-    node = insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)
+    insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)
 
-    return node
+    # Always return the root, whether it is the same one or a new one
+    return getroot(node)
 end
 
 function insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)
@@ -73,7 +73,7 @@ function insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter
     if filtered
         node = insert_node!(node, template, max_id)
         # Don't go further if all == false
-        all ? nothing : return nothing
+        all ? true : return node
     end
 
     if !isleaf(node)

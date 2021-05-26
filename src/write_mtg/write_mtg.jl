@@ -150,7 +150,7 @@ function get_leading_tabs(node)
     if isroot(node)
         return 0
     else
-        node.MTG.link == '+' ? node.parent[:lead] + 1 : node.parent[:lead]
+        node.MTG.link == "+" ? node.parent[:lead] + 1 : node.parent[:lead]
     end
 end
 
@@ -165,7 +165,7 @@ function get_reference(node)
     if isroot(node)
         return ""
     else
-        node.MTG.link == '+' ? "" : "^"
+        node.MTG.link == "+" ? "" : "^"
     end
 end
 

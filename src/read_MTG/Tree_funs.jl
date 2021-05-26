@@ -28,7 +28,7 @@ Return the children as an array, ordered first by "+"
 function ordered_children(node)
     links_chnodes = Array{Node,1}()
     for (name, chnode) in node.children
-        if chnode.MTG.link == '+'
+        if chnode.MTG.link == "+"
             pushfirst!(links_chnodes, chnode)
         else
             push!(links_chnodes, chnode)

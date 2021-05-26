@@ -28,14 +28,14 @@ NodeMTG("<", "Leaf", 2, 0)
 ```
 """
 struct NodeMTG <: AbstractNodeMTG
-    link::Union{String,Char}
+    link::String
     symbol::Union{String,SubString,Char}
     index::Union{Int,Nothing}
     scale::Int
 end
 
 mutable struct MutableNodeMTG <: AbstractNodeMTG
-    link::Union{String,Char}
+    link::String
     symbol::Union{String,SubString,Char}
     index::Union{Int,Nothing}
     scale::Int

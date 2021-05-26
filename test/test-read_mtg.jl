@@ -33,7 +33,7 @@ end
     @test mtg.name == "node_1"
     @test mtg.attributes[:scales] == [0, 1, 2, 3, 3]
     @test mtg.attributes[:symbols] == ["\$", "Individual", "Axis", "Internode", "Leaf"]
-    @test mtg.MTG == NodeMTG('/', "\$", 0, 0)
+    @test mtg.MTG == NodeMTG("/", "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
     @test typeof(mtg[1]) == Node{NodeMTG,MutableNamedTuple}
     @test mtg[1].name == "node_2"
@@ -57,7 +57,7 @@ end
     @test length(mtg) == 7
     @test typeof(mtg) == Node{NodeMTG,NamedTuple}
     @test mtg.name == "node_1"
-    @test mtg.MTG == MTG.NodeMTG('/', "\$", 0, 0)
+    @test mtg.MTG == MTG.NodeMTG("/", "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
     @test mtg[1].name == "node_2"
     @test mtg[1].parent === mtg
@@ -71,7 +71,7 @@ end
     @test mtg.name == "node_1"
     @test mtg.attributes == Dict(:symbols => ["\$", "Individual", "Axis", "Internode", "Leaf"],
         :scales => [0, 1, 2, 3, 3], :description => mtg[:description])
-    @test mtg.MTG == MTG.NodeMTG('/', "\$", 0, 0)
+    @test mtg.MTG == MTG.NodeMTG("/", "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
     @test mtg[1].name == "node_2"
     @test mtg[1].parent === mtg

@@ -180,7 +180,7 @@ function parse_MTG_node(l)
         return((l,missing,missing))
     end
 
-    link = l[1]
+    link = string(l[1:1])
 
     # Match the index at the end of the string:
     stringmatch = match(r"[^[:alpha:]]+$",l[2:end])
