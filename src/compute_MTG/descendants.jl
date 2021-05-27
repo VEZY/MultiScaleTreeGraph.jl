@@ -19,6 +19,10 @@ Get attribute values from the descendants (acropetal).
 is filtered out (`false`).
 - `self = false`: is the value for the current node needed ?
 - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
+- `recursivity_level = -1`: The maximum number of recursions allowed (considering filters).
+*E.g.* to get the first level children only: `recursivity_level = 1`, for children +
+grand-children: `recursivity_level = 2`. If a negative value is provided (the default), the
+function returns all valid values from the node to the leaves.
 - `type::Union{Union,DataType}`: The type of the attribute. Makes the function run much
 faster if provided (≈4x faster).
 
@@ -57,12 +61,14 @@ function descendants(
     all::Bool = true, # like continue in the R package, but actually the opposite
     self = false,
     filter_fun = nothing,
+    recursivity_level = -1,
     type::Union{Union,DataType} = Any)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale = scale, symbol = symbol, link = link)
 
     val = Array{type,1}()
+
     if self
         keep = is_filtered(node, scale, symbol, link, filter_fun)
 
@@ -74,13 +80,14 @@ function descendants(
         end
     end
 
-    descendants_(node, key, scale, symbol, link, all, filter_fun, val)
+    descendants_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
     return val
 end
 
 
-function descendants_(node, key, scale, symbol, link, all, filter_fun, val)
-    if !isleaf(node)
+function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
+
+    if !isleaf(node) && recursivity_level != 0
         for chnode in ordered_children(node)
             # Is there any filter happening for the current node? (FALSE if filtered out):
             keep = is_filtered(chnode, scale, symbol, link, filter_fun)
@@ -91,7 +98,7 @@ function descendants_(node, key, scale, symbol, link, all, filter_fun, val)
 
             # If we want to continue even if the current node is filtered-out
             if all || keep
-                descendants_(chnode, key, scale, symbol, link, all, filter_fun, val)
+                descendants_(chnode, key, scale, symbol, link, all, filter_fun, val, recursivity_level - 1)
             end
         end
     end
