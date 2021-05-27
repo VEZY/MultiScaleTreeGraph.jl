@@ -11,9 +11,10 @@ as they previously were in the mtg.
 See [`delete_nodes!`](@ref) for an example of application.
 """
 function is_segment!(node)
-    if !isleaf(node) && !isroot(node) && length(node.children) == 1
+    if !isleaf(node) && !isroot(node) && !isroot(node.parent) && length(node.children) == 1
         # We keep the root and the leaves, but want to delete the nodes with no branching.
-        # We recognise them because they have only one child.
+        # We recognise them because they have only one child. Also we want to keep the very
+        # first node even if it has only one child.
 
         # If it's a node that branches, set its unique child as the branching node instead:
         if node.MTG.link == "+"
