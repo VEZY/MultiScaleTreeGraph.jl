@@ -81,14 +81,9 @@ end
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"]
 """
-Base.getindex(node::Node, key) = getindex(node.attributes,Symbol(key))
-Base.getindex(node::Node, key::Symbol) = getindex(node.attributes,key)
-function Base.getindex(node::Node{T, MutableNamedTuple}, key::Symbol) where T<:AbstractNodeMTG
-    getproperty(node.attributes,key)
-end
-function Base.getindex(node::Node{T, MutableNamedTuple}, key) where T <:AbstractNodeMTG
-    getproperty(node.attributes,Symbol(key))
-end
+Base.getindex(node::Node, key) = unsafe_getindex(node,Symbol(key))
+Base.getindex(node::Node, key::Symbol) = unsafe_getindex(node,key)
+
 """
 Indexing a Node using an integer will index in its children
 """
@@ -96,7 +91,8 @@ Base.getindex(n::Node, i::Integer) = n.children[collect(keys(n.children))[i]]
 function Base.getindex(n::Node{T, MutableNamedTuple}, i::Integer) where T<:AbstractNodeMTG
     n.children[collect(keys(n.children))[i]]
 end
-    Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
+
+Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
 Base.getindex(x::Node, ::AbstractTrees.ImplicitRootState) = x
 
 """
