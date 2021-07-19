@@ -134,6 +134,9 @@ function unsafe_getindex(node::Node{M, T} where {M<:AbstractNodeMTG, T<: Abstrac
     unsafe_getindex(node,Symbol(key))
 end
 
+Base.setindex!(node::Node{<:AbstractNodeMTG, <:AbstractDict{Symbol, Any}}, x, key) = setindex!(node, x, Symbol(key))
+Base.setindex!(node::Node{<:AbstractNodeMTG, <:AbstractDict{Symbol, Any}}, x, key::Symbol) = node.attributes[key] = x
+
 # function setindex(node::Node{M<:AbstractNodeMTG, Dict{Symbol, Any}}, key::Symbol)
 #     try
 #         getindex(node.attributes,key)

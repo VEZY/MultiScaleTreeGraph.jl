@@ -7,6 +7,8 @@ using MutableNamedTuples
 using DelimitedFiles
 using OrderedCollections
 
+import Base.setindex!
+
 include("read_MTG/NodeMTG.jl")
 include("read_MTG/read_MTG.jl")
 include("read_MTG/strip_comments.jl")

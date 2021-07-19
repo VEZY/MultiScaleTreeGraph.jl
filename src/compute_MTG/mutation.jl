@@ -156,7 +156,7 @@ function rewrite_expr!(node_name, arguments::Expr)
                     # node_name.MTG.scale
                     x.args[1].args[1] = :($(node_name))
                 else
-                    x.args[1] = :($(node_name).attributes)
+                    x.args[1] = :($(node_name))
                     x.head = :ref
                 end
             else
