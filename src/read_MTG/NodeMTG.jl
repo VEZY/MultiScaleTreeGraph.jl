@@ -162,7 +162,7 @@ end
 
 function length_subtree(node::Node,i)
     if !isleaf(node)
-        for (name, chnode) in node.children
+        for chnode in ordered_children(node)
             i[1] = i[1] + 1
             length_subtree(chnode,i)
         end

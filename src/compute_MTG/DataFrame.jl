@@ -36,3 +36,7 @@ function DataFrames.DataFrame(mtg::Node, key::T) where T <: AbstractString
     key = Symbol(key)
     DataFrame([get_printing(mtg), [descendants(mtg, key, self = true)...]], [:tree,key])
 end
+
+function DataFrames.DataFrame(mtg::Node)
+    DataFrame([get_printing(mtg)], [:tree])
+end

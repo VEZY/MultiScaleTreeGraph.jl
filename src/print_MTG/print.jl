@@ -59,13 +59,13 @@ function get_printing_(node::Node; leading::AbstractString = "")
     if !isleaf(node)
         last = length(node.children)
         i = 0
-        for (key, chnode) in node.children
+        for chnode in ordered_children(node)
             i += 1
             if i != last
-                to_print    = leading * "\u251C\u2500 " * chnode.MTG.link * " " * key[6:end] * ": " * chnode.MTG.symbol
+                to_print    = leading * "\u251C\u2500 " * chnode.MTG.link * " " * chnode.name[6:end] * ": " * chnode.MTG.symbol
                 new_leading = leading * "\u2502  "
             else
-                to_print    = leading * "\u2514\u2500 " * chnode.MTG.link * " " * key[6:end] * ": " * chnode.MTG.symbol
+                to_print    = leading * "\u2514\u2500 " * chnode.MTG.link * " " * chnode.name[6:end] * ": " * chnode.MTG.symbol
                 new_leading = leading * "   "
             end
             append!(child_vec, [to_print])
