@@ -17,10 +17,17 @@
 
     @test descendants(mtg2, :Width, symbol = ("Leaf", "Internode"), self = true) ==
         width_all[end - 1:end]
-end
 
+    @test descendants!(mtg, :Width) == descendants(mtg, :Width)
+    @test descendants!(mtg2, :Width, symbol = ("Leaf", "Internode"), self = true) ==
+        width_all[end - 1:end]
+
+    # descendants!(mtg, :Width, symbol = ("Leaf", "Internode"), self = true)
+end
 
 # using BenchmarkTools
 
+# @benchmark descendants(mtg, :Width) # 19.000 μs
+# @benchmark descendants!(mtg, :Width) # 19.000 μs
 # @benchmark descendants(mtg, :Width; type = Union{Nothing,Float64})
 # @benchmark descendants(mtg, :Width)

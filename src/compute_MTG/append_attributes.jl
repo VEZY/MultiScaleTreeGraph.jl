@@ -25,3 +25,25 @@ end
 function Base.append!(node::Node{<: AbstractNodeMTG,<:AbstractDict}, attr)
     merge!(node.attributes, Dict(zip(keys(attr), values(attr))))
 end
+
+
+
+function Base.pop!(node::Node{M,T}, key) where {M <: AbstractNodeMTG,T <: MutableNamedTuple}
+    attr_keys = keys(node.attributes)
+    i_drop = findfirst(x -> x == key, attr_keys)
+    i_drop === nothing && return nothing
+    node.attributes = MutableNamedTuple{(attr_keys[setdiff(begin:end, i_drop)]...,)}((values(node.attributes)[setdiff(begin:end, i_drop)]...,))
+end
+
+function Base.pop!(node::Node{M,T}, key) where {M <: AbstractNodeMTG,T <: NamedTuple}
+    attr_keys = keys(node.attributes)
+    i_drop = findfirst(x -> x == key, attr_keys)
+    i_drop === nothing && return nothing
+    node.attributes = NamedTuple{(attr_keys[setdiff(begin:end, i_drop)]...,)}((values(node.attributes)[setdiff(begin:end, i_drop)]...,))
+end
+
+function Base.pop!(node::Node{<: AbstractNodeMTG,<:AbstractDict}, key)
+    pop!(node.attributes, key, nothing)
+
+    return nothing
+end

@@ -1,7 +1,11 @@
 """
     descendants(node::Node,key,<keyword arguments>)
+    descendants!(node::Node,key,<keyword arguments>)
 
-Get attribute values from the descendants (acropetal).
+Get attribute values from the descendants (acropetal). The mutating version (`descendants!`)
+cache the results in a cached variable named after the hash of the function call. This version
+is way faster for large trees, but require to clean the chache sometimes (see [`clean_cache`](@ref)).
+It also only works for trees with attributes of subtype of `AbstractDict`.
 
 # Arguments
 
@@ -102,4 +106,91 @@ function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recu
             end
         end
     end
+end
+
+
+function descendants!(
+    node,key;
+    scale = nothing,
+    symbol = nothing,
+    link = nothing,
+    all::Bool = true, # like continue in the R package, but actually the opposite
+    self = false,
+    filter_fun = nothing,
+    recursivity_level = -1,
+    type::Union{Union,DataType} = Any)
+
+    # Check the filters once, and then compute the descendants recursively using `descendants_`
+    check_filters(node, scale = scale, symbol = symbol, link = link)
+
+    key_cache = "_cache_" * bytes2hex(sha1(join([key, scale, symbol, link, all, self, filter_fun, type])))
+
+    if node[key_cache] === nothing
+
+        val = Array{type,1}()
+
+        if self
+            keep = is_filtered(node, scale, symbol, link, filter_fun)
+
+            if keep
+                push!(val, unsafe_getindex(node, key))
+            elseif !all
+                # We don't keep the value and we have to stop at the first filtered-out value
+                return val
+            end
+        end
+
+        descendants_!(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, key_cache)
+
+        # Caching the result into a cache attribute named after the SHA of the function arguments:
+        node[key_cache] = val
+    else
+        val = node[key_cache]
+    end
+
+    return val
+end
+
+"""
+Fast version of descendants_ that mutates the mtg nodes to cache the information.
+"""
+function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, key_cache)
+
+    if !isleaf(node) && recursivity_level != 0
+        if node[key_cache] === nothing # Is there any cached value? If so, do not recompute
+            for chnode in ordered_children(node)
+                # Is there any filter happening for the current node? (FALSE if filtered out):
+                keep = is_filtered(chnode, scale, symbol, link, filter_fun)
+
+                if keep
+                    push!(val, unsafe_getindex(chnode, key))
+                end
+
+                # If we want to continue even if the current node is filtered-out
+                if all || keep
+                    descendants_!(chnode, key, scale, symbol, link, all, filter_fun, val, recursivity_level - 1, key_cache)
+                end
+            end
+            node[key_cache] = val
+        else
+            append!(val, node[key_cache])
+        end
+    end
+end
+
+"""
+    clean_cache!(mtg)
+
+Clean the cached variables in the mtg, usually added from [`descendants!`](@ref).
+"""
+function clean_cache!(mtg)
+    cached_vars = find_cached_vars(mtg)
+    for i in cached_vars
+        traverse!(mtg, x -> pop!(x, i))
+    end
+end
+
+
+function find_cached_vars(node)
+    collect(keys(node.attributes))[findall(x -> occursin("_cache_", x), String.(keys(node.attributes)))]
 end

@@ -16,6 +16,7 @@ Convert an MTG into a DataFrame.
 mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
 
 DataFrame(mtg, :Length)
+DataFrame(mtg, [:Length, :Width])
 ```
 """
 function DataFrames.DataFrame(mtg::Node, key::T) where T <: Union{AbstractArray,Tuple}

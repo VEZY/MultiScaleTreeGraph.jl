@@ -1,12 +1,13 @@
 module MTG
 
+using Base:String
 using AbstractTrees
 using Printf
 using DataFrames
 using MutableNamedTuples
 using DelimitedFiles
 using OrderedCollections
-
+import SHA.sha1 # for naming the cache variable
 import Base.setindex!
 
 include("read_MTG/NodeMTG.jl")
@@ -56,7 +57,7 @@ export insert_nodes!
 export insert_node!
 export write_mtg
 export is_segment!
-export descendants, ancestors
+export descendants, ancestors, descendants!
 export Node
 export AbstractNodeMTG
 export NodeMTG
@@ -65,5 +66,6 @@ export check_filters
 export get_features
 export get_classes
 export get_description
+export clean_cache
 
 end

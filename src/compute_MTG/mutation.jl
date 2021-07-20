@@ -116,15 +116,20 @@ an attribute.
 # Examples
 
 ```
->julia test = :(x = node.name)
->julia MTG.rewrite_expr!(:mtg,test)
->julia test
-:(mtg.attributes[:x] = mtg.name)
+test = :(x = node.name)
+MTG.rewrite_expr!(:mtg,test)
+test
+# :(mtg.attributes[:x] = mtg.name)
 
->julia test = :(x = node.foo)
->julia MTG.rewrite_expr!(:mtg,test)
->julia test
-:(mtg.attributes[:x] = mtg.attributes[:foo])
+test = :(x = node.foo)
+MTG.rewrite_expr!(:mtg,test)
+test
+# :(mtg.attributes[:x] = mtg.attributes[:foo])
+
+test = :(x = node.MTG.symbol)
+MTG.rewrite_expr!(:mtg,test)
+test
+# :(mtg.attributes[:x] = mtg.MTG.symbol)
 ```
 """
 function rewrite_expr!(node_name, arguments::Expr)

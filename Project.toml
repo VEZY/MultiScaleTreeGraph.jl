@@ -10,6 +10,7 @@ DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 MutableNamedTuples = "af6c499f-54b4-48cc-bbd2-094bba7533c7"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [compat]
 AbstractTrees = "0.3"
