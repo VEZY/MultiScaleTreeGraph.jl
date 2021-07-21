@@ -18,9 +18,15 @@
     @test descendants(mtg2, :Width, symbol = ("Leaf", "Internode"), self = true) ==
         width_all[end - 1:end]
 
+    # Using the mutating version:
     @test descendants!(mtg, :Width) == descendants(mtg, :Width)
     @test descendants!(mtg2, :Width, symbol = ("Leaf", "Internode"), self = true) ==
         width_all[end - 1:end]
+
+    clean_cache!(mtg)
+    # Get the leaves values:
+    @test descendants(mtg, :Width; filter_fun = isleaf) ==  width_all[[end - 2,end]]
+
 
     # descendants!(mtg, :Width, symbol = ("Leaf", "Internode"), self = true)
 end

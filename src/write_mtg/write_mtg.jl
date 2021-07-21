@@ -21,8 +21,8 @@ instead of all. In this case the missing ones are recomputed using [`get_classes
 # Examples
 
 ```julia
-file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
-mtg = read_mtg(file);
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
 write_mtg("test.mtg",mtg)
 ```
 """

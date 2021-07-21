@@ -20,8 +20,8 @@ the function returns.
 # Examples
 
 ```julia
-file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
-mtg = read_mtg(file);
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
 traverse!(mtg, x -> isleaf(x) ? println(x.name," is a leaf") : nothing)
 node_5 is a leaf
 node_7 is a leaf

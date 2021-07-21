@@ -173,6 +173,12 @@ function returns all valid values from the node to the leaves.
 - `type::Union{Union,DataType}`: The type of the attribute. Makes the function run much
 faster if provided (≈4x faster).
 
+
+# Tips
+
+To get the values of the leaves use [`isleaf`](@ref) as the filtering function, e.g.:
+`descendants(mtg, :Width; filter_fun = isleaf)`.
+
 # Note
 
 In most cases, the `type` argument should be given as a union of `Nothing` and the data type
@@ -199,6 +205,9 @@ descendants(mtg, :Length, scale = 3, type = Float64)
 # Filter by symbol:
 descendants(mtg, :Length, symbol = "Leaf")
 descendants(mtg, :Length, symbol = ("Leaf","Internode"))
+
+# Filter by function, e.g. get the values for the leaves only:
+descendants(mtg, :Width; filter_fun = isleaf)
 
 # It is possible to cache the results in the mtg. This is wqy faster when using
 # `@mutate_mtg` (note the `!` at the end of the function name):

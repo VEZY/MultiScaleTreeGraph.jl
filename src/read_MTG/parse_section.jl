@@ -19,7 +19,7 @@ The parsed section of the MTG
 # Examples
 
 ```julia
-file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
 f = open(file, "r")
 line = [0] ; l = [""]; l[1] = MTG.next_line!(f,line)
 

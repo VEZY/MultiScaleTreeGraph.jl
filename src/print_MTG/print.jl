@@ -9,8 +9,8 @@ Most of the code from [DataTrees.jl](https://github.com/vh-d/DataTrees.jl/blob/m
 # Examples
 
 ```julia
-file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
-mtg = read_mtg(file);
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
 mtg
 # / 1: \$
 # └─ / 2: Individual
