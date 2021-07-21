@@ -66,6 +66,6 @@ export check_filters
 export get_features
 export get_classes
 export get_description
-export clean_cache
+export clean_cache!
 
 end
