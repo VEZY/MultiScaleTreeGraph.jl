@@ -31,6 +31,7 @@ include("compute_MTG/filter/filter-funs.jl")
 include("write_mtg/update_sections.jl")
 include("write_mtg/write_mtg.jl")
 include("compute_MTG/insert_nodes.jl")
+include("compute_MTG/mutation_helpers.jl")
 
 export read_mtg
 export isleaf
@@ -67,5 +68,6 @@ export get_features
 export get_classes
 export get_description
 export clean_cache!
+export topological_order
 
 end
