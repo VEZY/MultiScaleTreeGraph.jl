@@ -21,7 +21,6 @@ include("read_MTG/Tree_funs.jl")
 include("print_MTG/print.jl")
 include("compute_MTG/descendants.jl")
 include("compute_MTG/ancestors.jl")
-include("compute_MTG/DataFrame.jl")
 include("compute_MTG/check_filters.jl")
 include("compute_MTG/mutation.jl")
 include("compute_MTG/append_attributes.jl")
@@ -32,6 +31,7 @@ include("write_mtg/update_sections.jl")
 include("write_mtg/write_mtg.jl")
 include("compute_MTG/insert_nodes.jl")
 include("compute_MTG/mutation_helpers.jl")
+include("compute_MTG/DataFrame.jl")
 
 export read_mtg
 export isleaf

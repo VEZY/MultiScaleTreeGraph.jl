@@ -20,10 +20,25 @@ DataFrame(mtg, [:Length, :Width])
 ```
 """
 function DataFrames.DataFrame(mtg::Node, key::T) where T <: Union{AbstractArray,Tuple}
+
+    tree_vars = [:node_id, :node_symbol, :node_scale, :node_index, :parent_id, :node_link]
+    # Add the MTG to the attributes:
+    @mutate_mtg!(
+        mtg,
+        node_id = parse(Int, node.name[6:end]),
+        node_symbol = node.MTG.symbol,
+        node_scale = node.MTG.scale,
+        node_index = node.MTG.index,
+        parent_id = get_parent_id(node),
+        node_link = node.MTG.link
+    )
+
     node_vec = get_printing(mtg)
     df = DataFrame(tree = node_vec)
 
-    for var in key
+    append!(tree_vars, key)
+
+    for var in tree_vars
         insertcols!(df, var => [descendants(mtg, var, self = true)...])
     end
 
@@ -32,17 +47,22 @@ function DataFrames.DataFrame(mtg::Node, key::T) where T <: Union{AbstractArray,
         df[!,i] = replace(df[!,i], nothing => missing)
     end
 
+    rename!(
+        df,
+        Dict(
+            :node_id => "id",
+            :node_symbol => "symbol",
+            :node_scale => "scale",
+            :node_index => "index",
+            :node_link => "link"
+        )
+    )
+
     return df
 end
 
 function DataFrames.DataFrame(mtg::Node, key::T) where T <: Symbol
-    df = DataFrame([get_printing(mtg), [descendants(mtg, key, self = true)...]], [:tree,key])
-        # Replace the nothing values by missing values as it is the standard in DataFrames:
-    for i in names(df)
-        df[!,i] = replace(df[!,i], nothing => missing)
-    end
-
-    return df
+    DataFrame(mtg, [key])
 end
 
 function DataFrames.DataFrame(mtg::Node, key::T) where T <: AbstractString
@@ -51,4 +71,11 @@ end
 
 function DataFrames.DataFrame(mtg::Node)
     DataFrame([get_printing(mtg)], [:tree])
+end
+
+
+function get_parent_id(x)
+    if !isroot(x)
+        return parse(Int, x.parent.name[6:end])
+    end
 end
