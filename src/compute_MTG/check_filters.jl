@@ -80,7 +80,7 @@ get the filters as keyword arguments in macros.
 
 ```julia
 args = (:(x = length(node.name)), :(y = node.x + 2), :(scale = 2))
-MTG.parse_args_filters(args)
+MTG.parse_macro_args(args)
 ```
 """
 function parse_macro_args(args)

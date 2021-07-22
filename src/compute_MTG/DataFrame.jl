@@ -26,16 +26,27 @@ function DataFrames.DataFrame(mtg::Node, key::T) where T <: Union{AbstractArray,
     for var in key
         insertcols!(df, var => [descendants(mtg, var, self = true)...])
     end
-    df
+
+    # Replace the nothing values by missing values as it is the standard in DataFrames:
+    for i in names(df)
+        df[!,i] = replace(df[!,i], nothing => missing)
+    end
+
+    return df
 end
 
 function DataFrames.DataFrame(mtg::Node, key::T) where T <: Symbol
-    DataFrame([get_printing(mtg), [descendants(mtg, key, self = true)...]], [:tree,key])
+    df = DataFrame([get_printing(mtg), [descendants(mtg, key, self = true)...]], [:tree,key])
+        # Replace the nothing values by missing values as it is the standard in DataFrames:
+    for i in names(df)
+        df[!,i] = replace(df[!,i], nothing => missing)
+    end
+
+    return df
 end
 
 function DataFrames.DataFrame(mtg::Node, key::T) where T <: AbstractString
-    key = Symbol(key)
-    DataFrame([get_printing(mtg), [descendants(mtg, key, self = true)...]], [:tree,key])
+    DataFrame(mtg, Symbol(key))
 end
 
 function DataFrames.DataFrame(mtg::Node)
