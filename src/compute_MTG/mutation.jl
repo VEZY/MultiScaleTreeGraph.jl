@@ -50,9 +50,10 @@ macro mutate_mtg!(mtg, args...)
         check_filters(mtg, scale = $(flt.scale), symbol = $(flt.symbol), link = $(flt.link))
         # Traverse the mtg:
         traversed_mtg = $(kwargs[:traversal])(mtg)
-        for i in traversed_mtg
-            if is_filtered(i, $(flt.scale), $(flt.symbol), $(flt.link), $(flt.filter_fun))
-                @mutate_node!(i, $(args...))
+        for i00000000 in traversed_mtg
+            # NB: using i00000000 to avoid naming clash with variables when using rewrite_expr!(i,...)
+            if is_filtered(i00000000, $(flt.scale), $(flt.symbol), $(flt.link), $(flt.filter_fun))
+                @mutate_node!(i00000000, $(args...))
             elseif !$(kwargs[:all])
                 # In this case (all == false) we stop as soon as we reached the
                 # first filtered-out value. The default behavior is defined in parse_macro_args
@@ -155,7 +156,7 @@ function rewrite_expr!(node_name, arguments::Expr)
             # x here is defined either as node.variable or node[:variable], we must replace
             # by node_name[:variable]
             if !(Symbol(replace(arg, "node." => "")) in fieldnames(Node))
-                if any(match.(Regex.(string.(fieldnames(Node))), arg) .!= nothing)
+                if any(match.(Regex.("\\." .* string.(fieldnames(Node))), arg) .!= nothing)
                     # If the expression contains node attributes, only replace the node name
                     # because they are reserved keywords, e.g.: node.MTG.scale becomes
                     # node_name.MTG.scale
