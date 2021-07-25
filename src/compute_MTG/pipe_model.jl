@@ -22,10 +22,9 @@ function pipe_model!(node, root_value)
         return root_value
     else
         parent_cross_section = node.parent[:_cache_a7118a60b2a624134bf9eac2d64f2bb32798626a]
-        nleaf_node = length(descendants!(node, :xxx; filter_fun = isleaf)) + 1
-        nleaf_siblings_node = nleaf_siblings(node)
+        nleaf_node = nleaves(node)
 
-        nleaf_proportion_siblings = nleaf_node / (nleaf_siblings_node + nleaf_node)
+        nleaf_proportion_siblings = nleaf_node / (nleaves_siblings!(node) + nleaf_node)
 
         node[:_cache_a7118a60b2a624134bf9eac2d64f2bb32798626a] = parent_cross_section * nleaf_proportion_siblings
 
