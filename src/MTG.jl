@@ -32,6 +32,8 @@ include("write_mtg/write_mtg.jl")
 include("compute_MTG/insert_nodes.jl")
 include("compute_MTG/mutation_helpers.jl")
 include("compute_MTG/DataFrame.jl")
+include("compute_MTG/nleaves.jl")
+include("compute_MTG/pipe_model.jl")
 
 export read_mtg
 export isleaf
@@ -69,5 +71,7 @@ export get_classes
 export get_description
 export clean_cache!
 export topological_order
+export nleaves!, nleaves, nleaves_siblings!
+export pipe_model!
 
 end
