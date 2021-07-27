@@ -44,5 +44,5 @@ function nleaves_siblings!(x)
 
     n_leaf_siblings = [nleaves!(i) for i in node_siblings]
     # NB: `:xxx` can be replaced by anything else, it does not matter if the variable exist or not
-    return sum(n_leaf_siblings)
+    return n_leaf_siblings
 end
