@@ -32,7 +32,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
         error("Neither ENTITY-CODE or TOPO were found in the MTG header at line: ", line)
     end
 
-    columns = l_header[l_header .!= ""][2:end]
+    columns = strip.(l_header[l_header .!= ""][2:end]) # Remove leading and trailing whitespaces
     common_features = [i in features.NAME for i in columns]
 
     if !all(common_features)
@@ -80,7 +80,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
             splitted_MTG = split(l[1], "\t")
 
             node_column = findfirst(x -> length(x) > 0, splitted_MTG)
-        # node_data= splitted_MTG[[i]]
+            # node_data= splitted_MTG[[i]]
             node_data = splitted_MTG[node_column:end]
 
             if attr_column_start < node_column

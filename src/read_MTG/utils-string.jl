@@ -40,7 +40,7 @@ end
 
 # Read line
 
-Read the next line in the IO stream, strip the comments, and increment the line index.
+Read the next line in the IO stream, strip the comments, the missing values and increment the line index.
 
 # Arguments
 - `f::IOStream`: A buffered IO stream to the mtg file, *e.g.* `f = open(file, "r")`.
@@ -49,7 +49,11 @@ Read the next line in the IO stream, strip the comments, and increment the line 
 """
 function next_line!(f, line;whitespace = true)
     line[1] = line[1] + 1
-    strip_comments(readline(f);whitespace = whitespace)
+    missing_repl = whitespace ? "\t" : ""
+    missing_pat = whitespace ? r"(\t){0,1}missing" : r"missing"
+
+    x = replace(readline(f), missing_pat => missing_repl)
+    strip_comments(x; whitespace = whitespace)
 end
 
 

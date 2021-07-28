@@ -7,6 +7,7 @@ using DataFrames
 using MutableNamedTuples
 using DelimitedFiles
 using OrderedCollections
+import XLSX:readxlsx,sheetnames
 import SHA.sha1 # for naming the cache variable
 import Base.setindex!
 

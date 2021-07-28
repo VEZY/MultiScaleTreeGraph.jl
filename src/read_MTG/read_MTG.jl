@@ -43,74 +43,97 @@ mtg = read_mtg(file)
 
 # Or using another `MutableNamedTuple` for the attributes to be able to add one if needed:
 mtg = read_mtg(file,Dict);
+
+# We can also read an mtg directly from an excel file from the field:
+file = "E:/Agrobranche_Alexis_Bonnet/Biomass_evaluation_LiDAR/0-data/1-xlsx/tree3h.xlsx"
+mtg = read_mtg(file)
 ```
 """
-function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG)
-    parse_mtg_file(file, attr_type, mtg_type)
-end
+function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name = nothing)
 
-function parse_mtg_file(file, attr_type, mtg_type)
-    sections = ("CODE", "CLASSES", "DESCRIPTION", "FEATURES", "MTG")
+    file_extension = splitext(basename(file))[2]
 
-    # read the mtg file
-    mtg, classes, description, features =
-    open(file, "r") do f
-        line = [0]
-        l = [""]
-        l[1] = next_line!(f, line)
-
-        while !eof(f)
-            # Ignore empty lines between sections:
-            while !issection(l[1]) && !eof(f)
-                l[1] = next_line!(f, line)
-            end
-
-            # Parse the mtg CODE section, and then continue to next while loop iteration:
-            if issection(l[1], "CODE")
-                code = replace(l[1], r"^CODE[[:blank:]]*:[[:blank:]]*" => "")
-
-                # read next line before continuing the while loop
-                l[1] = next_line!(f, line)
-                continue
-            end
-
-            # Parse the mtg CLASSES section, and then continue to next while loop iteration:
-            if issection(l[1], "CLASSES")
-                classes = parse_section!(f, ["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"], "CLASSES", line, l)
-                classes.SCALE = parse.(Int, classes.SCALE)
-                continue
-            end
-
-            # Parse the mtg DESCRIPTION section:
-            if issection(l[1], "DESCRIPTION")
-                description = parse_section!(f, ["LEFT","RIGHT","RELTYPE","MAX"], "DESCRIPTION", line, l, allow_empty = true)
-                if description !== nothing
-                    description.RIGHT = split.(description.RIGHT, ",")
-                    if !all([i in description.RELTYPE for i in ("+", "<")])
-                        error("Unknown relation type(s) in DESCRITPION section: ",
-                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+<")) .== 0]), ", "))
-                    end
-                end
-                continue
-            end
-
-            # Parse the mtg FEATURES section:
-            if issection(l[1], "FEATURES")
-                features = parse_section!(f, ["NAME","TYPE"], "FEATURES", line, l)
-                continue
-            end
-
-            # Parse the mtg FEATURES section:
-            if issection(l[1], "MTG")
-                mtg = parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
-                continue
-            end
+    if file_extension == ".xlsx" || file_extension == ".xlsm"
+        xlsx_file = XLSX.readxlsx(file)
+        if sheet_name === nothing
+            xlsx_data = xlsx_file[XLSX.sheetnames(xlsx_file)[1]][:]
+        else
+            xlsx_data = xlsx_file[sheet_name][:]
         end
-        (mtg, classes, description, features)
+
+        f = IOBuffer();
+        DelimitedFiles.writedlm(f, xlsx_data)
+        seekstart(f)
+        # test = String(take!(io))
+        mtg, classes, description, features = parse_mtg_file(f, attr_type, mtg_type)
+        close(f)
+    else
+        # read the mtg file
+        mtg, classes, description, features =
+        open(file, "r") do f
+            parse_mtg_file(f, attr_type, mtg_type)
+        end
     end
 
     # Adding overall classes and symbols information to the root node (used for checks):
     append!(mtg, (symbols = classes.SYMBOL, scales = classes.SCALE, description = description))
 
     return mtg
+end
+
+function parse_mtg_file(f, attr_type, mtg_type)
+    line = [0]
+    l = [""]
+    l[1] = next_line!(f, line)
+
+    while !eof(f)
+        # Ignore empty lines between sections:
+        while !issection(l[1]) && !eof(f)
+            l[1] = next_line!(f, line)
+        end
+
+        # Parse the mtg CODE section, and then continue to next while loop iteration:
+        if issection(l[1], "CODE")
+            code = strip(replace(l[1], r"^CODE[[:blank:]]*:[[:blank:]]*" => ""))
+
+            # read next line before continuing the while loop
+            l[1] = next_line!(f, line)
+            continue
+        end
+
+        # Parse the mtg CLASSES section, and then continue to next while loop iteration:
+        if issection(l[1], "CLASSES")
+            global classes = parse_section!(f, ["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"], "CLASSES", line, l)
+            classes.SCALE = parse.(Int, classes.SCALE)
+            continue
+        end
+
+        # Parse the mtg DESCRIPTION section:
+        if issection(l[1], "DESCRIPTION")
+            global description = parse_section!(f, ["LEFT","RIGHT","RELTYPE","MAX"], "DESCRIPTION", line, l, allow_empty = true)
+            if description !== nothing
+                description.RIGHT = split.(description.RIGHT, ",")
+                if !all([i in description.RELTYPE for i in ("+", "<")])
+                    error("Unknown relation type(s) in DESCRITPION section: ",
+                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+<")) .== 0]), ", "))
+                end
+            end
+            continue
+        end
+
+        # Parse the mtg FEATURES section:
+        if issection(l[1], "FEATURES")
+            global features = parse_section!(f, ["NAME","TYPE"], "FEATURES", line, l)
+            continue
+        end
+
+        # Parse the mtg FEATURES section:
+        if issection(l[1], "MTG")
+            global mtg = parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
+            continue
+        end
+
+    end
+
+    return (mtg, classes, description, features)
 end
