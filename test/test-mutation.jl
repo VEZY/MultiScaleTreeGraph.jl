@@ -40,3 +40,49 @@ end
     @test mtg[:nametest] == "node_1_test"
     @test leaf_node[:nametest] == "node_5_test2"
 end
+
+
+
+@testset "append!" begin
+
+    # On Dict attributes
+    mtg = read_mtg("files/simple_plant.mtg", Dict);
+    append!(mtg, (test = 3,))
+    haskey(mtg.attributes, :test)
+
+    @test haskey(mtg.attributes, :test)
+    @test mtg[:test] == 3
+
+    # On MutableNamedTuple attributes
+    mtg = read_mtg("files/simple_plant.mtg", MutableNamedTuple);
+    # Using a leaf node from the mtg:
+    append!(mtg, (test = 3,))
+    @test :test in keys(mtg.attributes)
+    @test mtg[:test] == 3
+
+    # On NamedTuple attributes
+    mtg = read_mtg("files/simple_plant.mtg", NamedTuple);
+    # Using a leaf node from the mtg:
+    append!(mtg, (test = 3,))
+    @test :test in keys(mtg.attributes)
+    @test mtg[:test] == 3
+end
+
+@testset "pop!" begin
+    # On Dict attributes
+    mtg = read_mtg("files/simple_plant.mtg", Dict);
+    pop!(mtg, :symbols)
+    @test !haskey(mtg.attributes, :symbols)
+
+    # On MutableNamedTuple attributes
+    mtg = read_mtg("files/simple_plant.mtg", MutableNamedTuple);
+    # Using a leaf node from the mtg:
+    pop!(mtg, :symbols)
+    @test !(:symbols in keys(mtg.attributes))
+
+    # On NamedTuple attributes
+    mtg = read_mtg("files/simple_plant.mtg", NamedTuple);
+    # Using a leaf node from the mtg:
+    pop!(mtg, :symbols)
+    @test !(:symbols in keys(mtg.attributes))
+end

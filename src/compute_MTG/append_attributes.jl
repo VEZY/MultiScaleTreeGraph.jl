@@ -32,14 +32,14 @@ function Base.pop!(node::Node{M,T}, key) where {M <: AbstractNodeMTG,T <: Mutabl
     attr_keys = keys(node.attributes)
     i_drop = findfirst(x -> x == key, attr_keys)
     i_drop === nothing && return nothing
-    node.attributes = MutableNamedTuple{(attr_keys[setdiff(begin:end, i_drop)]...,)}((values(node.attributes)[setdiff(begin:end, i_drop)]...,))
+    node.attributes = MutableNamedTuple{(attr_keys[setdiff(1:end, i_drop)]...,)}((values(node.attributes)[setdiff(1:end, i_drop)]...,))
 end
 
 function Base.pop!(node::Node{M,T}, key) where {M <: AbstractNodeMTG,T <: NamedTuple}
     attr_keys = keys(node.attributes)
     i_drop = findfirst(x -> x == key, attr_keys)
     i_drop === nothing && return nothing
-    node.attributes = NamedTuple{(attr_keys[setdiff(begin:end, i_drop)]...,)}((values(node.attributes)[setdiff(begin:end, i_drop)]...,))
+    node.attributes = NamedTuple{(attr_keys[setdiff(1:end, i_drop)]...,)}((values(node.attributes)[setdiff(1:end, i_drop)]...,))
 end
 
 function Base.pop!(node::Node{<: AbstractNodeMTG,<:AbstractDict}, key)
