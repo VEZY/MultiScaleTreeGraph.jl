@@ -45,7 +45,7 @@ mtg = read_mtg(file)
 mtg = read_mtg(file,Dict);
 
 # We can also read an mtg directly from an excel file from the field:
-file = "E:/Agrobranche_Alexis_Bonnet/Biomass_evaluation_LiDAR/0-data/1-xlsx/tree3h.xlsx"
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","tree3h.xlsx")
 mtg = read_mtg(file)
 ```
 """
