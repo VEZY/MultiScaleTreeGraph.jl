@@ -37,7 +37,7 @@ end
 # You can put all the :var_name values to be recomputed at a value < threshold_value.
 
 """
-    pipe_model!(node, var_name, threshold_value)
+    pipe_model!(node, var_name, threshold_value; allow_missing = false)
 
 Same than `pipe_model!` but uses another variable as the reference down until a threshold
 value. This is used for example in the case of LiDAR measurements, where we know the
@@ -52,6 +52,8 @@ sub-trees with values of `:var_name <= threshold_value`.
 - `var_name`: the name of the cross-section attribute name in the nodes
 - `threshold_value`: the threshold defining the value below which the cross-section will be
 re-computed using the pipe model instead of using `var_name`.
+- `allow_missing=false`: Allow missing values for `var_name`, in which case the cross-section is
+recomputed using the pipe model. Please use this option only if you know why.
 
 # Details
 
@@ -64,20 +66,20 @@ using their number of leaves.
 
 # Word of caution
 
-User must ensure that :var_name has a value for all nodes in the mtg before calling this
-version of `pipe_model!`. Nodes with untrusted values should be set to a value below the
-threshold value to ensure recomputing of their values.
+User must ensure that `:var_name` has a value for all nodes in the mtg before calling this
+version of `pipe_model!`, unless `allow_missing=true`. Nodes with untrusted values should be
+set to a value below the threshold value to make `pipe_model!` recompute them.
 """
-function pipe_model!(node, var_name, threshold_value)
+function pipe_model!(node, var_name, threshold_value; allow_missing = false)
 
-    if node[var_name] === nothing
+    if node[var_name] === nothing && !allow_missing
         error(
             "$var_name not found (`== nothing`) in `$(node.name)`. ",
-            "Please make sure all nodes have a value before calling this version of pipe_model!"
+            "Please make sure all nodes have a value, or use `allow_missing = true`."
         )
     end
 
-    if isroot(node) || node[var_name] > threshold_value
+    if isroot(node) || (node[var_name] !== nothing && node[var_name] > threshold_value)
         # The node cross-section is higher thant the threshold, we use its value
         node[:_cache_522f54c893bc239eaf0e590bda58d106f91df45d] = node[var_name]
     else
@@ -103,10 +105,14 @@ function pipe_model!(node, var_name, threshold_value)
             nleaves_others = 0
             for (i, val) in enumerate(cross_section_siblings)
                 if val === nothing
-                    error(
-                        "$var_name not found (`== nothing`) in `$(node_siblings[i].name)`. ",
-                        "Please make sure all nodes have a value before calling this version of pipe_model!"
-                    )
+                    if allow_missing
+                        val = 0
+                    else
+                        error(
+                            "$var_name not found (`== nothing`) in `$(node_siblings[i].name)`. ",
+                            "Please make sure all nodes have a value, or use `allow_missing = true`."
+                        )
+                    end
                 end
 
                 if val > threshold_value

@@ -1,11 +1,8 @@
 module MTG
-
-using MutableNamedTuples: include
-using Base:String
 using AbstractTrees
 using Printf
 using DataFrames
-using MutableNamedTuples
+import MutableNamedTuples:MutableNamedTuple
 using DelimitedFiles
 using OrderedCollections
 import XLSX:readxlsx,sheetnames
