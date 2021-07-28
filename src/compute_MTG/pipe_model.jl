@@ -57,12 +57,14 @@ recomputed using the pipe model. Please use this option only if you know why.
 
 # Details
 
-The node cross-section is dispatched from parent to children according to he number of leaves
+The node cross-section is dispatched from parent to children according to the number of leaves
 (*i.e.* terminal nodes) each child bear, unless one or more children has a
 `:var_name > threshold_value`. In this case the shared cross-section is the one from the
 parent minus the one of these nodes for which we simply use the measured value. The
 cross-section of the siblings with `:var_name <= threshold_value` will be shared as usual
-using their number of leaves.
+using their number of leaves. If `:var_name` of the siblings are higher than the parent value,
+the cross-section of the node is computed only using the number of leaves as it should not
+be bigger.
 
 # Word of caution
 
@@ -94,6 +96,12 @@ function pipe_model!(node, var_name, threshold_value; allow_missing = false)
         else
 
             cross_section_siblings = [i[var_name] for i in node_siblings]
+            cross_section_siblings_no_nothing = filter(x -> x !== nothing, cross_section_siblings)
+
+            if length(cross_section_siblings_no_nothing)
+                sum_cross_section_siblings = sum(cross_section_siblings_no_nothing)
+            end
+
             nleaf_node = nleaves(node)
             nleaves_sibl = nleaves_siblings!(node)
 
@@ -115,12 +123,16 @@ function pipe_model!(node, var_name, threshold_value; allow_missing = false)
                     end
                 end
 
-                if val > threshold_value
-                # Here we already know the cross-section of the sibling node, so we
-                # remove its cross-section of the shareable pool
+                if val > threshold_value && cross_section_to_share > val && sum_cross_section_siblings < val
+                    # Here we already know the cross-section of the sibling node, so we
+                    # remove its cross-section of the shareable pool, unless its cross-section
+                    # is bigger than the cross-section of the parent, or also if the sum of the
+                    # cross-sections of the siblings is bigger than the parent. In this case
+                    # we go back to using the number of leaves because else it would give a
+                    # negative value for the current node
                     cross_section_to_share -= val
                 else
-                # For the others, we cumulate their number of leaves
+                    # For the others, we cumulate their number of leaves
                     nleaves_others += nleaves_sibl[i]
                 end
             end
