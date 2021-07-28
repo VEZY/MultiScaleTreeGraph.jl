@@ -70,6 +70,13 @@ threshold value to ensure recomputing of their values.
 """
 function pipe_model!(node, var_name, threshold_value)
 
+    if node[var_name] === nothing
+        error(
+            "$var_name not found (`== nothing`) in `$(node.name)`. ",
+            "Please make sure all nodes have a value before calling this version of pipe_model!"
+        )
+    end
+
     if isroot(node) || node[var_name] > threshold_value
         # The node cross-section is higher thant the threshold, we use its value
         node[:_cache_522f54c893bc239eaf0e590bda58d106f91df45d] = node[var_name]
@@ -95,6 +102,13 @@ function pipe_model!(node, var_name, threshold_value)
             # for which it is allocated respective to their number of terminal nodes (i.e. leaves):
             nleaves_others = 0
             for (i, val) in enumerate(cross_section_siblings)
+                if val === nothing
+                    error(
+                        "$var_name not found (`== nothing`) in `$(node_siblings[i].name)`. ",
+                        "Please make sure all nodes have a value before calling this version of pipe_model!"
+                    )
+                end
+
                 if val > threshold_value
                 # Here we already know the cross-section of the sibling node, so we
                 # remove its cross-section of the shareable pool
