@@ -35,8 +35,9 @@ only. See examples for more details.
 # Examples
 
 ```julia
-# Importing the mtg from the github repo:
-mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+# Importing an example mtg from the package:
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
 
 # Using a leaf node from the mtg:
 leaf_node = mtg.children["node_2"].children["node_3"].children["node_4"].children["node_5"]

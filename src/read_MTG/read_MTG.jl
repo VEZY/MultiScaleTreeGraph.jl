@@ -38,14 +38,18 @@ The MTG data.
 # Examples
 
 ```julia
-mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/simple_plant.mtg"))
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
 
 # Or using another `MutableNamedTuple` for the attributes to be able to add one if needed:
 mtg = read_mtg(file,Dict);
 ```
 """
 function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG)
+    parse_mtg_file(file, attr_type, mtg_type)
+end
 
+function parse_mtg_file(file, attr_type, mtg_type)
     sections = ("CODE", "CLASSES", "DESCRIPTION", "FEATURES", "MTG")
 
     # read the mtg file
@@ -108,5 +112,5 @@ function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG)
     # Adding overall classes and symbols information to the root node (used for checks):
     append!(mtg, (symbols = classes.SYMBOL, scales = classes.SCALE, description = description))
 
-    mtg
+    return mtg
 end
