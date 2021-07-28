@@ -1,5 +1,6 @@
 module MTG
 
+using MutableNamedTuples: include
 using Base:String
 using AbstractTrees
 using Printf
@@ -35,6 +36,7 @@ include("compute_MTG/mutation_helpers.jl")
 include("compute_MTG/DataFrame.jl")
 include("compute_MTG/nleaves.jl")
 include("compute_MTG/pipe_model.jl")
+include("compute_MTG/get_node.jl")
 
 export read_mtg
 export isleaf
@@ -74,5 +76,6 @@ export clean_cache!
 export topological_order
 export nleaves!, nleaves, nleaves_siblings!
 export pipe_model!
+export get_node
 
 end
