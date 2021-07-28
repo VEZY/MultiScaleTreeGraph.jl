@@ -54,9 +54,9 @@ function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name 
     file_extension = splitext(basename(file))[2]
 
     if file_extension == ".xlsx" || file_extension == ".xlsm"
-        xlsx_file = XLSX.readxlsx(file)
+        xlsx_file = readxlsx(file)
         if sheet_name === nothing
-            xlsx_data = xlsx_file[XLSX.sheetnames(xlsx_file)[1]][:]
+            xlsx_data = xlsx_file[sheetnames(xlsx_file)[1]][:]
         else
             xlsx_data = xlsx_file[sheet_name][:]
         end
