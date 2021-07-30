@@ -8,7 +8,7 @@
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
 
-The goal of MTG.jl is to read, write, analyze and plot MTG (Multi-scale Tree Graph) files. These files describe the plant topology (i.e. structure) along with some attributes for each node (e.g. geometry, colors, state...).
+The goal of MTG.jl is to read, write, analyse and plot MTG (Multi-scale Tree Graph) files. These files describe the plant topology (*i.e.* structure) along with some attributes for each node (*e.g.* geometry, colors, state...).
 
 > The package is under intensive development and is in a very early version. The functions may heavily change from one version to another until a more stable version is released.
 
@@ -30,8 +30,28 @@ using MTG
 
 file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
 
-mtg,classes,description,features = read_mtg(file);
+mtg = read_mtg(file);
 ```
+
+Then you can compute new variables in the MTG like so:
+
+```julia
+@mutate!(mtg, length_mm = node.Length * 100.)
+```
+
+And then write the mtg back to disk:
+
+```julia
+write_mtg("test.mtg",mtg)
+```
+
+You can also transform it into a DataFrame as follows:
+
+```julia
+DataFrame(mtg, [:length_mm, :XX])
+```
+
+You can learn more about MTG.jl in the documentation.
 
 ## 3. Roadmap
 
@@ -45,7 +65,7 @@ To do before v1:
   - [x] `@mutate_mtg!()`
   - [x] `traverse!()` for a more julian way
   - [x] `delete_nodes!()` to delete nodes in the tree based on filters
-  - [ ] `add_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_name()` for naming them.
+  - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_name()` for naming them.
   - [ ] Add possibility to mutate a node using an anonymous function, e.g. `@mutate_mtg!(mtg, x -> x*2)`
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
@@ -54,7 +74,7 @@ To do before v1:
   - [x] attributes using Symbols or anything else
   - [x] node fields using the dot notation
 - [x] iterable
-- [ ] Work by default at the finer scale. Hence we can make a function to dump the scales ze don't want to work with, which would speed-up the computations. Careful though, we probably have to change the links between nodes then.
+- [ ] Work by default at the finer scale. Hence we can make a function to dump the scales we don't want to work with, which would speed-up the computations. Careful though, we probably have to change the links between nodes then.
 - [x] Use MutableNamedTuple for `node.children` by default -> rolled back to Dict instead
 - [ ] Tree printing:
   - [x] Tree printing
@@ -80,6 +100,4 @@ To do before v1:
 
 Several tree-related functions in use are adapted from [DataTrees.jl](https://github.com/vh-d/DataTrees.jl/).
 
-The first implementations for handling the MTG:
-
-- OpenAlea's Python implementation
+This package is heavily inspired by [OpenAlea's MTG](https://github.com/openalea/mtg) implementation in Python.
