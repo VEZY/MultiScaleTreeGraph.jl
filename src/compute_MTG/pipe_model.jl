@@ -57,7 +57,7 @@ recomputed using the pipe model. Please use this option only if you know why.
 
 # Details
 
-The node cross-section is dispatched from parent to children according to the number of leaves
+The node cross-section is partitioned from parent to children according to the number of leaves
 (*i.e.* terminal nodes) each child bear, unless one or more children has a
 `:var_name > threshold_value`. In this case the shared cross-section is the one from the
 parent minus the one of these nodes for which we simply use the measured value. The
@@ -68,8 +68,12 @@ be bigger.
 
 # Word of caution
 
-User must ensure that `:var_name` has a value for all nodes in the mtg before calling this
-version of `pipe_model!`, unless `allow_missing=true`. Nodes with untrusted values should be
+Some tips when using this function:
+
+- User must ensure that `:var_name` has a value for all nodes in the mtg before calling this
+version of `pipe_model!`, unless `allow_missing=true`.
+
+- Nodes with untrusted values should be
 set to a value below the threshold value to make `pipe_model!` recompute them.
 """
 function pipe_model!(node, var_name, threshold_value; allow_missing = false)
@@ -98,8 +102,10 @@ function pipe_model!(node, var_name, threshold_value; allow_missing = false)
             cross_section_siblings = [i[var_name] for i in node_siblings]
             cross_section_siblings_no_nothing = filter(x -> x !== nothing, cross_section_siblings)
 
-            if length(cross_section_siblings_no_nothing)
+            if length(cross_section_siblings_no_nothing) > 0
                 sum_cross_section_siblings = sum(cross_section_siblings_no_nothing)
+            else
+                sum_cross_section_siblings = 0.0
             end
 
             nleaf_node = nleaves(node)
