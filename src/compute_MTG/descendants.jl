@@ -39,11 +39,13 @@ function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recu
 
             if keep
                 push!(val, unsafe_getindex(chnode, key))
+                 # Only decrement the recursivity level when the current node is not filtered-out
+                recursivity_level -= 1
             end
 
             # If we want to continue even if the current node is filtered-out
             if all || keep
-                descendants_(chnode, key, scale, symbol, link, all, filter_fun, val, recursivity_level - 1)
+                descendants_(chnode, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
             end
         end
     end
@@ -107,11 +109,13 @@ function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, rec
                 if keep
                     val_key = unsafe_getindex(chnode, key)
                     push!(val_i, val_key)
+                    # Only decrement the recursivity level when the current node is not filtered-out
+                    recursivity_level -= 1
                     # chnode[key_cache] = val_key
                 end
                 # If we want to continue even if the current node is filtered-out
                 if all || keep
-                    descendants_!(chnode, key, scale, symbol, link, all, filter_fun, val_i, recursivity_level - 1, key_cache)
+                    descendants_!(chnode, key, scale, symbol, link, all, filter_fun, val_i, recursivity_level, key_cache)
                 end
             end
             node[key_cache] = val_i

@@ -73,7 +73,6 @@ function ancestors(
 
     val = Array{type,1}()
     # Put the recursivity level into an array so it is mutable in-place:
-    level = [recursivity_level]
 
     if self
         keep = is_filtered(node, scale, symbol, link, filter_fun)
@@ -86,14 +85,14 @@ function ancestors(
         end
     end
 
-    ancestors_(node, key, scale, symbol, link, all, filter_fun, val, level)
+    ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
     return val
 end
 
 
 function ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
 
-    if !isroot(node) && recursivity_level[1] != 0
+    if !isroot(node) && recursivity_level != 0
         parent = node.parent
 
         # Is there any filter happening for the current node? (FALSE if filtered out):
@@ -101,11 +100,12 @@ function ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recurs
 
         if keep
             push!(val, unsafe_getindex(parent, key))
+            # Only decrement the recursivity level when the current node is not filtered-out
+            recursivity_level -= 1
         end
 
         # If we want to continue even if the current node is filtered-out
         if all || keep
-            recursivity_level[1] -= 1
             ancestors_(parent, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
         end
     end
