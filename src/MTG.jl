@@ -70,7 +70,7 @@ export get_features
 export get_classes
 export get_description
 export clean_cache!
-export topological_order
+export branching_order!
 export nleaves!, nleaves, nleaves_siblings!
 export pipe_model!
 export get_node
