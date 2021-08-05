@@ -66,7 +66,7 @@ To do before v1:
   - [x] `traverse!()` for a more julian way
   - [x] `delete_nodes!()` to delete nodes in the tree based on filters
   - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_name()` for naming them.
-  - [ ] Add possibility to mutate a node using an anonymous function, e.g. `@mutate_mtg!(mtg, x -> x*2)`
+  - [ ] Add possibility to mutate a node using an anonymous function, e.g. `@mutate_mtg!(mtg, x -> x*2)`. NB: there's `traverse()` for that.
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
 - [x] Make `Node` indexable for:

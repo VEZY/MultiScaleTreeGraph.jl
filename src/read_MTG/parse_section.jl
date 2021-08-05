@@ -47,6 +47,13 @@ function parse_section!(f, header, section, line, l;allow_empty = false)
     end
 
     l[1] = next_line!(f, line)
+
+    if length(l[1]) == 0
+        allow_empty && return
+        error("Data not found in MTG section `",section,"`. Did you put empty lines between the header",
+        " of the section and its header? If so, remove them before proceeding.")
+    end
+
     section_l = strip.(split(l[1], "\t"))
     classes = [section_l]
 
