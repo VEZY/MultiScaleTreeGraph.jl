@@ -41,7 +41,8 @@ end
 
 Same than `pipe_model!` but uses another variable as the reference down until a threshold
 value. This is used for example in the case of LiDAR measurements, where we know the
-cross-section is well measured down to *e.g.* 2-3cm of diameter, but should be computed below.
+cross-section (`:var_name`) is well measured down to *e.g.* 2-3cm of diameter, but should be
+computed below.
 
 This function allows to compute the cross-section using the pipe model **only** for some
 sub-trees with values of `:var_name <= threshold_value`.

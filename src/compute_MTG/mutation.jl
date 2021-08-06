@@ -48,9 +48,9 @@ macro mutate_mtg!(mtg, args...)
 
     expr = quote
         # Check the filters consistency with the mtg:
-        check_filters(mtg, scale = $(flt.scale), symbol = $(flt.symbol), link = $(flt.link))
+        check_filters($(mtg), scale = $(flt.scale), symbol = $(flt.symbol), link = $(flt.link))
         # Traverse the mtg:
-        traversed_mtg = $(kwargs[:traversal])(mtg)
+        traversed_mtg = $(kwargs[:traversal])($(mtg))
         for i00000000 in traversed_mtg
             # NB: using i00000000 to avoid naming clash with variables when using rewrite_expr!(i,...)
             if is_filtered(i00000000, $(flt.scale), $(flt.symbol), $(flt.link), $(flt.filter_fun))
