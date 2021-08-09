@@ -16,6 +16,11 @@ function is_segment!(node)
         # We recognise them because they have only one child. Also we want to keep the very
         # first node even if it has only one child.
 
+        # If there is only one child but it is branching:
+        if node[1].MTG.link == "+"
+            return false
+        end
+
         # If it's a node that branches, set its unique child as the branching node instead:
         if node.MTG.link == "+"
             node_MTG = node[1].MTG
