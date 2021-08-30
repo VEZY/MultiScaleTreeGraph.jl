@@ -119,15 +119,7 @@ function unsafe_getindex(
     node::Node{M, T} where {M<:AbstractNodeMTG, T<: AbstractDict{Symbol, Any}},
     key::Symbol
     )
-    try
-        getindex(node.attributes,key)
-    catch err
-        if typeof(err) == KeyError
-            nothing
-        else
-            error(err.msg)
-        end
-    end
+    get(node.attributes, key, nothing)
 end
 
 function unsafe_getindex(node::Node{M, T} where {M<:AbstractNodeMTG, T<: AbstractDict{Symbol, Any}}, key)
