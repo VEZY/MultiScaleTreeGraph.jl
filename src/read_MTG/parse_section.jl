@@ -64,8 +64,10 @@ function parse_section!(f, header, section, line, l;allow_empty = false)
     while (length(section_l) == length(header)) && !issection(l[1]) && !eof(f)
         l[1] = next_line!(f, line)
 
-        # Break if empty line:
-        (length(l[1]) == 0) && break
+        # Read next line if the line is empty:
+        if length(l[1]) == 0
+            continue
+        end
 
         # Break if line is a new section
         issection(l[1]) && break

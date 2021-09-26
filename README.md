@@ -45,13 +45,13 @@ And then write the mtg back to disk:
 write_mtg("test.mtg",mtg)
 ```
 
-You can also transform it into a DataFrame as follows:
+You can also transform it into a DataFrame like so:
 
 ```julia
 DataFrame(mtg, [:length_mm, :XX])
 ```
 
-You can learn more about MTG.jl in the documentation.
+You can learn more about MTG.jl in the [documentation of the package](https://vezy.github.io/MTG.jl/dev/).
 
 ## 3. Roadmap
 
@@ -67,6 +67,7 @@ To do before v1:
   - [x] `delete_nodes!()` to delete nodes in the tree based on filters
   - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_name()` for naming them.
   - [ ] Add possibility to mutate a node using an anonymous function, e.g. `@mutate_mtg!(mtg, x -> x*2)`. NB: there's `traverse()` for that.
+  - [ ] Use DataFrame-like API? -> add select, transform, filter, names (return feature names), and use the different notations: :x => sqrt, or :x => (x -> x^2) => :x2, or :x => (x->x^2)
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
 - [x] Make `Node` indexable for:
@@ -90,11 +91,13 @@ To do before v1:
     - [ ]  min/max scale
     - [ ]  nb nodes in total / for a given scale
 - [ ] Add documentation
+  - [ ] Add tutorial
+  - [ ] Add documentation on helper functions, e.g. get_features, get_node...
 - [x] Add tests
   - [x] Add test on the row at which the columns are declared (at ENTITY-CODE!)
   - [x] Add test when there's a missing link at a given line
-  - [ ] Add test for when the scale of the element is not found in the classes (see line 59 and 141 of parse_mtg.jl, i.e. `classes.SCALE[node_element[2] .== classes.SYMBOL][1]`
-  - [ ] Add test in parse_section! for empty lines in section (such as a while loop to ignore it).
+  - [x] Add test for when the scale of the element is not found in the classes (see line 59 and 141 of parse_mtg.jl, i.e. `classes.SCALE[node_element[2] .== classes.SYMBOL][1]`
+  - [x] Add test in parse_section! for empty lines in section (such as a while loop to ignore it).
 
 ## 4. Acknowledgments
 
