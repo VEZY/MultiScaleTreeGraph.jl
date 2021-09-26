@@ -114,7 +114,7 @@ function parse_mtg_file(f, attr_type, mtg_type)
             if description !== nothing
                 description.RIGHT = split.(description.RIGHT, ",")
                 if !all([i in description.RELTYPE for i in ("+", "<")])
-                    error("Unknown relation type(s) in DESCRITPION section: ",
+                    error("Unknown relation type(s) in DESCRIPTION section: ",
                                 join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+<")) .== 0]), ", "))
                 end
             end

@@ -33,6 +33,7 @@ close(f)
 ```
 """
 function parse_section!(f, header, section, line, l;allow_empty = false)
+
     l[1] = next_line!(f, line)
 
     if length(l[1]) == 0
@@ -54,14 +55,20 @@ function parse_section!(f, header, section, line, l;allow_empty = false)
         " of the section and its header? If so, remove them before proceeding.")
     end
 
+    # Return if the line is a new section
+    issection(l[1]) && return
+
     section_l = strip.(split(l[1], "\t"))
     classes = [section_l]
 
-    while (length(section_l) == length(header)) & !issection(l[1]) & !eof(f)
+    while (length(section_l) == length(header)) && !issection(l[1]) && !eof(f)
         l[1] = next_line!(f, line)
 
         # Break if empty line:
         (length(l[1]) == 0) && break
+
+        # Break if line is a new section
+        issection(l[1]) && break
 
         section_l = strip.(split(l[1], "\t"))
         append!(classes, [section_l])
