@@ -65,7 +65,17 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
         symbol = "\$"
     end
 
-    scale = classes.SCALE[symbol .== classes.SYMBOL][1]
+    symbol_in_classes = symbol .== classes.SYMBOL
+    if !any(symbol_in_classes)
+        error(
+            "The symbol of node `$(node_1_node[1])` defined at line ",
+            line[1],
+            " is not declared on the CLASSES section, ",
+            "please define it first."
+        )
+    end
+
+    scale = classes.SCALE[symbol_in_classes][1]
     attrs = parse_MTG_node_attr(splitted_MTG, attr_type, features, attr_column_start, line)
 
     root_node = Node("node_1", mtg_type(link, symbol, index, scale), attrs)
@@ -93,11 +103,15 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
             node_data = splitted_MTG[node_column:end]
 
             if attr_column_start < node_column
-                error("Error in MTG at line ",line,": Found an MTG node declared at column ",
-                node_column,", but attributes are declared to start at column ",
-                attr_column_start," in the ENTITY-CODE row. \nYou can probably fix the issue by adding",
-                " some tabs after ENTITY-CODE (try to add ",
-                node_column - attr_column_start + 1," tabs).")
+                error(
+                    "Error in MTG at line ",
+                    line,
+                    ": Found an MTG node declared at column ",
+                    node_column,", but attributes are declared to start at column ",
+                    attr_column_start," in the ENTITY-CODE row. \nYou can probably fix the issue by adding",
+                    " some tabs after ENTITY-CODE (try to add ",
+                    node_column - attr_column_start + 1," tabs)."
+                )
             end
             node_attr_column_start = attr_column_start - node_column + 1
             node = split_MTG_elements(node_data[1])
@@ -118,8 +132,11 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 parent_column = last_node_column[node_column - 1]
 
                 if parent_column == 0
-                    error("Can't find the parent of Node defined at line ",line,
-                ". You may check the number of leading tabs.")
+                    error(
+                        "Can't find the parent of Node defined at line ",
+                        line,
+                        ". You may check the number of leading tabs."
+                    )
                 end
             end
 
@@ -152,12 +169,25 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                     parent_node = join(["node_",node_id - 1])
                 end
 
+                symbol_in_classes = node_element[2] .== classes.SYMBOL
+
+                if !any(symbol_in_classes)
+                    error(
+                        "The symbol of node `$(node[k])` defined at line ",
+                        line[1],
+                        " is not declared on the CLASSES section, ",
+                        "please define it first."
+                    )
+                end
+
+                scale = classes.SCALE[symbol_in_classes][1]
+
                 # Instantiating the current node MTG (immutable):
                 childMTG = mtg_type(
                     node_element[1],
                     node_element[2],
                     node_element[3],
-                    classes.SCALE[node_element[2] .== classes.SYMBOL][1]
+                    scale
                 )
 
                 # Instantiating the current node (mutable):
@@ -175,8 +205,11 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 node_id = node_id + 1
             end
         end
-    catch
-        error("Error at line $line. Couldn't catch the origin of the error though.")
+    catch e
+        error(
+            "Error at line $line: ",
+            e.msg
+        )
     end
     root_node
 end
