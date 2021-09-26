@@ -107,14 +107,14 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
             node_attr = parse_MTG_node_attr(node_data, attr_type, features, node_attr_column_start, line)
 
             if node[1] == "^"
-            # The parent node is the last one built on the same column
+                # The parent node is the last one built on the same column
                 parent_column = last_node_column[node_column]
                 if parent_column == 0
                     error("Node defined at line ",line,
                 " uses the '<' notation but is the first on its column.")
                 end
             else
-            # The parent node is the last one built on column - 1.
+                # The parent node is the last one built on column - 1.
                 parent_column = last_node_column[node_column - 1]
 
                 if parent_column == 0
@@ -129,6 +129,16 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 node_element = parse_MTG_node(node[k])
                 # NB: if several nodes are declared on the same line, the attributes are defined
                 # for the last node only, unless "<.<" or "+.+" are used
+
+                # Return an error if the link is not a proper one:
+                if node_element[1] ∉ ("/", "<", "+")
+                    error(
+                        "Node `$(node[k])` defined at line ",
+                        line[1],
+                        " does not have a proper link (i.e. `/`, `<`, `+`), ",
+                        "please define one."
+                    )
+                end
 
                 if k == length(node) || findfirst(x -> x == k, shared) !== nothing
                     node_k_attr = node_attr
@@ -194,7 +204,7 @@ function parse_MTG_node(l)
 
     link = string(l[1:1])
 
-# Match the index at the end of the string:
+    # Match the index at the end of the string:
     stringmatch = match(r"[^[:alpha:]]+$", l[2:end])
     if stringmatch === nothing
         symbol = l[2:end]
@@ -203,7 +213,7 @@ function parse_MTG_node(l)
         symbol = l[2:stringmatch.offset]
         index = parse(Int, stringmatch.match)
     end
-# Use the index at which the MTG index was found to retreive the MTG symbol:
+    # Use the index at which the MTG index was found to retreive the MTG symbol:
     (link, symbol, index)
 end
 

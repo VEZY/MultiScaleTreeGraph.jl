@@ -92,7 +92,7 @@ To do before v1:
 - [ ] Add documentation
 - [x] Add tests
   - [x] Add test on the row at which the columns are declared (at ENTITY-CODE!)
-  - [ ] Add test when there's a missing link at a given line
+  - [x] Add test when there's a missing link at a given line
   - [ ] Add test for when the scale of the element is not found in the classes (see line 59 and 141 of parse_mtg.jl, i.e. `classes.SCALE[node_element[2] .== classes.SYMBOL][1]`
   - [ ] Add test in parse_section! for empty lines in section (such as a while loop to ignore it).
 
