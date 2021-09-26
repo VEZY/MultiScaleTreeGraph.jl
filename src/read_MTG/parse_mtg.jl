@@ -33,6 +33,15 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     end
 
     columns = strip.(l_header[l_header .!= ""][2:end]) # Remove leading and trailing whitespaces
+
+    if length(columns) != length(features.NAME)
+        error(
+            "Number of attributes in the ENTITY-CODE ($(length(columns))) is different than",
+            " declared in the FEATURES section ($(length(features.NAME))).",
+            " Please check that all columns names are declared in the ENTITY-CODE line (l.$(line[1]))"
+        )
+    end
+
     common_features = [i in features.NAME for i in columns]
 
     if !all(common_features)
