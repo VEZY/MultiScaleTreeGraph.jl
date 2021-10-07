@@ -75,7 +75,7 @@ function traverse_(node::Node, f::Function, val, args...)
 
     if !isleaf(node)
         for chnode in ordered_children(node)
-            traverse_(chnode, f, args...)
+            traverse_(chnode, f, val, args...)
         end
     end
 end
