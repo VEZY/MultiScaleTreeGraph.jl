@@ -67,7 +67,11 @@ To do before v1:
   - [x] `delete_nodes!()` to delete nodes in the tree based on filters
   - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_name()` for naming them.
   - [ ] Add possibility to mutate a node using an anonymous function, e.g. `@mutate_mtg!(mtg, x -> x*2)`. NB: there's `traverse()` for that.
-  - [ ] Use DataFrame-like API? -> add select, transform, filter, names (return feature names), and use the different notations: :x => sqrt, or :x => (x -> x^2) => :x2, or :x => (x->x^2)
+  - [ ] Use DataFrame-like API?
+    - [ ] select!
+    - [x] transform!
+    - [ ] filter!
+    - [ ] names (return feature names)
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
 - [x] Make `Node` indexable for:
