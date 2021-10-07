@@ -8,6 +8,8 @@ using OrderedCollections
 import XLSX:readxlsx,sheetnames
 import SHA.sha1 # for naming the cache variable
 import Base.setindex!
+import DataFrames.transform! # We define our own version for transforming the MTG
+import DataFrames.rename! # We define our own version for renaming node attributes
 
 include("read_MTG/NodeMTG.jl")
 include("read_MTG/read_MTG.jl")
@@ -24,6 +26,7 @@ include("compute_MTG/check_filters.jl")
 include("compute_MTG/mutation.jl")
 include("compute_MTG/append_attributes.jl")
 include("compute_MTG/traverse.jl")
+include("compute_MTG/transform.jl")
 include("compute_MTG/delete_nodes.jl")
 include("compute_MTG/filter/filter-funs.jl")
 include("write_mtg/update_sections.jl")
@@ -42,6 +45,7 @@ export children
 export addchild!
 export traverse!
 export traverse
+export transform!
 export getroot
 export nextsibling
 export print

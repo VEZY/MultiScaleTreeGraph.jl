@@ -75,9 +75,7 @@ function ancestors(
     # Put the recursivity level into an array so it is mutable in-place:
 
     if self
-        keep = is_filtered(node, scale, symbol, link, filter_fun)
-
-        if keep
+        if is_filtered(node, scale, symbol, link, filter_fun)
             push!(val, unsafe_getindex(node, key))
         elseif !all
             # We don't keep the value and we have to stop at the first filtered-out value

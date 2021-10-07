@@ -47,3 +47,20 @@ function Base.pop!(node::Node{<: AbstractNodeMTG,<:AbstractDict}, key)
 
     return nothing
 end
+
+# Renaming attributes:
+function rename!(node::Node{M,T}, old_new) where {M <: AbstractNodeMTG,T <: MutableNamedTuple}
+    attr_keys = replace([i for i in keys(node.attributes)], old_new)
+    node.attributes = MutableNamedTuple{attr_keys}(values(node.attributes))
+end
+
+function rename!(node::Node{M,T}, old_new) where {M <: AbstractNodeMTG,T <: NamedTuple}
+    attr_keys = replace([i for i in keys(node.attributes)], old_new)
+    node.attributes = NamedTuple{attr_keys}(values(node.attributes))
+end
+
+function rename!(node::Node{<: AbstractNodeMTG,<:AbstractDict}, old_new)
+    replace!(node.attributes) do kv
+        first(kv) == first(old_new) ? last(old_new) => last(kv) : kv
+    end
+end
