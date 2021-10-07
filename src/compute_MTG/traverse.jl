@@ -25,6 +25,13 @@ mtg = read_mtg(file)
 traverse!(mtg, x -> isleaf(x) ? println(x.name," is a leaf") : nothing)
 node_5 is a leaf
 node_7 is a leaf
+
+# We can also use the `do...end` block notation when we have a complex set of instructions:
+traverse!(mtg) do x
+    if isleaf(x)
+         println(x.name," is a leaf")
+    end
+end
 ```
 """
 function traverse!(node::Node, f::Function, args...)
@@ -42,7 +49,6 @@ function traverse!(node::Node, f::Function, args...)
     end
 end
 
-
 function traverse!(node::Node, f::Function)
 
     f(node)
@@ -54,6 +60,7 @@ function traverse!(node::Node, f::Function)
     end
 end
 
+# Non-mutating version:
 # Set-up array of value and call the workhorse (traverse_)
 function traverse(node::Node, f::Function, args...)
     val = []
@@ -89,4 +96,23 @@ function traverse_(node::Node, f::Function, val)
             traverse_(chnode, f, val)
         end
     end
+end
+
+
+# Used for the do...end block notation
+function traverse!(f::Function, node::Node, args...)
+    traverse!(node, f, args...)
+end
+# Same here but without arguments
+function traverse!(f::Function, node::Node)
+    traverse!(node, f)
+end
+
+# And with the non-mutating version:
+function traverse(f::Function, node::Node, args...)
+    traverse(node, f, args...)
+end
+# Same here but without arguments
+function traverse(f::Function, node::Node)
+    traverse(node, f)
 end
