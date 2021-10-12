@@ -39,17 +39,37 @@ Then you can compute new variables in the MTG like so:
 @mutate!(mtg, length_mm = node.Length * 100.)
 ```
 
-And then write the mtg back to disk:
+Or using the more `DataFrame.jl` way:
+
+```julia
+transform!(mtg, :Length => (x -> x * 100.) => :length_mm)
+```
+
+And then write the MTG back to disk:
 
 ```julia
 write_mtg("test.mtg",mtg)
 ```
 
-You can also transform it into a DataFrame like so:
+You can also transform it into a DataFrame like so, while selecting the variables you want:
 
 ```julia
 DataFrame(mtg, [:length_mm, :XX])
 ```
+
+Or convert it to a [MetaGraph](https://juliagraphs.org/MetaGraphsNext.jl/dev/):
+
+```julia
+MetaGraph(mtg)
+```
+
+Finally, we can plot the MTG using `GraphPlot`:
+
+```julia
+using GraphPlot
+
+```
+
 
 You can learn more about MTG.jl in the [documentation of the package](https://vezy.github.io/MTG.jl/dev/).
 

@@ -27,7 +27,6 @@ function Base.append!(node::Node{<: AbstractNodeMTG,<:AbstractDict}, attr)
 end
 
 
-
 function Base.pop!(node::Node{M,T}, key) where {M <: AbstractNodeMTG,T <: MutableNamedTuple}
     attr_keys = keys(node.attributes)
     i_drop = findfirst(x -> x == key, attr_keys)

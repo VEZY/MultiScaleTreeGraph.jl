@@ -10,6 +10,8 @@ import SHA.sha1 # for naming the cache variable
 import Base.setindex!
 import DataFrames.transform! # We define our own version for transforming the MTG
 import DataFrames.rename! # We define our own version for renaming node attributes
+import MetaGraphsNext:MetaGraph,code_for,add_edge! # Transform to MetaGraph
+import LightGraphs.DiGraph
 
 include("read_MTG/NodeMTG.jl")
 include("read_MTG/read_MTG.jl")
@@ -33,10 +35,11 @@ include("write_mtg/update_sections.jl")
 include("write_mtg/write_mtg.jl")
 include("compute_MTG/insert_nodes.jl")
 include("compute_MTG/mutation_helpers.jl")
-include("compute_MTG/DataFrame.jl")
 include("compute_MTG/nleaves.jl")
 include("compute_MTG/pipe_model.jl")
 include("compute_MTG/get_node.jl")
+include("conversion/DataFrame.jl")
+include("conversion/MetaGraph.jl")
 
 export read_mtg
 export isleaf
@@ -52,6 +55,7 @@ export print
 export show
 export length
 export DataFrame
+export MetaGraph
 export iterate
 export siblings
 export append!
