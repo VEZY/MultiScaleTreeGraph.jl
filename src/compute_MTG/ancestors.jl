@@ -23,6 +23,7 @@ is filtered out (`false`).
 *E.g.* to get the parent only: `recursivity_level = 1`, for parent + grand-parent:
 `recursivity_level = 2`. If a negative value is provided (the default), the function returns
 all valid values from the node to the root.
+- `ignore_nothing = false`: ignore nothing values
 - `type::Union{Union,DataType}`: The type of the attribute. Makes the function run much
 faster if provided (≈4x faster).
 
@@ -66,6 +67,7 @@ function ancestors(
     self = false,
     filter_fun = nothing,
     recursivity_level = -1,
+    ignore_nothing = false,
     type::Union{Union,DataType} = Any)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
@@ -76,19 +78,22 @@ function ancestors(
 
     if self
         if is_filtered(node, scale, symbol, link, filter_fun)
-            push!(val, unsafe_getindex(node, key))
+            val_ = unsafe_getindex(node, key)
+            if val_ !== nothing || !ignore_nothing
+                push!(val, val_)
+            end
         elseif !all
             # We don't keep the value and we have to stop at the first filtered-out value
             return val
         end
     end
 
-    ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
+    ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, ignore_nothing)
     return val
 end
 
 
-function ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
+function ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, ignore_nothing)
 
     if !isroot(node) && recursivity_level != 0
         parent = node.parent
@@ -97,14 +102,17 @@ function ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recurs
         keep = is_filtered(parent, scale, symbol, link, filter_fun)
 
         if keep
-            push!(val, unsafe_getindex(parent, key))
+            val_ = unsafe_getindex(parent, key)
+            if val_ !== nothing || !ignore_nothing
+                push!(val, val_)
+            end
             # Only decrement the recursivity level when the current node is not filtered-out
             recursivity_level -= 1
         end
 
         # If we want to continue even if the current node is filtered-out
         if all || keep
-            ancestors_(parent, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
+            ancestors_(parent, key, scale, symbol, link, all, filter_fun, val, recursivity_level, ignore_nothing)
         end
     end
 end
