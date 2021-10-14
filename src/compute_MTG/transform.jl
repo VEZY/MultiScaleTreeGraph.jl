@@ -20,15 +20,26 @@ Nothing, mutates the (sub-)tree in-place.
 
 # Details
 
-The interface of the function is inspired from the one used in [`DataFrames.jl`](https://dataframes.juliadata.org/stable/).
+The interface of the function is inspired from the one used in
+[`DataFrames.jl`](https://dataframes.juliadata.org/stable/), but adapted to an MTG.
 
-The `args...` provided can be of the two following forms:
+The `args...` provided can be of the following forms:
 
-1. a `cols => function` pair. The cols are declared as a Symbol or a String (or a vector of),
-and they are passed as positional arguments to the function. This form automatically
-generates the new column name by concatenating the source column name(s) and the function name
-if any.
-1. a cols => function => target_col form explicitly specifying the name of teh target column.
+1. a `:var_name => :new_var_name` pair. This form is used to rename an attribute name
+1. a `:var_name => function` or `[:var_name1, :var_name2] => function` pair. The variables
+are declared as a Symbol or a String (or a vector of), and they are passed as positional
+arguments to the function. This form automatically generates the new column name by
+concatenating the source column name(s) and the function name if any.
+1. a `:var_name => function => :new_var_name` form that does the same as the previous form
+but explicitly naming the resulting variable.
+1. a `function => :new_var_name` form that applies a function to a node and puts the results
+in a new attribute. This form is usually applied when searching ancestors or descendants values.
+1. a `function` form that applies a mutating function to a node, without expecting any output.
+This form is adapted when using a function that already mutates the node, without the need to
+return anything, *e.g.* [`branching_order!`](@ref).
+
+Carefull to the form you use! Form 2 and 3 expect a function that uses one or more node
+attributes (== variables) as inputs, while form 4 and 5 expect a function that uses a node.
 
 # Examples
 
@@ -91,13 +102,29 @@ transform!(
 )
 DataFrame(mtg, [:vol, :biomass])
 
-# Finally, we can also rename a variable like so:
+# We can also rename a variable like so:
 transform!(
     mtg,
     :biomass => :mass,
     filter_fun = x -> x[:Length] !== nothing && x[:Width] !== nothing
 )
 DataFrame(mtg, [:vol, :mass])
+
+# Finnaly, we can use variables from ancestors/descendants using the `function => :new_var` form:
+function get_mass_descendants(x)
+    masses = descendants(x, :mass, filter_fun = x -> x[:mass] !== nothing)
+    if length(masses) == 0
+        nothing
+    else
+        sum(masses)
+    end
+end
+
+transform!(
+    mtg,
+    get_mass_descendants => :mass_beared
+)
+DataFrame(mtg, [:mass, :mass_beared])
 ```
 """
 function transform!(
@@ -115,12 +142,20 @@ function transform!(
         if nc isa Base.Callable
             # If we provide just a function, it is applied to the node directly, so it must handle
             # a node as the first argument.
+            # ?NOTE: Here the function takes a node as input
             fun_ = nc
-        elseif last(nc) isa Symbol
-            # Name => new name form, i.e. :x => :y. We just rename the column
+        elseif first(nc) isa Symbol && last(nc) isa Symbol
+            # `Name => new name` form, i.e. :x => :y.
+            # ?NOTE: Here we just rename an attribute
             fun_ = x -> rename!(x, nc)
+        elseif first(nc) isa Base.Callable && last(nc) isa Symbol
+            # `function => new name` form, i.e. `node -> sum(descendants(node, :var)) => :newvar`.
+            # ?NOTE: Here the function takes a node as input
+            fun, newname = nc
+            fun_ = x -> x[newname] = fun(x)
         elseif last(nc) isa Pair
-            # Name => function => new name form, i.e. :x => sqrt => :x_sq
+            # `Name => function => new name` form, i.e. :x => sqrt => :x_sq
+            # ?NOTE: Here the function takes one or more attributes as input
             col_idx, (fun, newname) = nc
 
             if !isa(col_idx, Vector)
@@ -129,7 +164,8 @@ function transform!(
 
             fun_ = x -> x[newname] = fun([x[i] for i in col_idx]...)
         else
-            # Name => function form, i.e. :x => sqrt
+            # `Name => function` form, i.e. :x => sqrt
+            # ?NOTE: Here the function takes one or more attributes as input
             col_idx, fun = nc
             if !isa(col_idx, Vector)
                 col_idx = [col_idx]
