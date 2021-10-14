@@ -12,6 +12,8 @@ import DataFrames.transform! # We define our own version for transforming the MT
 import DataFrames.rename! # We define our own version for renaming node attributes
 import MetaGraphsNext:MetaGraph,code_for,add_edge! # Transform to MetaGraph
 import LightGraphs.DiGraph
+using RecipesBase # For plotting with Plots.jl backends
+import DataFrames.transform!
 
 include("read_MTG/NodeMTG.jl")
 include("read_MTG/read_MTG.jl")
@@ -40,6 +42,8 @@ include("compute_MTG/pipe_model.jl")
 include("compute_MTG/get_node.jl")
 include("conversion/DataFrame.jl")
 include("conversion/MetaGraph.jl")
+include("plot_MTG/coordinates.jl")
+include("plot_MTG/plot.jl")
 
 export read_mtg
 export isleaf

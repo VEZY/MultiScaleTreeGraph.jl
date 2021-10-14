@@ -63,13 +63,15 @@ Or convert it to a [MetaGraph](https://juliagraphs.org/MetaGraphsNext.jl/dev/):
 MetaGraph(mtg)
 ```
 
-Finally, we can plot the MTG using `GraphPlot`:
+Finally, we can plot the MTG using any backends from `Plots`, *e.g.* Plotly:
 
 ```julia
-using GraphPlot
+using Plots
+# import Pkg; Pkg.add("PlotlyJS")
+plotlyjs()
 
+plot(mtg)
 ```
-
 
 You can learn more about MTG.jl in the [documentation of the package](https://vezy.github.io/MTG.jl/dev/).
 
@@ -105,7 +107,7 @@ To do before v1:
   - [x] Tree printing
   - [x] Link + symbol + unique ID
   - [ ] Color for scales
-- [ ] Functions to plot the MTG
+- [x] Functions to plot the MTG
 - [ ] Easy handling of the scales in:
   - [x]  tree traversal
   - [ ]  Printing
