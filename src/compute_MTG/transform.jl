@@ -112,7 +112,7 @@ DataFrame(mtg, [:vol, :mass])
 
 # Finnaly, we can use variables from ancestors/descendants using the `function => :new_var` form:
 function get_mass_descendants(x)
-    masses = descendants(x, :mass, filter_fun = x -> x[:mass] !== nothing)
+    masses = descendants(x, :mass, ignore_nothing = true)
     if length(masses) == 0
         nothing
     else

@@ -7,7 +7,7 @@ function descendants(
     self = false,
     filter_fun = nothing,
     recursivity_level = -1,
-    ignore_nothing = false,
+    ignore_nothing::Bool = false,
     type::Union{Union,DataType} = Any)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
@@ -46,7 +46,6 @@ function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recu
                 if val_ !== nothing || !ignore_nothing
                     push!(val, val_)
                 end
-                push!(val, val_)
                  # Only decrement the recursivity level when the current node is not filtered-out
                 recursivity_level -= 1
             end
