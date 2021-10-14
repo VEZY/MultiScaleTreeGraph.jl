@@ -19,4 +19,5 @@ end
     include("test-mutation.jl")
     include("test-insert_node.jl")
     include("test-traverse.jl")
+    include("test-transform.jl")
 end
