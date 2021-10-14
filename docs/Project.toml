@@ -1,3 +1,4 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 MTG = "dd4a991b-8a45-4075-bede-262ee62d5583"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"

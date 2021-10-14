@@ -36,7 +36,7 @@ mtg = read_mtg(file);
 Then you can compute new variables in the MTG like so:
 
 ```julia
-@mutate!(mtg, length_mm = node.Length * 100.)
+@mutate_mtg!(mtg, length_mm = node.Length * 100.)
 ```
 
 Or using the more `DataFrame.jl` way:

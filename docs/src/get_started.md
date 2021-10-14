@@ -4,7 +4,7 @@ The Multi-Scale Tree Graph, or MTG, is a data structure used to encode a plant. 
 
 The format is described in details in the original paper from Godin et al. (1997).
 
-The MTG format helps describe the plant at different scales at the same time. For example we can describe a plant at the scale of the organ (e.g. leaf, internode), the scale of a growth unit, the scale of the axis, the crown or even just the plant.
+The MTG format helps describe the plant at different scales at the same time. For example we can describe a plant at the scale of the organ (e.g. leaf, internode), the scale of a growth unit, the scale of the axis, the crown or even at the whole plant.
 
 ## References
 

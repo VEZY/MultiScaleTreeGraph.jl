@@ -1,6 +1,6 @@
 using MTG
 using Documenter
-
+using Plots
 DocMeta.setdocmeta!(MTG, :DocTestSetup, :(using MTG); recursive = true)
 
 makedocs(;

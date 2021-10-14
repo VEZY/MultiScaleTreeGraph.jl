@@ -27,6 +27,8 @@ the symbol of the node, and its index.
 NodeMTG("<", "Leaf", 2, 0)
 ```
 """
+NodeMTG,MutableNodeMTG
+
 struct NodeMTG <: AbstractNodeMTG
     link::String
     symbol::Union{String,SubString,Char}
