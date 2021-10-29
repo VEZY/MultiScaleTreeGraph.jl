@@ -3,6 +3,7 @@ using MTG
 using DataFrames
 using MutableNamedTuples
 using RecipesBase
+using Plots # Add this dependency because else the tests on plot recip return an error (I don't know why)
 
 @testset "read_mtg" begin
     include("test-read_mtg.jl")
