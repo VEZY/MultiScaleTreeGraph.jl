@@ -19,6 +19,7 @@ XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
 [compat]
 AbstractTrees = "0.3"
 DataFrames = "0.21, 0.22, 1.1"
+Graphs = "1"
 MetaGraphsNext = "0.1"
 MutableNamedTuples = "0.1"
 OrderedCollections = "1.4"
