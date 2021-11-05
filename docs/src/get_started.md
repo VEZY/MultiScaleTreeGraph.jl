@@ -77,5 +77,3 @@ savefig("mtgplot3d.html"); nothing # hide
 ```@raw html
 <object type="text/html" data="mtgplot.html" style="width:100%;height:2100px;"></object>
 ```
-
-You can learn more about MTG.jl in the next pages.
