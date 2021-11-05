@@ -27,3 +27,7 @@ end
 @testset "plot recipes" begin
     include("test-plot-recipe.jl")
 end
+
+@testset "conversion" begin
+    include("test-conversion.jl")
+end
