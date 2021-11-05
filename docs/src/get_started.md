@@ -71,9 +71,9 @@ savefig("mtgplot3d.html"); nothing # hide
 ```
 
 ```@raw html
-<object type="text/html" data="mtgplot3d.html" style="width:100%;height:2100px;"></object>
+<object type="text/html" data="../mtgplot3d.html" style="width:100%;height:2100px;"></object>
 ```
 
 ```@raw html
-<object type="text/html" data="mtgplot.html" style="width:100%;height:2100px;"></object>
+<object type="text/html" data="../mtgplot.html" style="width:100%;height:2100px;"></object>
 ```
