@@ -211,7 +211,7 @@ only. See examples for more details.
 
 ```julia
 # Importing the mtg from the github repo:
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 descendants(mtg, :Length) # Short to write, but slower to execute
@@ -247,11 +247,11 @@ end
 
 @mutate_mtg!(mtg, subtree_length = compute_subtree_length(node), symbol = "Internode")
 
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 @mutate_mtg!(mtg, subtree_length = compute_subtree_length!(node))
 
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 compute_subtree_length!(mtg)
 DataFrame(mtg, [:Length, :_cache_9011cfa452383c48086b78014718eeebab7b12b9])
@@ -262,7 +262,7 @@ mtg[1][1][1].attributes
 mtg[1][1][1][2].attributes
 DataFrame(mtg, [:Length, :subtree_length])
 
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 node = mtg
 key = :Length

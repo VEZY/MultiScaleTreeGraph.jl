@@ -21,7 +21,7 @@ instead of all. In this case the missing ones are recomputed using [`get_classes
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 write_mtg("test.mtg",mtg)
 ```
@@ -97,9 +97,9 @@ end
 function paste_node_mtg(mtg, features)
     @mutate_mtg!(
         mtg,
-        lead = MTG.get_leading_tabs(node),
-        mtg_print = MTG.paste_mtg_node(node),
-        mtg_refer = MTG.get_reference(node)
+        lead = MultiScaleTreeGraph.get_leading_tabs(node),
+        mtg_print = MultiScaleTreeGraph.paste_mtg_node(node),
+        mtg_refer = MultiScaleTreeGraph.get_reference(node)
     )
 
     attributes = Dict_attrs(mtg, ["mtg_print",features.NAME...,"lead","mtg_refer"])

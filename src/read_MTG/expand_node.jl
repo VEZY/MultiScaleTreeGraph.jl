@@ -19,7 +19,7 @@ A Tuple of:
 
 ```julia
 x = split("/A1+U85/U86<U87<.<U93<U94<.<U96<U97+.+U100",r"(?<=.)(?=[</+])");
-nodes, shared = MTG.expand_node!(x,1)
+nodes, shared = MultiScaleTreeGraph.expand_node!(x,1)
 (AbstractString["/A1", "+U85", "/U86", "<U87", "<U88", "<U89", "<U90", "<U91", "<U92", "<U93", "<U94", "<U95", "<U96", "<U97", "+U98", "+U99", "+U100"], Any[87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100])
 ```
 """

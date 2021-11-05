@@ -493,7 +493,7 @@ version = "0.3.3"
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
-[[MTG]]
+[[MultiScaleTreeGraph]]
 deps = ["AbstractTrees", "DataFrames", "DelimitedFiles", "Graphs", "MetaGraphsNext", "MutableNamedTuples", "OrderedCollections", "Printf", "RecipesBase", "SHA", "XLSX"]
 path = ".."
 uuid = "dd4a991b-8a45-4075-bede-262ee62d5583"

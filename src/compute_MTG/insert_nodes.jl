@@ -31,10 +31,10 @@ inserting nodes. So if you insert a branching node, the whole subtree will be br
 # Examples
 
 ```julia
-# Importing the mtg from the github repo:
-mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/A1B1.mtg"))
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","A1B1.mtg")
+mtg = read_mtg(file)
 
-mtg = insert_nodes!(mtg, MTG.MutableNodeMTG("/", "Shoot", 0, 1), scale = 2) # Will insert new nodes before all scale 2
+mtg = insert_nodes!(mtg, MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1), scale = 2) # Will insert new nodes before all scale 2
 mtg
 ```
 """
@@ -100,11 +100,11 @@ the name of the inserted node. It is incremented in the function.
 # Examples
 
 ```julia
-# Importing the mtg from the github repo:
-mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/A1B1.mtg"))
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","A1B1.mtg")
+mtg = read_mtg(file)
 
-template = MTG.MutableNodeMTG("/", "Shoot", 0, 1)
-max_id = parse(Int, MTG.max_name(mtg)[6:end])
+template = MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1)
+max_id = parse(Int, MultiScaleTreeGraph.max_name(mtg)[6:end])
 mtg = insert_node!(mtg[1][1], template, max_id)
 mtg
 ```

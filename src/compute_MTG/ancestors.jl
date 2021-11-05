@@ -37,7 +37,7 @@ only. See examples for more details.
 
 ```julia
 # Importing an example mtg from the package:
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 # Using a leaf node from the mtg:

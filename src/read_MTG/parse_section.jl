@@ -19,15 +19,15 @@ The parsed section of the MTG
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 f = open(file, "r")
-line = [0] ; l = [""]; l[1] = MTG.next_line!(f,line)
+line = [0] ; l = [""]; l[1] = MultiScaleTreeGraph.next_line!(f,line)
 
-while !MTG.issection(l[1]) || !MTG.issection(l[1],"CLASSES")
-    l[1] = MTG.next_line!(f,line)
+while MultiScaleTreeGraph.issection(l[1]) || MultiScaleTreeGraph.issection(l[1],"CLASSES")
+    l[1] = MultiScaleTreeGraph.next_line!(f,line)
 end
 
-classes = MTG.parse_section!(f,["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"],"CLASSES",line,l)
+classes = MultiScaleTreeGraph.parse_section!(f,["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"],"CLASSES",line,l)
 
 close(f)
 ```

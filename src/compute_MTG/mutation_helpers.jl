@@ -17,7 +17,7 @@ basipetal computation.
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 branching_order!(mtg)
 DataFrame(mtg, :branching_order)

@@ -11,7 +11,7 @@
     @test recipe[1].args == ([0.0, 0.0], [0.0, 0.1]) # coordinates of the two vertex for the edge
     @test recipe[6].args == ([0.0, 0.7071067811865474], [1.3, 2.0071067811865477]) # same, last one
 
-    df_coordinates = MTG.mtg_coordinates_df(mtg, force = true)
+    df_coordinates = MultiScaleTreeGraph.mtg_coordinates_df(mtg, force = true)
 
     @test recipe[7].args[1] == df_coordinates.XX
     @test recipe[7].plotattributes == Dict{Symbol,Any}(

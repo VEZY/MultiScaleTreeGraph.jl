@@ -38,14 +38,14 @@ The MTG data.
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 # Or using another `MutableNamedTuple` for the attributes to be able to add one if needed:
 mtg = read_mtg(file,Dict);
 
 # We can also read an mtg directly from an excel file from the field:
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","tree3h.xlsx")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","tree3h.xlsx")
 mtg = read_mtg(file)
 ```
 """

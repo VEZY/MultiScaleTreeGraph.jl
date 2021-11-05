@@ -2,18 +2,18 @@
 
 ## 1. Installation
 
-You can install the development version of MTG.jl from [GitHub](https://github.com/) using Pkg:
+You can install the development version of MultiScaleTreeGraph.jl from [GitHub](https://github.com/) using Pkg:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/VEZY/MTG.jl", rev="master")
+Pkg.add(url="https://github.com/VEZY/MultiScaleTreeGraph.jl", rev="master")
 ```
 
 ## 2. Example
 
 ```@setup usepkg
-using MTG
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+using MultiScaleTreeGraph
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 100.) => :length_mm)
 ```
@@ -21,9 +21,9 @@ transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 100.) => :length_m
 Read a simple MTG file:
 
 ```@example usepkg
-using MTG
+using MultiScaleTreeGraph
 
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 ```
 

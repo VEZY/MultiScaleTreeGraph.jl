@@ -1,24 +1,24 @@
-# MTG
+# MultiScaleTreeGraph
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://VEZY.github.io/MTG.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://VEZY.github.io/MTG.jl/dev)
-[![Build Status](https://github.com/VEZY/MTG.jl/workflows/CI/badge.svg)](https://github.com/VEZY/MTG.jl/actions)
-[![Coverage](https://codecov.io/gh/VEZY/MTG.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/VEZY/MTG.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://VEZY.github.io/MultiScaleTreeGraph.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://VEZY.github.io/MultiScaleTreeGraph.jl/dev)
+[![Build Status](https://github.com/VEZY/MultiScaleTreeGraph.jl/workflows/CI/badge.svg)](https://github.com/VEZY/MultiScaleTreeGraph.jl/actions)
+[![Coverage](https://codecov.io/gh/VEZY/MultiScaleTreeGraph.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/VEZY/MultiScaleTreeGraph.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
 
-The goal of MTG.jl is to read, write, analyse and plot MTG (Multi-scale Tree Graph) files. These files describe the plant topology (*i.e.* structure) along with some attributes for each node (*e.g.* geometry, colors, state...).
+The goal of MultiScaleTreeGraph.jl is to read, write, analyse and plot MTG (Multi-scale Tree Graph) files. These files describe the plant topology (*i.e.* structure) along with some attributes for each node (*e.g.* geometry, colors, state...).
 
 > The package is under intensive development and is in a very early version. The functions may heavily change from one version to another until a more stable version is released.
 
 ## 1. Installation
 
-You can install the development version of MTG.jl from [GitHub](https://github.com/) using Pkg:
+You can install the development version of MultiScaleTreeGraph.jl from [GitHub](https://github.com/) using Pkg:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/VEZY/MTG.jl", rev="master")
+Pkg.add(url="https://github.com/VEZY/MultiScaleTreeGraph.jl", rev="master")
 ```
 
 ## 2. Example
@@ -26,7 +26,7 @@ Pkg.add(url="https://github.com/VEZY/MTG.jl", rev="master")
 Read a simple MTG file:
 
 ```julia
-using MTG
+using MultiScaleTreeGraph
 
 file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
 
@@ -73,7 +73,7 @@ plotlyjs()
 plot(mtg)
 ```
 
-You can learn more about MTG.jl in the [documentation of the package](https://vezy.github.io/MTG.jl/dev/).
+You can learn more about MultiScaleTreeGraph.jl in the [documentation of the package](https://vezy.github.io/MultiScaleTreeGraph.jl/dev/).
 
 ## 3. Roadmap
 

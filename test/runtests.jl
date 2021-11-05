@@ -1,5 +1,5 @@
 using Test
-using MTG
+using MultiScaleTreeGraph
 using DataFrames
 using MutableNamedTuples
 using RecipesBase

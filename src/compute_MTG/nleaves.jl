@@ -14,7 +14,7 @@ variables.
 
 ```julia
 # Importing the mtg from the github repo:
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 nleaves!(mtg)

@@ -27,7 +27,7 @@ is filtered out (`false`).
 
 ```julia
 # Importing an mtg from the package:
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 # Compute a new attribute with the scales and add 2 to its values:
@@ -44,7 +44,7 @@ mtg = read_mtg(file)
 macro mutate_mtg!(mtg, args...)
     arguments = (args...,)
     # Get the value of the filters if any:
-    flt, kwargs, args = MTG.parse_macro_args(arguments)
+    flt, kwargs, args = MultiScaleTreeGraph.parse_macro_args(arguments)
 
     expr = quote
         # Check the filters consistency with the mtg:
@@ -85,7 +85,7 @@ Mutate a single node in place.
 
 ```julia
 # Importing an mtg from the package:
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 # Compute a new attribute with the scales and add 2 to its values:
@@ -120,17 +120,17 @@ an attribute.
 
 ```
 test = :(x = node.name)
-MTG.rewrite_expr!(:mtg,test)
+MultiScaleTreeGraph.rewrite_expr!(:mtg,test)
 test
 # :(mtg.attributes[:x] = mtg.name)
 
 test = :(x = node.foo)
-MTG.rewrite_expr!(:mtg,test)
+MultiScaleTreeGraph.rewrite_expr!(:mtg,test)
 test
 # :(mtg.attributes[:x] = mtg.attributes[:foo])
 
 test = :(x = node.MTG.symbol)
-MTG.rewrite_expr!(:mtg,test)
+MultiScaleTreeGraph.rewrite_expr!(:mtg,test)
 test
 # :(mtg.attributes[:x] = mtg.MTG.symbol)
 ```

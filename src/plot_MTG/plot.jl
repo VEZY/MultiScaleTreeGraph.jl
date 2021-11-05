@@ -1,14 +1,14 @@
-# using MTG
+# using MultiScaleTreeGraph
 # using Plots
 # using ColorSchemes
 # plotlyjs()
 
-# file = joinpath(dirname(dirname(pathof(MTG))), "test", "files", "simple_plant.mtg")
+# file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", "simple_plant.mtg")
 # mtg = read_mtg(file)
 # plot(mtg)
 @recipe function f(h::Node; mode = "2d")
     branching_order!(mtg)
-    df_coordinates = MTG.mtg_coordinates_df(mtg, force = true)
+    df_coordinates = MultiScaleTreeGraph.mtg_coordinates_df(mtg, force = true)
     df_coordinates[!,:branching_order] = descendants(mtg, :branching_order, self = true)
 
     x = df_coordinates.XX

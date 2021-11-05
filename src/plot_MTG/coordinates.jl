@@ -12,7 +12,7 @@ Nothing, mutates the mtg in-place (adds :XX, :YY and :ZZ to nodes).
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 coordinates!(mtg)
 DataFrame(mtg, [:XX, :YY, :ZZ])

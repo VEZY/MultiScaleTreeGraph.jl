@@ -13,7 +13,7 @@ Convert an MTG into a DataFrame.
 
 ```julia
 # Importing an mtg from the package:
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 DataFrame(mtg, :Length)

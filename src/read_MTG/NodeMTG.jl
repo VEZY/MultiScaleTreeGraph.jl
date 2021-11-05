@@ -193,14 +193,14 @@ Base.IteratorSize(::Type{Node{T,D}}) where {T,D} = Base.SizeUnknown()
 # Set the traits of this kind of tree
 AbstractTrees.parentlinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredParents()
 AbstractTrees.siblinglinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredSiblings()
-AbstractTrees.children(node::Node) = MTG.children(node)
+AbstractTrees.children(node::Node) = MultiScaleTreeGraph.children(node)
 AbstractTrees.nodetype(::Node) = Node
 
 Base.parent(node::Node) = isdefined(node, :parent) ? node.parent : nothing
 Base.parent(root::Node, node::Node) = isdefined(node, :parent) ? node.parent : nothing
 
 function AbstractTrees.nextsibling(tree::Node, child::Node)
-    MTG.nextsibling(child)
+    MultiScaleTreeGraph.nextsibling(child)
 end
 
 # We also need `pairs` to return something sensible.

@@ -43,7 +43,7 @@ end
 @testset "test mtg mutation" begin
     @test (mtg.name = "first_node") == "first_node"
     @test (mtg.attributes[:scales] .= [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
-    @test (mtg.MTG = MTG.NodeMTG("<", "Leaf", 2, 0)) == MTG.NodeMTG("<", "Leaf", 2, 0)
+    @test (mtg.MTG = MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)) == MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)
     @test (mtg[1].parent = nothing) === nothing
     node2 = mtg[1]
     @test (mtg.children = nothing) === nothing
@@ -57,7 +57,7 @@ end
     @test length(mtg) == 7
     @test typeof(mtg) == Node{NodeMTG,NamedTuple}
     @test mtg.name == "node_1"
-    @test mtg.MTG == MTG.NodeMTG("/", "\$", 0, 0)
+    @test mtg.MTG == MultiScaleTreeGraph.NodeMTG("/", "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
     @test mtg[1].name == "node_2"
     @test mtg[1].parent === mtg
@@ -67,11 +67,11 @@ end
 @testset "test mtg with Dict" begin
     mtg = read_mtg("files/simple_plant.mtg", Dict, NodeMTG);
     @test length(mtg) == 7
-    @test typeof(mtg) == Node{MTG.NodeMTG,Dict{Symbol,Any}}
+    @test typeof(mtg) == Node{MultiScaleTreeGraph.NodeMTG,Dict{Symbol,Any}}
     @test mtg.name == "node_1"
     @test mtg.attributes == Dict(:symbols => ["\$", "Individual", "Axis", "Internode", "Leaf"],
         :scales => [0, 1, 2, 3, 3], :description => mtg[:description])
-    @test mtg.MTG == MTG.NodeMTG("/", "\$", 0, 0)
+    @test mtg.MTG == MultiScaleTreeGraph.NodeMTG("/", "\$", 0, 0)
     @test typeof(mtg.children) == Dict{String,Node}
     @test mtg[1].name == "node_2"
     @test mtg[1].parent === mtg
@@ -82,7 +82,7 @@ end
     mtg = read_mtg("files/simple_plant.mtg", Dict, NodeMTG);
     @test (mtg.name = "first_node") == "first_node"
     @test (mtg.attributes[:scales] = [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
-@test (mtg.MTG = MTG.NodeMTG("<", "Leaf", 2, 0)) == MTG.NodeMTG("<", "Leaf", 2, 0)
+@test (mtg.MTG = MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)) == MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)
     @test (mtg[1].parent = nothing) === nothing
     node2 = mtg[1]
     @test (mtg.children = nothing) === nothing

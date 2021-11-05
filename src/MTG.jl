@@ -1,4 +1,4 @@
-module MTG
+module MultiScaleTreeGraph
 using AbstractTrees
 using Printf
 using DataFrames

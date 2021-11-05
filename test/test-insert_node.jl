@@ -2,10 +2,10 @@ mtg = read_mtg("files/simple_plant.mtg");
 
 @testset "test insert_node!" begin
 
-    template = MTG.MutableNodeMTG("/", "Shoot", 0, 1)
-    max_id = [parse(Int, MTG.max_name(mtg)[6:end])]
+    template = MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1)
+    max_id = [parse(Int, MultiScaleTreeGraph.max_name(mtg)[6:end])]
     length_before = length(mtg)
-    MTG.insert_node!(mtg[1][1], template, max_id)
+    MultiScaleTreeGraph.insert_node!(mtg[1][1], template, max_id)
 
     @test length(mtg) == length_before + 1
     @test mtg[1][1].MTG.link == template.link
@@ -18,9 +18,9 @@ end
 
 @testset "test insert_nodes!" begin
     mtg = read_mtg("files/simple_plant.mtg");
-    template = MTG.MutableNodeMTG("/", "Shoot", 0, 1)
+    template = MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1)
     length_before = length(mtg)
-    MTG.insert_nodes!(mtg, template, scale = 2)
+    MultiScaleTreeGraph.insert_nodes!(mtg, template, scale = 2)
 
     @test length(mtg) == length_before + 1
     @test mtg[1][1].MTG.link == template.link

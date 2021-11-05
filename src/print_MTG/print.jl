@@ -9,7 +9,7 @@ Most of the code from [DataTrees.jl](https://github.com/vh-d/DataTrees.jl/blob/m
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 mtg
 # / 1: \$

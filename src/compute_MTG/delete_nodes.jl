@@ -33,8 +33,8 @@ to match automatic reconstructions from e.g. LiDAR point cloud with manual measu
 # Examples
 
 ```julia
-# Importing the mtg from the github repo:
-mtg = read_mtg(download("https://raw.githubusercontent.com/VEZY/MTG.jl/master/test/files/A1B1.mtg"))
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","A1B1.mtg")
+mtg = read_mtg(file)
 
 delete_nodes!(mtg, scale = 2) # Will remove all nodes of scale 2
 
