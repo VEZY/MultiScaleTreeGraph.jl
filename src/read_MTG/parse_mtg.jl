@@ -26,7 +26,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
         error("No header was found for MTG section `MTG`. Did you put an empty line in-between ",
         "the section name and its header?")
     end
-    l_header = split(l[1], "\t")
+    l_header = strip.(split(l[1], "\t"))
 
     if l_header[1] != "ENTITY-CODE" && l_header[1] != "TOPO"
         error("Neither ENTITY-CODE or TOPO were found in the MTG header at line: ", line)

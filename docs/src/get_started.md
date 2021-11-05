@@ -1,13 +1,81 @@
 # Getting started
 
-The Multi-Scale Tree Graph, or MTG, is a data structure used to encode a plant. It was developed in the [AMAP lab](https://amap.cirad.fr/) in the 90's to cope with the need of a generic yet scalable structure for plant topology and traits measurement, analysis and modelling.
+## 1. Installation
 
-The format is described in details in the original paper from Godin et al. (1997).
+You can install the development version of MTG.jl from [GitHub](https://github.com/) using Pkg:
 
-The MTG format helps describe the plant at different scales at the same time. For example we can describe a plant at the scale of the organ (e.g. leaf, internode), the scale of a growth unit, the scale of the axis, the crown or even at the whole plant.
+```julia
+using Pkg
+Pkg.add(url="https://github.com/VEZY/MTG.jl", rev="master")
+```
 
-## References
+## 2. Example
 
-Godin, C., et Y. Caraglio. 1998. « A Multiscale Model of Plant Topological Structures ». Journal of Theoretical Biology 191 (1): 1‑46. https://doi.org/10.1006/jtbi.1997.0561.
+```@setup usepkg
+using MTG
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
+transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 100.) => :length_mm)
+```
 
-Plant svg original file from Kelvinsong — CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=27509689
+Read a simple MTG file:
+
+```@example usepkg
+using MTG
+
+file = joinpath(dirname(dirname(pathof(MTG))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
+```
+
+Then you can compute new variables in the MTG using [`transform!`](@ref):
+
+```@example usepkg
+transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 100.) => :length_mm)
+```
+
+The design of [`transform!`](@ref) is heavily inspired from the eponym function from [`DataFrame.jl`](https://dataframes.juliadata.org/stable/), with little tweaks for MTGs.
+
+If you prefer a more R-like design, you can use [`@mutate_mtg!`](@ref) instead:
+
+```@example usepkg
+@mutate_mtg!(mtg, length_mm = node.Length * 100., filter_fun = x -> !isnothing(x[:Length]))
+```
+
+Then you can write the MTG back to disk like so:
+
+```julia
+write_mtg("test.mtg",mtg)
+```
+
+You can also transform it into a DataFrame while selecting the variables you want:
+
+```@example usepkg
+DataFrame(mtg, [:length_mm, :XX])
+```
+
+Or convert it to a [MetaGraph](https://juliagraphs.org/MetaGraphsNext.jl/dev/):
+
+```@example usepkg
+MetaGraph(mtg)
+```
+
+Finally, we can plot the MTG using any backends from `Plots`, *e.g.* Plotly for the 3d:
+
+```@example usepkg
+using Plots
+# import Pkg; Pkg.add("PlotlyJS")
+plotlyjs()
+
+plot(mtg, mode = "3d") # use mode = "2d" for a 2d plot
+savefig("mtgplot3d.html"); nothing # hide
+```
+
+```@raw html
+<object type="text/html" data="mtgplot3d.html" style="width:100%;height:2100px;"></object>
+```
+
+```@raw html
+<object type="text/html" data="mtgplot.html" style="width:100%;height:2100px;"></object>
+```
+
+You can learn more about MTG.jl in the next pages.
