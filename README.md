@@ -14,7 +14,13 @@ The goal of MultiScaleTreeGraph.jl is to read, write, analyse and plot MTG (Mult
 
 ## 1. Installation
 
-You can install the development version of MultiScaleTreeGraph.jl from [GitHub](https://github.com/) using Pkg:
+You can install the latest stable version of MultiScaleTreeGraph.jl using this command:
+
+```julia
+] add MultiScaleTreeGraph
+```
+
+Or if you prefer the the development version:
 
 ```julia
 using Pkg
