@@ -2,11 +2,10 @@
 
 ## 1. Installation
 
-You can install the development version of MultiScaleTreeGraph.jl from [GitHub](https://github.com/) using Pkg:
+You can install the latest stable version of MultiScaleTreeGraph.jl using this command:
 
 ```julia
-using Pkg
-Pkg.add(url="https://github.com/VEZY/MultiScaleTreeGraph.jl", rev="master")
+]add MultiScaleTreeGraph
 ```
 
 ## 2. Example
