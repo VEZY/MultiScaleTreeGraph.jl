@@ -8,6 +8,8 @@ You can install the latest stable version of MultiScaleTreeGraph.jl using this c
 ]add MultiScaleTreeGraph
 ```
 
+Note the `]` that is used to enter the package mode in the REPL.
+
 ## 2. Example
 
 ```@setup usepkg
