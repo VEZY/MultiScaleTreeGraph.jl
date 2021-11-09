@@ -20,7 +20,7 @@ You can install the latest stable version of MultiScaleTreeGraph.jl using this c
 ] add MultiScaleTreeGraph
 ```
 
-Or if you prefer the the development version:
+Or if you prefer the development version:
 
 ```julia
 using Pkg
