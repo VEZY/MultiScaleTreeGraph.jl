@@ -27,7 +27,7 @@ the symbol of the node, and its index.
 NodeMTG("<", "Leaf", 2, 0)
 ```
 """
-NodeMTG,MutableNodeMTG
+NodeMTG, MutableNodeMTG
 
 struct NodeMTG <: AbstractNodeMTG
     link::String
@@ -43,54 +43,68 @@ mutable struct MutableNodeMTG <: AbstractNodeMTG
     scale::Int
 end
 
+"""
+Type that defines an MTG node (*i.e.* an element) with the name of the node, its parent, children,
+siblings, MTG encoding (see [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref)) and attributes.
 
+The node is an entry point to a Mutli-Scale Tree Graph, meaning we can move through the MTG from any
+of its node. The root node is the node without parent. A leaf node is a node without any children.
+Root and leaf nodes are used with their computer science meaning throughout the package, not in the
+biological sense.
+"""
 mutable struct Node{T<:AbstractNodeMTG,A}
+    "Name of the node. Should be unique in the MTG."
     name::String
+    "Parent node."
     parent::Union{Nothing,Node}
+    "Dictionary of children nodes, or Nothing if no children."
     children::Union{Nothing,Dict{String,Node}}
+    "Dictionary of sibling(s) nodes if any, or else Nothing. Can be Nothing if not computed too."
     siblings::Union{Nothing,Dict{String,Node}}
+    "MTG encoding (see [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref))."
     MTG::T
+    "Node attributes. Can be anything really."
     attributes::A
 end
 
 # Shorter way of instantiating a Node:
 
 # - for the root:
-Node(name::String,MTG::T,attributes) where T<:AbstractNodeMTG= Node(name,nothing,nothing,nothing,MTG,attributes)
+Node(name::String, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(name, nothing, nothing, nothing, MTG, attributes)
 
 # Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
 # can't mutate attributes, i.e. we get somthing like
 # Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
 # Node{NodeMTG,MutableNamedTuple}
-function Node(name::String,MTG::M,attributes::T) where {M<:AbstractNodeMTG, T<:MutableNamedTuple}
-    Node{typeof(MTG),MutableNamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
+function Node(name::String, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
+    Node{typeof(MTG),MutableNamedTuple}(name, nothing, nothing, nothing, MTG, attributes)
 end
 
-function Node(name::String,MTG::M,attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    Node{typeof(MTG),NamedTuple}(name,nothing,nothing,nothing,MTG,attributes)
+function Node(name::String, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
+    Node{typeof(MTG),NamedTuple}(name, nothing, nothing, nothing, MTG, attributes)
 end
 
 # - for all others:
-function Node(name::String,parent::Node,MTG::M,attributes) where M<:AbstractNodeMTG
-    Node(name,parent,nothing,nothing,MTG,attributes)
+function Node(name::String, parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    Node(name, parent, nothing, nothing, MTG, attributes)
 end
 
 # Idem for MutableNamedTuple here:
-function Node(name::String,parent::Node,MTG::M,attributes::T) where {M<:AbstractNodeMTG, T<:MutableNamedTuple}
-    Node{typeof(MTG),MutableNamedTuple}(name,parent,nothing,nothing,MTG,attributes)
+function Node(name::String, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
+    Node{typeof(MTG),MutableNamedTuple}(name, parent, nothing, nothing, MTG, attributes)
 end
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"]
 """
-Base.getindex(node::Node, key) = unsafe_getindex(node,Symbol(key))
-Base.getindex(node::Node, key::Symbol) = unsafe_getindex(node,key)
+Base.getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
+Base.getindex(node::Node, key::Symbol) = unsafe_getindex(node, key)
 
 """
 Indexing a Node using an integer will index in its children
 """
 Base.getindex(n::Node, i::Integer) = n.children[collect(keys(n.children))[i]]
-function Base.getindex(n::Node{T, MutableNamedTuple}, i::Integer) where T<:AbstractNodeMTG
+function Base.getindex(n::Node{T,MutableNamedTuple}, i::Integer) where {T<:AbstractNodeMTG}
     n.children[collect(keys(n.children))[i]]
 end
 
@@ -105,7 +119,7 @@ so if a node does not have a field, it does not return an error.
 """
 function unsafe_getindex(node::Node, key::Symbol)
     try
-        getproperty(node.attributes,key)
+        getproperty(node.attributes, key)
     catch err
         if err.msg == "type NamedTuple has no field $key" || err.msg == "type Nothing has no field $key"
             nothing
@@ -115,21 +129,21 @@ function unsafe_getindex(node::Node, key::Symbol)
     end
 end
 
-unsafe_getindex(node::Node, key) = unsafe_getindex(node,Symbol(key))
+unsafe_getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
 
 function unsafe_getindex(
-    node::Node{M, T} where {M<:AbstractNodeMTG, T<: AbstractDict{Symbol, Any}},
+    node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,Any}},
     key::Symbol
-    )
+)
     get(node.attributes, key, nothing)
 end
 
-function unsafe_getindex(node::Node{M, T} where {M<:AbstractNodeMTG, T<: AbstractDict{Symbol, Any}}, key)
-    unsafe_getindex(node,Symbol(key))
+function unsafe_getindex(node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,Any}}, key)
+    unsafe_getindex(node, Symbol(key))
 end
 
-Base.setindex!(node::Node{<:AbstractNodeMTG, <:AbstractDict{Symbol, Any}}, x, key) = setindex!(node, x, Symbol(key))
-Base.setindex!(node::Node{<:AbstractNodeMTG, <:AbstractDict{Symbol, Any}}, x, key::Symbol) = node.attributes[key] = x
+Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict{Symbol,Any}}, x, key) = setindex!(node, x, Symbol(key))
+Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict{Symbol,Any}}, x, key::Symbol) = node.attributes[key] = x
 
 # function setindex(node::Node{M<:AbstractNodeMTG, Dict{Symbol, Any}}, key::Symbol)
 #     try
@@ -150,15 +164,15 @@ Returns the length of the subtree below the node (including it)
 """
 function Base.length(node::Node)
     i = [1]
-    length_subtree(node::Node,i)
+    length_subtree(node::Node, i)
     return i[1]
 end
 
-function length_subtree(node::Node,i)
+function length_subtree(node::Node, i)
     if !isleaf(node)
         for chnode in ordered_children(node)
             i[1] = i[1] + 1
-            length_subtree(chnode,i)
+            length_subtree(chnode, i)
         end
     end
 end
@@ -177,11 +191,11 @@ Base.eltype(::Type{Node{T,D}}) where {T,D} = Node{T,D}
 
 
 # Iteartion over the immediate children:
-function Base.iterate(node::T) where T <: Node
+function Base.iterate(node::T) where {T<:Node}
     isleaf(node) ? nothing : (node[1], 1)
 end
 
-function Base.iterate(node::T, state::Int) where T <: Node
+function Base.iterate(node::T, state::Int) where {T<:Node}
     state += 1
     state > length(children(node)) ? nothing : (node[state], state)
 end

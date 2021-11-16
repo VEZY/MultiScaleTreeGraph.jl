@@ -11,15 +11,16 @@ makedocs(;
     format = Documenter.HTML(;
         prettyurls = get(ENV, "CI", "false") == "true",
         canonical = "https://VEZY.github.io/MultiScaleTreeGraph.jl",
-        assets = String[],
+        assets = String[]
     ),
     pages = [
         "Home" => "index.md",
         "Getting started" => "get_started.md",
+        # "Tutorials" => "tutorial_simple.md",
         "API" => "api.md",
-    ],
+    ]
 )
 
 deploydocs(;
-    repo = "github.com/VEZY/MultiScaleTreeGraph.jl",
+    repo = "github.com/VEZY/MultiScaleTreeGraph.jl"
 )
