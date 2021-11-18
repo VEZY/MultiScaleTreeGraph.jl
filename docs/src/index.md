@@ -23,9 +23,10 @@ The format is described in details in the original paper from Godin et al. (1997
 
 The MTG format helps describe the plant at different scales at the same time. For example we can describe a plant at the scale of the organ (e.g. leaf, internode), the scale of a growth unit, the scale of the axis, the crown or even at the whole plant.
 
-You can find out how to use the package on the [Getting started](@ref) section.
+You can find out how to use the package on the [Getting started](@ref) section, or more about the MTG format in the [The MTG](@ref).
+
 ## References
 
 Godin, C., et Y. Caraglio. 1998. « A Multiscale Model of Plant Topological Structures ». Journal of Theoretical Biology 191 (1): 1‑46. https://doi.org/10.1006/jtbi.1997.0561.
 
-Plant svg original file from Kelvinsong — CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=27509689
+Image: https://upload.wikimedia.org/wikipedia/commons/4/44/Grassy_grass_plant.svg
