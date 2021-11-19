@@ -2159,7 +2159,7 @@
      inkscape:cx="929.16833"
      inkscape:cy="478.99379"
      inkscape:document-units="px"
-     inkscape:current-layer="g2527"
+     inkscape:current-layer="layer1"
      showgrid="true"
      showborder="true"
      inkscape:window-width="1920"
@@ -5523,70 +5523,67 @@
          d="m 141.26783,538.67335 c 27.9296,-36.47776 79.20786,-49.51955 112.03979,-49.22881 l 3.75,1.09835 c -37.01158,-0.0918 -86.59468,12.85799 -115.78979,48.13046 z"
          style="fill:#29c13e;fill-opacity:1;stroke:none" />
     </g>
-    <g
-       id="g2527">
-      <text
-         id="text1399"
-         y="880.69611"
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       x="34.869385"
+       y="880.69611"
+       id="text1399"><tspan
+         sodipodi:role="line"
+         id="tspan1397"
          x="34.869385"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
-         xml:space="preserve"><tspan
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none;stroke-opacity:1"
-           y="880.69611"
-           x="34.869385"
-           id="tspan1397"
-           sodipodi:role="line">Plant</tspan></text>
-      <text
-         id="text1399-0"
-         y="881.87329"
+         y="880.69611"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none;stroke-opacity:1">Plant</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none"
+       x="835.99054"
+       y="881.87329"
+       id="text1399-0"><tspan
+         sodipodi:role="line"
+         id="tspan1397-1"
          x="835.99054"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none"
-         xml:space="preserve"><tspan
-           y="881.87329"
-           x="835.99054"
-           id="tspan1397-1"
-           sodipodi:role="line">Axes</tspan></text>
-      <text
-         id="text1399-9-5"
+         y="881.87329">Axes</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none"
+       x="-283.75095"
+       y="231.67831"
+       id="text1399-9-5"><tspan
          y="231.67831"
          x="-283.75095"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none;"
-         xml:space="preserve"><tspan
-           sodipodi:role="line"
-           id="tspan12692"
-           x="-283.75095"
-           y="231.67831">(a)</tspan></text>
-      <text
-         id="text1399-9-5-4"
-         y="230.6981"
+         id="tspan12692"
+         sodipodi:role="line">(a)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none"
+       x="508.76157"
+       y="230.6981"
+       id="text1399-9-5-4"><tspan
+         sodipodi:role="line"
+         id="tspan14374"
          x="508.76157"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none;"
-         xml:space="preserve"><tspan
-           y="230.6981"
-           x="508.76157"
-           id="tspan14374"
-           sodipodi:role="line">(b)</tspan></text>
-      <text
-         id="text1399-0-2"
-         y="881.5755"
+         y="230.6981">(b)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none"
+       x="1567.0469"
+       y="881.5755"
+       id="text1399-0-2"><tspan
+         sodipodi:role="line"
+         id="tspan1397-1-1"
          x="1567.0469"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none"
-         xml:space="preserve"><tspan
-           y="881.5755"
-           x="1567.0469"
-           id="tspan1397-1-1"
-           sodipodi:role="line">Phytomer</tspan></text>
-      <text
-         id="text1399-9-5-4-4"
-         y="229.49513"
+         y="881.5755">Phytomer</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none"
+       x="1309.0626"
+       y="229.49513"
+       id="text1399-9-5-4-4"><tspan
+         sodipodi:role="line"
+         id="tspan14400"
          x="1309.0626"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:1.25;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:'Arial Rounded MT Bold, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#7e7e7e;fill-opacity:1;stroke:none;"
-         xml:space="preserve"><tspan
-           y="229.49513"
-           x="1309.0626"
-           id="tspan14400"
-           sodipodi:role="line">(c)</tspan></text>
-    </g>
+         y="229.49513">(c)</tspan></text>
   </g>
   <inkscape:grid
      type="xygrid"
