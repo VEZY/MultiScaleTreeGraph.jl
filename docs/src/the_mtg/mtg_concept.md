@@ -1,4 +1,4 @@
-# The MTG
+# The MTG concept
 
 ## Introduction
 

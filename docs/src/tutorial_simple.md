@@ -63,7 +63,7 @@ mtg.attributes
 The `MTG` field from the node helps us describe the node within the MTG. Let's see what's in it:
 
 ```@example usepkg
-fieldnames(mtg.MTG)
+fieldnames(typeof(mtg.MTG))
 ```
 
 We see that it holds the MTG fields: the scale, symbol, index and link to its parent.

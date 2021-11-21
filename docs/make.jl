@@ -16,7 +16,11 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         "Getting started" => "get_started.md",
-        "The MTG format" => "mtg_format.md",
+        "The MTG format" => [
+            "Concept" => "the_mtg/mtg_concept.md",
+            "File format" => "the_mtg/mtg_format.md",
+            "Our implementation" => "the_mtg/our_implementation.md"
+        ],
         # "Tutorials" => "tutorial_simple.md",
         "API" => "api.md",
     ]
