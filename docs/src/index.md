@@ -23,7 +23,7 @@ The format is described in details in the original paper from Godin et al. (1997
 
 The MTG format helps describe the plant at different scales at the same time. For example we can describe a plant at the scale of the organ (e.g. leaf, internode), the scale of a growth unit, the scale of the axis, the crown or even at the whole plant.
 
-You can find out how to use the package on the [Getting started](@ref) section, or more about the MTG format in the [The MTG](@ref).
+You can find out how to use the package on the [Getting started](@ref) section, or more about the MTG format in the [The MTG concept](@ref).
 
 ## References
 

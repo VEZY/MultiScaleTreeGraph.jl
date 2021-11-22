@@ -6,7 +6,7 @@ The Multi-scale Tree Graph -or MTG for short- is a data structure for describing
 
 Let's take a grass plant as an example:
 
-![A grass plant](www/Grassy_plant.svg)
+![A grass plant](../www/Grassy_plant.svg)
 
 *Fig. 1. A Typical grass plant.*[^1]
 
@@ -16,7 +16,7 @@ Now if we get closer to the plant we see more details, for example we can now se
 
 If we get closer again, each axis can be described with more details, and we can now differentiate each [phytomer](https://en.wikipedia.org/wiki/Phytomer) (Fig. 2c), *i.e.* the compound of the leaf and the internode. This is a new scale again, and attributes can be associated to each metamer, for example its length, diameter, biomass, leaf area or volume.
 
-![A grass plant described at different scales](www/Grassy_plant_scales.svg)
+![A grass plant described at different scales](../www/Grassy_plant_scales.svg)
 
 *Fig. 2. A grass plant described at three different scales: (a) the plant, (b) the axis and (c) the phytomer. The corresponding MTG graph (mono-scale) is shown on the right of each description.*
 
@@ -24,7 +24,7 @@ Figure 2 shows a different graph for each scale used for the description, but we
 
 The resulting MTG describing all scales at once in the same graph can be represented as follows:
 
-![MTG of a grass plant described at different scales](www/Grassy_plant_MTG_vertical.svg)
+![MTG of a grass plant described at different scales](../www/Grassy_plant_MTG_vertical.svg)
 
 *Fig. 3. Multi-scale Tree Graph of a grass plant described at three different scales: the plant (P), the axis (A) and the phytomer (I).*
 
