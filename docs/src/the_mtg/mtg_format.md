@@ -85,17 +85,43 @@ The `NAME` column is used to give the name of an attribute, and the `TYPE` colum
 - `INT` for integer numbers, *e.g.* 1
 - `STRING` for strings, *e.g.* broken
 - `ALPHA` for reserved keywords:
-  + NbEl: NumBer of ELements, the number of children at the next scale
-  + Length: the node length
-  + BottomDiameter, the bottom tapering applied to the node for computing its geometry
-  + TopDiameter, the tapering applied at the top
-  + State, defines the state of a node. It can take the value D (Dead), A (Alive), B (Broken) , P (Pruned), G (Growing), V (Vegetative), R (Resting), C (Completed), M (Modified), or any combination of these given letters.
+  - NbEl: NumBer of ELements, the number of children at the next scale
+  - Length: the node length
+  - BottomDiameter, the bottom tapering applied to the node for computing its geometry
+  - TopDiameter, the tapering applied at the top
+  - State, defines the state of a node. It can take the value D (Dead), A (Alive), B (Broken) , P (Pruned), G (Growing), V (Vegetative), R (Resting), C (Completed), M (Modified), or any combination of these given letters.
 
 !!! warning
     This package does not implement any check on the State of a node, and does not make use of the reserved keywords.
 
 ### The MTG section
 
-This section is the actual MTG. It describes the topology of the plant node by node, and give the possibility to add attributes to them.
+This section is the actual MTG. It describes the topology of the plant, and give the possibility to add attributes to them.
 
 The MTG is encoded as a table with tabulation separated values. The header of this section defines the columns used for describing the topology and the ones used for the attributes. The first column name is reserved and must be named `ENTITY-CODE`. Then, a set of empty column names (*i.e.* just tabulations) that defines how many columns are used for the topology. Finally, the following columns are used to define the attributes of the nodes. Their names must match the ones given in [The FEATURES section](@ref).
+
+Each row of the table usually refers to a single node. The topology is and node description is given in the `ENTITY-CODE` columns.
+
+In our example MTG, the first node is the scene: `/Scene0`. In this package, this notation is called a [`NodeMTG`](@ref). It is made out of three different information:
+
+- The link to the parent node: `/`
+- The node Symbol: `Scene`
+- The node index: `0`
+
+The link to the parent can be either `/` (decomposition), `<` (following) or `+` (branching). you can read the [Node MTG and attributes](@ref) section for more details on the signification of each. In few words, a node decomposes its parent if it changes the scale of description, follows if it is continuing after its parent, or branching if it branches from its parent.
+
+The node symbol is used to determine the scale of the node and eventually its properties.
+
+The node index is completely free. It is mainly used to keep track of the number of following segments on an axis, or the branching order.
+
+The second node in our example is `^/Individual0`. It introduces a new character used as prefix: `^`. This character is used to tell us the parent of the current node is the last node in the same column. If this character is absent, then the parent of the node is the last node found on the column before.
+
+We can find such example in the 5th row of the table where a leaf is declared like so: `+Leaf0`. The missing `^` tells us that the parent of this node is the one found on the column before, which is `^/Internode0`.
+
+!!! note
+    Because there is no explicit need to change column when nodes are decomposing or following, we usually create a new column only when a node branches to reduce the number of columns in the `ENTITY-CODE`.
+
+Attributes are then declared in their respective columns defined in the header. If there is no value for an attribute, it is usually declared as an empty column
+
+!!! note
+    MTGs entered manually on the field are usually done in a spreadsheet software such as MS Excel or Only Office / Open Office / Libre Office Calc. Here is an [example spreadsheet](https://github.com/VEZY/MultiScaleTreeGraph.jl/raw/master/test/files/tree3h.xlsx) used on the field. We have one with a Macro too. Just sent us an email to get one.

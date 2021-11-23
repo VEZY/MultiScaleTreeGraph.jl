@@ -8,9 +8,7 @@ Get a node in an mtg by name.
 ```julia
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
-traverse!(mtg, x -> isleaf(x) ? println(x.name," is a leaf") : nothing)
-node_5 is a leaf
-node_7 is a leaf
+node_6 = get_node(mtg, "node_6")
 ```
 """
 function get_node(node::Node, name)
