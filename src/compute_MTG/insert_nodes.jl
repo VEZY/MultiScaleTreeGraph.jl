@@ -46,7 +46,7 @@ function insert_nodes!(
     link = nothing,
     all::Bool = true, # like continue in the R package, but actually the opposite
     filter_fun = nothing
-    )
+)
 
     max_id = [parse(Int, max_name(node)[6:end])]
     # # Check the filters once, and then compute the descendants recursively using `descendants_`
@@ -62,7 +62,7 @@ function insert_nodes!(
     insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)
 
     # Always return the root, whether it is the same one or a new one
-    return getroot(node)
+    return get_root(node)
 end
 
 function insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)

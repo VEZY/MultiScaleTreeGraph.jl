@@ -2,15 +2,15 @@ module MultiScaleTreeGraph
 using AbstractTrees
 using Printf
 using DataFrames
-import MutableNamedTuples:MutableNamedTuple
+import MutableNamedTuples: MutableNamedTuple
 using DelimitedFiles
 using OrderedCollections
-import XLSX:readxlsx,sheetnames
+import XLSX: readxlsx, sheetnames
 import SHA.sha1 # for naming the cache variable
 import Base.setindex!
 import DataFrames.transform! # We define our own version for transforming the MTG
 import DataFrames.rename! # We define our own version for renaming node attributes
-import MetaGraphsNext:MetaGraph,code_for,add_edge! # Transform to MetaGraph
+import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
 using RecipesBase # For plotting with Plots.jl backends
 import DataFrames.transform!
@@ -53,7 +53,7 @@ export addchild!
 export traverse!
 export traverse
 export transform!
-export getroot
+export get_root
 export nextsibling
 export print
 export show

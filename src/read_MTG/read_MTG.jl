@@ -1,5 +1,5 @@
 """
-    read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG)
+    read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name = nothing)
 
 Read an MTG file
 
@@ -9,6 +9,8 @@ Read an MTG file
 - `attr_type::DataType = Dict`: the type used to hold the attribute values for each node.
 - `mtg_type = MutableNodeMTG`: the type used to hold the mtg encoding for each node (*i.e.*
 link, symbol, index, scale). See details section below.
+- `sheet_name = nothing`: the sheet name in case you're reading an `xlsx` or `xlsm` file. It
+reads the first sheet if `nothing` (default behavior).
 
 # Details
 
@@ -18,22 +20,22 @@ link, symbol, index, scale). See details section below.
 plotting or computing statistics...
 - `MutableNamedTuple` if you plan to modify the attributes values but not adding new attributes
 very often, *e.g.* recompute an attribute value...
-- `Dict` or similar (e.g. `OrderedDict`) if you plan to heavily modify the attributes, *e.g.*
-adding/removing attibutes a lot
+- `Dict` or similar (*e.g.* `OrderedDict`) if you plan to heavily modify the attributes, *e.g.*
+adding/removing attributes a lot
 
-The `MTG` package provides two types for `mtg_type`, one immutable ([`NodeMTG`](@ref)), and
+The `MultiScaleTreeGraph` package provides two types for `mtg_type`, one immutable ([`NodeMTG`](@ref)), and
 one mutable ([`MutableNodeMTG`](@ref)). If you're planning on modifying the mtg encoding of
 some of your nodes, you should use [`MutableNodeMTG`](@ref), and if you don't want to modify
 anything, use [`NodeMTG`](@ref) instead as it should be faster.
 
 # Note
 
-See the documentation for the MTG format from the [OpenAlea webpage](http://openalea.gforge.inria.fr/doc/vplants/newmtg/doc/_build/html/user/intro.html#mtg-a-plant-architecture-databases)
-for further details.
+See the documentation of the MTG format from the package documentation for further details,
+*e.g.* [The MTG concept](@ref).
 
 # Returns
 
-The MTG data.
+The MTG root node.
 
 # Examples
 
@@ -61,7 +63,7 @@ function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name 
             xlsx_data = xlsx_file[sheet_name][:]
         end
 
-        f = IOBuffer();
+        f = IOBuffer()
         DelimitedFiles.writedlm(f, xlsx_data)
         seekstart(f)
         # test = String(take!(io))
@@ -70,9 +72,9 @@ function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name 
     else
         # read the mtg file
         mtg, classes, description, features =
-        open(file, "r") do f
-            parse_mtg_file(f, attr_type, mtg_type)
-        end
+            open(file, "r") do f
+                parse_mtg_file(f, attr_type, mtg_type)
+            end
     end
 
     # Adding overall classes and symbols information to the root node (used for checks):
@@ -103,19 +105,19 @@ function parse_mtg_file(f, attr_type, mtg_type)
 
         # Parse the mtg CLASSES section, and then continue to next while loop iteration:
         if issection(l[1], "CLASSES")
-            global classes = parse_section!(f, ["SYMBOL","SCALE","DECOMPOSITION","INDEXATION","DEFINITION"], "CLASSES", line, l)
+            global classes = parse_section!(f, ["SYMBOL", "SCALE", "DECOMPOSITION", "INDEXATION", "DEFINITION"], "CLASSES", line, l)
             classes.SCALE = parse.(Int, classes.SCALE)
             continue
         end
 
         # Parse the mtg DESCRIPTION section:
         if issection(l[1], "DESCRIPTION")
-            global description = parse_section!(f, ["LEFT","RIGHT","RELTYPE","MAX"], "DESCRIPTION", line, l, allow_empty = true)
+            global description = parse_section!(f, ["LEFT", "RIGHT", "RELTYPE", "MAX"], "DESCRIPTION", line, l, allow_empty = true)
             if description !== nothing
                 description.RIGHT = split.(description.RIGHT, ",")
                 if !all([i in description.RELTYPE for i in ("+", "<")])
                     error("Unknown relation type(s) in DESCRIPTION section: ",
-                                join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+<")) .== 0]), ", "))
+                        join(unique(description.RELTYPE[occursin.(description.RELTYPE, ("+<")).==0]), ", "))
                 end
             end
             continue
@@ -123,7 +125,7 @@ function parse_mtg_file(f, attr_type, mtg_type)
 
         # Parse the mtg FEATURES section:
         if issection(l[1], "FEATURES")
-            global features = parse_section!(f, ["NAME","TYPE"], "FEATURES", line, l)
+            global features = parse_section!(f, ["NAME", "TYPE"], "FEATURES", line, l)
             continue
         end
 

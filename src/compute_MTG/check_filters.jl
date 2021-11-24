@@ -11,21 +11,21 @@ check_filters(mtg, scale = (1,2))
 check_filters(mtg, scale = (1,2), symbol = "Leaf", link = "<")
 ```
 """
-function check_filters(node; scale = nothing, symbol = nothing, link = nothing) where T
+function check_filters(node; scale = nothing, symbol = nothing, link = nothing) where {T}
 
-    root_node = getroot(node)
+    root_node = get_root(node)
 
     nodeMTG_type = typeof(node.MTG)
-    check_filter(nodeMTG_type,:scale,scale,unique(root_node.attributes[:scales]))
-    check_filter(nodeMTG_type,:symbol,symbol,unique(root_node.attributes[:symbols]))
-    check_filter(nodeMTG_type,:link,link,("/","<","+"))
+    check_filter(nodeMTG_type, :scale, scale, unique(root_node.attributes[:scales]))
+    check_filter(nodeMTG_type, :symbol, symbol, unique(root_node.attributes[:symbols]))
+    check_filter(nodeMTG_type, :link, link, ("/", "<", "+"))
 
     return nothing
 end
 
-function check_filter(nodetype,type::Symbol,filter,filters)
+function check_filter(nodetype, type::Symbol, filter, filters)
     if !isnothing(filter)
-        filter_type = fieldtype(nodetype,type)
+        filter_type = fieldtype(nodetype, type)
         !(typeof(filter) <: filter_type) &&
             @warn "The $type argument should be of type $filter_type"
         if !(filter in filters)
@@ -34,9 +34,9 @@ function check_filter(nodetype,type::Symbol,filter,filters)
     end
 end
 
-function check_filter(nodetype,type::Symbol,filter::T,filters) where T<:Union{Tuple,AbstractArray}
+function check_filter(nodetype, type::Symbol, filter::T, filters) where {T<:Union{Tuple,AbstractArray}}
     for i in filter
-        check_filter(nodetype,type,i,filters)
+        check_filter(nodetype, type, i, filters)
     end
 end
 
@@ -48,25 +48,25 @@ Is a node filtered in ? Returns `true` if the node is kept, `false` if it is fil
 """
 function is_filtered(node, scale, symbol, link, filter_fun)
 
-    link_keep = is_filtered(link,node.MTG.link)
-    symbol_keep = is_filtered(symbol,node.MTG.symbol)
-    scale_keep = is_filtered(scale,node.MTG.scale)
+    link_keep = is_filtered(link, node.MTG.link)
+    symbol_keep = is_filtered(symbol, node.MTG.symbol)
+    scale_keep = is_filtered(scale, node.MTG.scale)
     filter_fun_keep = isnothing(filter_fun) || filter_fun(node)
 
     scale_keep && symbol_keep && link_keep && filter_fun_keep
 end
 
 
-function is_filtered(filter,value)
+function is_filtered(filter, value)
     isnothing(filter) || value in filter
 end
 
-function is_filtered(filter::String,value)
+function is_filtered(filter::String, value)
     isnothing(filter) || value in (filter,)
 end
 
-function is_filtered(filter,value::T) where T<:Union{Tuple,Array}
-    all(map(x -> is_filtered(filter,x), value))
+function is_filtered(filter, value::T) where {T<:Union{Tuple,Array}}
+    all(map(x -> is_filtered(filter, x), value))
 end
 
 
@@ -104,8 +104,8 @@ function parse_macro_args(args)
         elseif i.head == :(=) && i.args[1] in keys(kwargs)
             kwargs[i.args[1]] = i.args[2]
         else
-            push!(args_array,i)
+            push!(args_array, i)
         end
     end
-    return (;filters...), (;kwargs...), (args_array...,)
+    return (; filters...), (; kwargs...), (args_array...,)
 end

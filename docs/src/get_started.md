@@ -1,6 +1,10 @@
 # Getting started
 
-## 1. Installation
+## Introduction
+
+This page let's you take a peek at what the package is capable of. If you want a better, more in-depth introduction to the package, take a look at the tutorials, starting from [Read and Write MTGs](@ref). If you don't know what an MTG is, you can read more about starting from [The MTG concept](@ref).
+
+## Installation
 
 You can install the latest stable version of MultiScaleTreeGraph.jl using this command:
 
@@ -8,9 +12,10 @@ You can install the latest stable version of MultiScaleTreeGraph.jl using this c
 ]add MultiScaleTreeGraph
 ```
 
-Note the `]` that is used to enter the package mode in the REPL.
+!!! note
+    The `]` is used to enter the package mode in the REPL.
 
-## 2. Example
+## Example
 
 ```@setup usepkg
 using MultiScaleTreeGraph

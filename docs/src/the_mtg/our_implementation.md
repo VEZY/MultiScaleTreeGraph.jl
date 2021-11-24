@@ -69,7 +69,7 @@ mtg = read_mtg(file)
 typeof(mtg)
 ```
 
-!!!note
+!!! note
     The [`Node`](@ref) is a parametric type, that's why `typeof(mtg)` also returns the type used for the MTG data in the node (`MutableNodeMTG`) and the type used for the attributes (`Dict{Symbol, Any}`). But this is not important here.
 
 ### Accessing a node
@@ -118,7 +118,7 @@ Or its attributes:
 mtg.attributes
 ```
 
-!!!note
+!!! note
     The attributes of the root node always include the data from the header sections of an MTG file: the scales of the MTG, the description and the symbols. You can learn more in [The MTG sections](@ref) if you want.
 
 We can also access the attributes of a node by indexing the node with a Symbol:
@@ -131,6 +131,12 @@ node_6[:Length]
 
 ```@example usepkg
 node_6["Length"]
+```
+
+Which are both equivalent to:
+
+```@example usepkg
+node_6.attributes[:Length]
 ```
 
 You'll find more information on how to make computations over the MTG, how to transform it into a DataFrame, how to write it back to disk, or how to delete and insert new nodes in the tutorials.

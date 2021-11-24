@@ -21,7 +21,15 @@ makedocs(;
             "File format" => "the_mtg/mtg_format.md",
             "Our implementation" => "the_mtg/our_implementation.md"
         ],
-        # "Tutorials" => "tutorial_simple.md",
+        "Tutorials" => [
+            "tutorials/0.read_write.md",
+            "tutorials/1.manipulate_node.md",
+            "tutorials/2.transform_mtg.md",
+            "tutorials/3.use_filters.md",
+            "tutorials/4.convert_mtg.md",
+            "tutorials/5.plotting.md",
+            "tutorials/6.add_remove_nodes.md",
+        ],
         "API" => "api.md",
     ]
 )

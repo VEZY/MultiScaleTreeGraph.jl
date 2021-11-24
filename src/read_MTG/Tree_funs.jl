@@ -40,17 +40,17 @@ end
 """
 Add a new child to a parent node, and add the parent node as the parent.
 """
-function addchild!(parent::Node, name::String, MTG::M, attributes) where M <: AbstractNodeMTG
-  child = Node(name, parent, MTG, attributes)
-  addchild!(parent, child)
+function addchild!(parent::Node, name::String, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    child = Node(name, parent, MTG, attributes)
+    addchild!(parent, child)
 end
 
-function addchild!(parent::Node, name::String, MTG::M) where M <: AbstractNodeMTG
-  child = Node(name, parent, MTG)
-  addchild!(parent, child)
+function addchild!(parent::Node, name::String, MTG::M) where {M<:AbstractNodeMTG}
+    child = Node(name, parent, MTG)
+    addchild!(parent, child)
 end
 
-function addchild!(parent::Node, child::Node;force = false)
+function addchild!(parent::Node, child::Node; force = false)
 
     if child.parent === missing || force == true
         child.parent = parent
@@ -69,11 +69,11 @@ end
 """
 Find the root node of a tree, given any node in the tree.
 """
-function getroot(node::Node)
+function get_root(node::Node)
     if isroot(node)
-        return(node)
+        return (node)
     else
-        getroot(node.parent)
+        get_root(node.parent)
     end
 end
 
@@ -103,7 +103,7 @@ function nextsibling(node::Node)
     # Get the index of the current node in the siblings:
     node_index = findfirst(x -> x == node, all_siblings)
     if node_index < length(all_siblings)
-        all_siblings[node_index + 1]
+        all_siblings[node_index+1]
     else
         nothing
     end
