@@ -20,7 +20,7 @@ DataFrame(mtg, [:XX, :YY, :ZZ])
 """
 function coordinates!(mtg; angle = 45, force = false)
 
-    coord_in_attributes = [:XX, :YY, :ZZ] .∈ Ref(get_features(mtg).NAME)
+    coord_in_attributes = [:XX, :YY, :ZZ] .∈ Ref(get_attributes(mtg))
 
     if !force && any(coord_in_attributes)
         error(
@@ -38,7 +38,7 @@ function coordinates!(mtg; angle = 45, force = false)
 end
 
 function coordinates_parent!(mtg)
-    coord_in_attributes = [:XX, :YY, :ZZ] .∈ Ref(get_features(mtg).NAME)
+    coord_in_attributes = [:XX, :YY, :ZZ] .∈ Ref(get_attributes(mtg))
     if !all(coord_in_attributes)
         error("No coordinates found in MTG. Use `coordinates!(mtg)` first.")
     end
@@ -82,7 +82,7 @@ function new_pos(node, angle, phyllotaxy)
                 phyllotaxy[1] * angle
             )
 
-    # Change phyllotaxy for next node:
+        # Change phyllotaxy for next node:
         if phyllotaxy[1] == 1
             phyllotaxy[1] = -1
         else
@@ -110,7 +110,7 @@ end
 Rotate a point (x1,y1) around (x0, y0) with `angle`.
 """
 function rotate_point(x0, y0, x1, y1, angle)
-    angle = - angle * pi / 180
+    angle = -angle * pi / 180
     x1 = x1 - x0
     y1 = y1 - y0
     cos_a = cos(angle)
@@ -139,7 +139,7 @@ function mtg_coordinates_df(mtg; force = false)
 end
 
 function mtg_coordinates_df!(mtg; force = false)
-    coord_in_attributes = [:XX, :YY, :ZZ] .∈ Ref(get_features(mtg).NAME)
+    coord_in_attributes = [:XX, :YY, :ZZ] .∈ Ref(get_attributes(mtg))
     if !all(coord_in_attributes) || force
         if coord_in_attributes == [true, true, false] && !force
             # Only :ZZ is missing, using a dummy value:

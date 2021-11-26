@@ -63,8 +63,8 @@ node_7 is a leaf
 # We can compute a new variable based on another. For example to know if the value of the
 # `:Length` attribute is provided or not, we can do:
 transform!(mtg, :Length => isnothing)
-# To check the values we first call [`get_features`](@ref) to know the new variable name:
-get_features(mtg)
+# To check the values we first call [`get_attributes`](@ref) to know the new variable name:
+get_attributes(mtg)
 # And then we get the values using [`descendants`](@ref)
 descendants(mtg, :Length_isnothing, self = true)
 # Or DataFrame:
@@ -75,11 +75,11 @@ transform!(mtg, :Length => isnothing => :no_length)
 descendants(mtg, :no_length, self = true)
 
 # We can provide anonymous functions if we want to:
-transform!(mtg, :Length => (x -> isnothing(x)))
+transform!(mtg, :Length => (x -> isnothing(x)) => :no_length)
 descendants(mtg, :no_length, self = true)
 
 # When a node does not have an attribute, it returns `nothing`. Most basic functions do not
-# handle well those, e.g.:
+# handle those very well, e.g.:
 transform!(mtg, :Length => log)
 # It does not work because some nodes have no value for `:Length`.
 # The solution is to handle these cases in our own functions instead:

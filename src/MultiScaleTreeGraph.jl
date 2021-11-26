@@ -77,7 +77,7 @@ export AbstractNodeMTG
 export NodeMTG
 export MutableNodeMTG
 export check_filters
-export get_features
+export get_features, get_attributes
 export get_classes
 export get_description
 export clean_cache!

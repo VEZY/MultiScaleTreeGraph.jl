@@ -9,9 +9,9 @@ function get_classes(mtg)
     df = DataFrame(attributes)
 
     # Make everything to default values:
-    df[!,:DECOMPOSITION] .= "FREE"
-    df[!,:INDEXATION] .= "FREE"
-    df[!,:DEFINITION] .= "IMPLICIT"
+    df[!, :DECOMPOSITION] .= "FREE"
+    df[!, :INDEXATION] .= "FREE"
+    df[!, :DEFINITION] .= "IMPLICIT"
     return df
 end
 
@@ -27,7 +27,7 @@ end
 """
     get_features(mtg)
 
-Compute the mtg features based on its attributes. Usefull after having computed new attributes
+Compute the mtg features section based on its attributes. Usefull after having computed new attributes
 in the mtg.
 """
 function get_features(mtg)
@@ -51,7 +51,7 @@ function get_features(mtg)
             new_type[index] = "REAL"
         elseif value <: Int
             new_type[index] = "INT"
-        # elseif df.NAME[i] in () # Put reserved keywords here if needed in the future
+            # elseif df.NAME[i] in () # Put reserved keywords here if needed in the future
             # new_type[index] = "ALPHA"
         else
             # All others are parsed as string
@@ -63,3 +63,10 @@ function get_features(mtg)
 
     return df
 end
+
+"""
+    get_attributes(node)
+
+Get all attributes names available on the node and its children.
+"""
+get_attributes(node) = unique(vcat(traverse(node, node -> collect(keys(node.attributes)))...))
