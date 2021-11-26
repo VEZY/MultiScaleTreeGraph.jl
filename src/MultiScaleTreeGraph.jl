@@ -13,7 +13,6 @@ import DataFrames.rename! # We define our own version for renaming node attribut
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
 using RecipesBase # For plotting with Plots.jl backends
-import DataFrames.transform!
 
 include("read_MTG/NodeMTG.jl")
 include("read_MTG/read_MTG.jl")
@@ -52,7 +51,7 @@ export children
 export addchild!
 export traverse!
 export traverse
-export transform!
+export transform!, transform
 export get_root
 export nextsibling
 export print

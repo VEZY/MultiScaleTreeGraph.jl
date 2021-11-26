@@ -1,7 +1,9 @@
 """
     transform!(node::Node, args..., <keyword arguments>)
+    transform(node::Node, args..., <keyword arguments>)
 
-Transform (mutate) an MTG (`node`) in place to add attributes specified by `args...`.
+Transform (mutate) an MTG (`node`) in place (`transform!`) or on a copy (`transform`) to add
+attributes specified by `args...`.
 
 # Arguments
 
@@ -16,7 +18,13 @@ Transform (mutate) an MTG (`node`) in place to add attributes specified by `args
 
 # Returns
 
-Nothing, mutates the (sub-)tree in-place.
+`transform!`: Nothing, mutates the (sub-)tree in-place.
+`transform`: A mutated copy of `node`.
+
+# Notes
+
+Carefull, `transform` is much slower than `transform!` because it makes a copy of the whole
+MTG each time.
 
 # Details
 
@@ -127,14 +135,16 @@ transform!(
 DataFrame(mtg, [:mass, :mass_beared])
 ```
 """
+transform!, transform
+
 function transform!(
-        mtg::Node,
-        args...;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
+    mtg::Node,
+    args...;
+    scale = nothing,
+    symbol = nothing,
+    link = nothing,
+    filter_fun = nothing
+)
 
     check_filters(mtg, scale = scale, symbol = symbol, link = link)
 
@@ -191,4 +201,28 @@ function transform!(
             filter_fun = filter_fun
         )
     end
+end
+
+
+function transform(
+    mtg::Node,
+    args...;
+    scale = nothing,
+    symbol = nothing,
+    link = nothing,
+    filter_fun = nothing
+)
+
+    new_mtg = deepcopy(mtg)
+
+    transform!(
+        new_mtg,
+        args...;
+        scale = scale,
+        symbol = symbol,
+        link = link,
+        filter_fun = filter_fun
+    )
+
+    return new_mtg
 end
