@@ -38,3 +38,35 @@ function is_segment!(node)
     end
     return false
 end
+
+"""
+    filter_fun_nothing(filter_fun, ignore_nothing)
+
+Returns a new filtering function that adds a filter on the key value for `nothing` if
+`ignore_nothing` is `true`
+"""
+function filter_fun_nothing(filter_fun, ignore_nothing, attr_keys)
+    # Change the filtering function if we also want to remove nodes with nothing values.
+    if ignore_nothing
+        if filter_fun !== nothing
+            filter_fun_ =
+                function (node)
+                    all([unsafe_getindex(node, i) !== nothing for i in attr_keys]) && filter_fun(node)
+                end
+        else
+            filter_fun_ =
+                function (node)
+                    all([unsafe_getindex(node, i) !== nothing for i in attr_keys])
+                end
+        end
+    else
+        filter_fun_ = filter_fun
+    end
+
+    filter_fun_
+end
+
+
+function filter_fun_nothing(filter_fun, ignore_nothing, attr_keys::T) where {T<:Union{Symbol,String}}
+    filter_fun_nothing(filter_fun, ignore_nothing, [attr_keys])
+end

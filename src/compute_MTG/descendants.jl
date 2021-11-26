@@ -1,5 +1,5 @@
 function descendants(
-    node,key;
+    node, key;
     scale = nothing,
     symbol = nothing,
     link = nothing,
@@ -13,28 +13,29 @@ function descendants(
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale = scale, symbol = symbol, link = link)
 
+    # Change the filtering function if we also want to remove nodes with nothing values:
+    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
+
     val = Array{type,1}()
 
     if self
-        keep = is_filtered(node, scale, symbol, link, filter_fun)
+        keep = is_filtered(node, scale, symbol, link, filter_fun_)
 
         if keep
             val_ = unsafe_getindex(node, key)
-            if val_ !== nothing || !ignore_nothing
-                push!(val, val_)
-            end
+            push!(val, val_)
         elseif !all
             # We don't keep the value and we have to stop at the first filtered-out value
             return val
         end
     end
 
-    descendants_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, ignore_nothing)
+    descendants_(node, key, scale, symbol, link, all, filter_fun_, val, recursivity_level)
     return val
 end
 
 
-function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, ignore_nothing)
+function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
 
     if !isleaf(node) && recursivity_level != 0
         for chnode in ordered_children(node)
@@ -43,16 +44,14 @@ function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recu
 
             if keep
                 val_ = unsafe_getindex(chnode, key)
-                if val_ !== nothing || !ignore_nothing
-                    push!(val, val_)
-                end
-                 # Only decrement the recursivity level when the current node is not filtered-out
+                push!(val, val_)
+                # Only decrement the recursivity level when the current node is not filtered-out
                 recursivity_level -= 1
             end
 
             # If we want to continue even if the current node is filtered-out
             if all || keep
-                descendants_(chnode, key, scale, symbol, link, all, filter_fun, val, recursivity_level, ignore_nothing)
+                descendants_(chnode, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
             end
         end
     end
@@ -60,7 +59,7 @@ end
 
 
 function descendants!(
-    node,key;
+    node, key;
     scale = nothing,
     symbol = nothing,
     link = nothing,
@@ -78,14 +77,15 @@ function descendants!(
 
     val = Array{type,1}()
 
+    # Change the filtering function if we also want to remove nodes with nothing values:
+    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
+
     if self
-        keep = is_filtered(node, scale, symbol, link, filter_fun)
+        keep = is_filtered(node, scale, symbol, link, filter_fun_)
 
         if keep
             val_ = unsafe_getindex(node, key)
-            if val_ !== nothing || !ignore_nothing
-                push!(val, val_)
-            end
+            push!(val, val_)
         elseif !all
             # We don't keep the value and we have to stop at the first filtered-out value
             return val
@@ -94,14 +94,12 @@ function descendants!(
 
     if node[key_cache] === nothing
 
-        descendants_!(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, ignore_nothing, key_cache)
+        descendants_!(node, key, scale, symbol, link, all, filter_fun_, val, recursivity_level, key_cache)
 
         # Caching the result into a cache attribute named after the SHA of the function arguments:
         node[key_cache] = val
     else
-        if node[key_cache] !== nothing || !ignore_nothing
-            append!(val, node[key_cache])
-        end
+        append!(val, node[key_cache])
     end
 
     return val
@@ -110,7 +108,7 @@ end
 """
 Fast version of descendants_ that mutates the mtg nodes to cache the information.
 """
-function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, ignore_nothing, key_cache)
+function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, key_cache)
 
     val_i = Array{eltype(val),1}()
     if !isleaf(node) && recursivity_level != 0
@@ -121,22 +119,18 @@ function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, rec
 
                 if keep
                     val_key = unsafe_getindex(chnode, key)
-                    if val_key !== nothing || !ignore_nothing
-                        push!(val_i, val_key)
-                    end
+                    push!(val_i, val_key)
                     # Only decrement the recursivity level when the current node is not filtered-out
                     recursivity_level -= 1
                     # chnode[key_cache] = val_key
                 end
                 # If we want to continue even if the current node is filtered-out
                 if all || keep
-                    descendants_!(chnode, key, scale, symbol, link, all, filter_fun, val_i, recursivity_level, ignore_nothing, key_cache)
+                    descendants_!(chnode, key, scale, symbol, link, all, filter_fun, val_i, recursivity_level, key_cache)
                 end
             end
             node[key_cache] = val_i
-            if val_i !== nothing || !ignore_nothing
-                append!(val, val_i)
-            end
+            append!(val, val_i)
         else
             append!(val, copy(node[key_cache]))
             # node[key_cache]
@@ -191,7 +185,7 @@ is filtered out (`false`).
 *E.g.* to get the first level children only: `recursivity_level = 1`, for children +
 grand-children: `recursivity_level = 2`. If a negative value is provided (the default), the
 function returns all valid values from the node to the leaves.
-- `ignore_nothing = false`: ignore nothing values
+- `ignore_nothing = false`: filter-out the nodes with `nothing` values for the given `key`
 - `type::Union{Union,DataType}`: The type of the attribute. Makes the function run much
 faster if provided (≈4x faster).
 

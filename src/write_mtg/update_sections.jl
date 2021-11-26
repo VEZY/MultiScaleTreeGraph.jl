@@ -63,10 +63,3 @@ function get_features(mtg)
 
     return df
 end
-
-"""
-    get_attributes(node)
-
-Get all attributes names available on the node and its children.
-"""
-get_attributes(node) = unique(vcat(traverse(node, node -> collect(keys(node.attributes)))...))

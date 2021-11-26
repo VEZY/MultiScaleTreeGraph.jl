@@ -15,6 +15,8 @@ attributes specified by `args...`.
     - `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
     - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
     - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
+    - `ignore_nothing = false`: filter-out the nodes with `nothing` values for the given
+    attributes used as inputs (apply only to the form :var_name => ...)
 
 # Returns
 
@@ -34,12 +36,12 @@ The interface of the function is inspired from the one used in
 The `args...` provided can be of the following forms:
 
 1. a `:var_name => :new_var_name` pair. This form is used to rename an attribute name
-1. a `:var_name => function` or `[:var_name1, :var_name2] => function` pair. The variables
+1. a `:var_name => function` or `[:var_name1, :var_name2...] => function` pair. The variables
 are declared as a Symbol or a String (or a vector of), and they are passed as positional
 arguments to the function. This form automatically generates the new column name by
 concatenating the source column name(s) and the function name if any.
 1. a `:var_name => function => :new_var_name` form that does the same as the previous form
-but explicitly naming the resulting variable.
+but explicitly naming the resulting variable (can take several variables on left-hand side).
 1. a `function => :new_var_name` form that applies a function to a node and puts the results
 in a new attribute. This form is usually applied when searching ancestors or descendants values.
 1. a `function` form that applies a mutating function to a node, without expecting any output.
@@ -82,9 +84,13 @@ descendants(mtg, :no_length, self = true)
 # handle those very well, e.g.:
 transform!(mtg, :Length => log)
 # It does not work because some nodes have no value for `:Length`.
-# The solution is to handle these cases in our own functions instead:
-transform!(mtg, :Length => (x -> x === nothing ? nothing : log(x)) => :log_length)
+# To remove automatically the nodes with `nothing` values, use `ignore_nothing`:
+transform!(mtg, :Length => log => :log_length, ignore_nothing = true)
 descendants(mtg, :log_length, self = true)
+
+# Or you could handle these manually in your function if you prefer:
+transform!(mtg, :Length => (x -> x === nothing ? nothing : log(x)) => :log_length2)
+descendants(mtg, :log_length2, self = true)
 
 # Another way is to give a filtering function as an argument:
 transform!(mtg, :Length => log => :log_length, filter_fun = x -> x[:Length] !== nothing)
@@ -143,10 +149,12 @@ function transform!(
     scale = nothing,
     symbol = nothing,
     link = nothing,
-    filter_fun = nothing
+    filter_fun = nothing,
+    ignore_nothing = false
 )
 
     check_filters(mtg, scale = scale, symbol = symbol, link = link)
+    filter_fun_ = filter_fun
 
     for nc in args
         if nc isa Base.Callable
@@ -173,6 +181,10 @@ function transform!(
             end
 
             fun_ = x -> x[newname] = fun([x[i] for i in col_idx]...)
+
+            # Add a filter to the filtering function: checks if the node has the attributes
+            # and if not, filter-out the node (in case ignore_nothing == true)
+            filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, col_idx)
         else
             # `Name => function` form, i.e. :x => sqrt
             # ?NOTE: Here the function takes one or more attributes as input
@@ -190,7 +202,12 @@ function transform!(
                 newname = Symbol(join([col_idx_name, String(fnname)], "_"))
             end
             fun_ = x -> x[newname] = fun([x[i] for i in col_idx]...)
+
+            # Add a filter to the filtering function: checks if the node has the attributes
+            # and if not, filter-out the node (in case ignore_nothing == true)
+            filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, col_idx)
         end
+
 
         traverse!(
             mtg,
@@ -198,7 +215,7 @@ function transform!(
             scale = scale,
             symbol = symbol,
             link = link,
-            filter_fun = filter_fun
+            filter_fun = filter_fun_
         )
     end
 end
@@ -210,7 +227,8 @@ function transform(
     scale = nothing,
     symbol = nothing,
     link = nothing,
-    filter_fun = nothing
+    filter_fun = nothing,
+    ignore_nothing = false
 )
 
     new_mtg = deepcopy(mtg)

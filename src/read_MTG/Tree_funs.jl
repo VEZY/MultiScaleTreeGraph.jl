@@ -140,3 +140,10 @@ end
 function new_name(mtg)
     new_name(mtg, max_name(mtg))
 end
+
+"""
+    get_attributes(node)
+
+Get all attributes names available on the node and its children.
+"""
+get_attributes(node) = unique(vcat(traverse(node, node -> collect(keys(node.attributes)))...))
