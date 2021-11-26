@@ -24,8 +24,8 @@ makedocs(;
         "Tutorials" => [
             "tutorials/0.read_write.md",
             "tutorials/1.manipulate_node.md",
-            "tutorials/2.transform_mtg.md",
-            "tutorials/3.use_filters.md",
+            "tutorials/2.descendants_ancestors_filters.md",
+            "tutorials/3.transform_mtg.md",
             "tutorials/4.convert_mtg.md",
             "tutorials/5.plotting.md",
             "tutorials/6.add_remove_nodes.md",
