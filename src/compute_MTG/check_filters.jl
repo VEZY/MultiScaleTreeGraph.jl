@@ -16,9 +16,17 @@ function check_filters(node; scale = nothing, symbol = nothing, link = nothing) 
     root_node = get_root(node)
 
     nodeMTG_type = typeof(node.MTG)
-    check_filter(nodeMTG_type, :scale, scale, unique(root_node.attributes[:scales]))
-    check_filter(nodeMTG_type, :symbol, symbol, unique(root_node.attributes[:symbols]))
-    check_filter(nodeMTG_type, :link, link, ("/", "<", "+"))
+    if root_node[:scales] !== nothing
+        check_filter(nodeMTG_type, :scale, scale, unique(root_node.attributes[:scales]))
+    end
+
+    if root_node[:symbols] !== nothing
+        check_filter(nodeMTG_type, :symbol, symbol, unique(root_node.attributes[:symbols]))
+    end
+
+    if root_node[:link] !== nothing
+        check_filter(nodeMTG_type, :link, link, ("/", "<", "+"))
+    end
 
     return nothing
 end
