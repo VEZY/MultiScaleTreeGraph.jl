@@ -20,32 +20,35 @@ DataFrame(mtg, :Length)
 DataFrame(mtg, [:Length, :Width])
 ```
 """
-function DataFrames.DataFrame(mtg::Node, key::T) where T <: Union{AbstractArray,Tuple}
+function DataFrames.DataFrame(mtg::Node, key::T) where {T<:Union{AbstractArray,Tuple}}
 
-    tree_vars = [:node_id, :node_symbol, :node_scale, :node_index, :parent_id, :node_link]
-    # Add the MTG to the attributes:
-    @mutate_mtg!(
-        mtg,
-        node_id = parse(Int, node.name[6:end]),
-        node_symbol = node.MTG.symbol,
-        node_scale = node.MTG.scale,
-        node_index = node.MTG.index,
-        parent_id = get_parent_id(node),
-        node_link = node.MTG.link
-    )
+    tree_vars = [:node_id, :node_symbol, :node_scale, :node_index, :parent_id, :node_link] ∪ key
 
-    node_vec = get_printing(mtg)
-    df = DataFrame(tree = node_vec)
+    # Extract the MTG info:
+    nodes_info =
+        traverse(
+            mtg,
+            node -> (
+                node_id = parse(Int, node.name[6:end]),
+                node_symbol = node.MTG.symbol,
+                node_scale = node.MTG.scale,
+                node_index = node.MTG.index,
+                parent_id = MultiScaleTreeGraph.get_parent_id(node),
+                node_link = node.MTG.link
+            )
+        )
 
-    append!(tree_vars, key)
+    # Build the DataFrame:
+    df = DataFrame(nodes_info)
+    DataFrames.insertcols!(df, 1, :tree => get_printing(mtg))
 
-    for var in tree_vars
+    for var in key
         insertcols!(df, var => [descendants(mtg, var, self = true)...])
     end
 
     # Replace the nothing values by missing values as it is the standard in DataFrames:
     for i in names(df)
-        df[!,i] = replace(df[!,i], nothing => missing)
+        df[!, i] = replace(df[!, i], nothing => missing)
     end
 
     rename!(
@@ -62,11 +65,11 @@ function DataFrames.DataFrame(mtg::Node, key::T) where T <: Union{AbstractArray,
     return df
 end
 
-function DataFrames.DataFrame(mtg::Node, key::T) where T <: Symbol
+function DataFrames.DataFrame(mtg::Node, key::T) where {T<:Symbol}
     DataFrame(mtg, [key])
 end
 
-function DataFrames.DataFrame(mtg::Node, key::T) where T <: AbstractString
+function DataFrames.DataFrame(mtg::Node, key::T) where {T<:AbstractString}
     DataFrame(mtg, Symbol(key))
 end
 
