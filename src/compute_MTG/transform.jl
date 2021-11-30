@@ -36,15 +36,15 @@ The interface of the function is inspired from the one used in
 The `args...` provided can be of the following forms:
 
 1. a `:var_name => :new_var_name` pair. This form is used to rename an attribute name
-1. a `:var_name => function` or `[:var_name1, :var_name2...] => function` pair. The variables
+2. a `:var_name => function` or `[:var_name1, :var_name2...] => function` pair. The variables
 are declared as a Symbol or a String (or a vector of), and they are passed as positional
 arguments to the function. This form automatically generates the new column name by
 concatenating the source column name(s) and the function name if any.
-1. a `:var_name => function => :new_var_name` form that does the same as the previous form
+3. a `:var_name => function => :new_var_name` form that does the same as the previous form
 but explicitly naming the resulting variable (can take several variables on left-hand side).
-1. a `function => :new_var_name` form that applies a function to a node and puts the results
+4. a `function => :new_var_name` form that applies a function to a node and puts the results
 in a new attribute. This form is usually applied when searching ancestors or descendants values.
-1. a `function` form that applies a mutating function to a node, without expecting any output.
+5. a `function` form that applies a mutating function to a node, without expecting any output.
 This form is adapted when using a function that already mutates the node, without the need to
 return anything, *e.g.* [`branching_order!`](@ref).
 
