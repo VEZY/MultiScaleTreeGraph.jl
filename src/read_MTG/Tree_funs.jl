@@ -134,7 +134,7 @@ Hint: prefer using `max_name = max_name(mtg)` and then `new_name(mtg,max_name)` 
 if you do it repeatidely.
 """
 function new_name(mtg, max_name)
-    string(mtg.name[1:5], parse(Int, max_name[6:end] + 1))
+    string(mtg.name[1:5], parse(Int, max_name[6:end]) + 1)
 end
 
 function new_name(mtg)
