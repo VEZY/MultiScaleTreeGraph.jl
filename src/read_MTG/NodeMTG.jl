@@ -44,8 +44,12 @@ mutable struct MutableNodeMTG <: AbstractNodeMTG
 end
 
 """
-Type that defines an MTG node (*i.e.* an element) with the name of the node, its parent, children,
-siblings, MTG encoding (see [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref)) and attributes.
+    Node(name::String, MTG<:AbstractNodeMTG, attributes)
+    Node(name::String, parent::Node, MTG<:AbstractNodeMTG, attributes)
+
+Type that defines an MTG node (*i.e.* an element) with the name of the node, its parent (only
+if its not the root node), children, MTG encoding (see [`NodeMTG`](@ref) or
+[`MutableNodeMTG`](@ref)) and attributes.
 
 The node is an entry point to a Mutli-Scale Tree Graph, meaning we can move through the MTG from any
 of its node. The root node is the node without parent. A leaf node is a node without any children.
@@ -86,12 +90,16 @@ end
 
 # - for all others:
 function Node(name::String, parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
-    Node(name, parent, nothing, nothing, MTG, attributes)
+    node = Node(name, parent, nothing, nothing, MTG, attributes)
+    addchild!(parent, node)
+    return node
 end
 
 # Idem for MutableNamedTuple here:
 function Node(name::String, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    Node{typeof(MTG),MutableNamedTuple}(name, parent, nothing, nothing, MTG, attributes)
+    node = Node{typeof(MTG),MutableNamedTuple}(name, parent, nothing, nothing, MTG, attributes)
+    addchild!(parent, node)
+    return node
 end
 
 """

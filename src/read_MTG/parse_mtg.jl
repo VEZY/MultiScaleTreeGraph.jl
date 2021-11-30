@@ -24,7 +24,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
 
     if length(l[1]) == 0
         error("No header was found for MTG section `MTG`. Did you put an empty line in-between ",
-        "the section name and its header?")
+            "the section name and its header?")
     end
     l_header = strip.(split(l[1], "\t"))
 
@@ -32,7 +32,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
         error("Neither ENTITY-CODE or TOPO were found in the MTG header at line: ", line)
     end
 
-    columns = strip.(l_header[l_header .!= ""][2:end]) # Remove leading and trailing whitespaces
+    columns = strip.(l_header[l_header.!=""][2:end]) # Remove leading and trailing whitespaces
 
     if length(columns) != length(features.NAME)
         error(
@@ -91,8 +91,8 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     # for i in Iterators.drop(1:length(splitted_MTG), 1)
     try
         while !eof(f)
-            node_name = join(["node_",node_id])
-            l[1] = next_line!(f, line;whitespace = false)
+            node_name = join(["node_", node_id])
+            l[1] = next_line!(f, line; whitespace = false)
             if length(l[1]) == 0
                 continue
             end
@@ -107,10 +107,10 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                     "Error in MTG at line ",
                     line,
                     ": Found an MTG node declared at column ",
-                    node_column,", but attributes are declared to start at column ",
-                    attr_column_start," in the ENTITY-CODE row. \nYou can probably fix the issue by adding",
+                    node_column, ", but attributes are declared to start at column ",
+                    attr_column_start, " in the ENTITY-CODE row. \nYou can probably fix the issue by adding",
                     " some tabs after ENTITY-CODE (try to add ",
-                    node_column - attr_column_start + 1," tabs)."
+                    node_column - attr_column_start + 1, " tabs)."
                 )
             end
             node_attr_column_start = attr_column_start - node_column + 1
@@ -124,12 +124,12 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 # The parent node is the last one built on the same column
                 parent_column = last_node_column[node_column]
                 if parent_column == 0
-                    error("Node defined at line ",line,
-                " uses the '<' notation but is the first on its column.")
+                    error("Node defined at line ", line,
+                        " uses the '<' notation but is the first on its column.")
                 end
             else
                 # The parent node is the last one built on column - 1.
-                parent_column = last_node_column[node_column - 1]
+                parent_column = last_node_column[node_column-1]
 
                 if parent_column == 0
                     error(
@@ -140,7 +140,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 end
             end
 
-            building_nodes = (1:length(node))[node .!= "^"]
+            building_nodes = (1:length(node))[node.!="^"]
 
             for k in building_nodes
                 node_element = parse_MTG_node(node[k])
@@ -164,9 +164,9 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 end
 
                 if k == minimum(building_nodes)
-                    parent_node = join(["node_",parent_column])
+                    parent_node = join(["node_", parent_column])
                 else
-                    parent_node = join(["node_",node_id - 1])
+                    parent_node = join(["node_", node_id - 1])
                 end
 
                 symbol_in_classes = node_element[2] .== classes.SYMBOL
@@ -193,8 +193,6 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 # Instantiating the current node (mutable):
                 child = Node(node_name, tree_dict[parent_node], childMTG, node_k_attr)
 
-                # Add the current node as a child to the parent and the parent to the current node
-                addchild!(tree_dict[parent_node], child;force = true)
                 # Add the node to tree_dict to be able to access it by name:
                 push!(tree_dict, node_name => child)
 
@@ -232,7 +230,7 @@ A parsed node in the form of a Dict of three:
 """
 function parse_MTG_node(l)
     if l in ("^", "<.", "+.")
-        return((l, missing, missing))
+        return ((l, missing, missing))
     end
 
     link = string(l[1:1])
@@ -268,7 +266,7 @@ Parse MTG node attributes names, values and type
 A list of attributes
 
 """
-function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, line;force = false)
+function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, line; force = false)
 
     if length(node_data) < attr_column_start
         return init_empty_attr(attr_type)
@@ -278,16 +276,16 @@ function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, 
 
     if length(node_data_attr) > size(features)[1]
         error("Found more columns for features in MTG than declared in the FEATURE section",
-    ". Please check line ",line, " of the MTG:\n",join(node_data, "\t"))
+            ". Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
     end
 
     node_attr = Dict{String,Any}(zip(features.NAME[1:length(node_data_attr)],
-                                fill(missing, length(node_data_attr))))
+        fill(missing, length(node_data_attr))))
 
     node_type = features.TYPE
 
-# node_data_attr is always read in order so names and types correspond to values in features
-    for i in 1:length(node_data_attr)
+    # node_data_attr is always read in order so names and types correspond to values in features
+    for i = 1:length(node_data_attr)
         if node_data_attr[i] == "" || node_data_attr[i] == "NA"
             pop!(node_attr, features.NAME[i])
             continue
@@ -299,25 +297,25 @@ function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, 
             catch e
                 if !force
                     error("Found issue in the MTG when converting column $(features[i,1]) ",
-                "with value $(node_data_attr[i]) into integer.",
-                " Please check line ",line," of the MTG:\n",join(node_data, "\t"))
+                        "with value $(node_data_attr[i]) into integer.",
+                        " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
                 end
                 pop!(node_attr, features.NAME[i])
 
             end
         elseif node_type[i] == "REAL" || (node_type[i] == "ALPHA" && in(features.NAME[i], ("Width", "Length")))
-        try
-            node_attr[features.NAME[i]] = parse(Float64, node_data_attr[i])
-        catch e
-            if !force
-                error("Found issue in the MTG when converting column $(features[i,1]) ",
-                "with value $(node_data_attr[i]) into Float64.",
-                " Please check line ",line," of the MTG:\n",join(node_data, "\t"))
+            try
+                node_attr[features.NAME[i]] = parse(Float64, node_data_attr[i])
+            catch e
+                if !force
+                    error("Found issue in the MTG when converting column $(features[i,1]) ",
+                        "with value $(node_data_attr[i]) into Float64.",
+                        " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
+                end
+                pop!(node_attr, features.NAME[i])
             end
-            pop!(node_attr, features.NAME[i])
-        end
-    else
-        node_attr[features.NAME[i]] = node_data_attr[i]
+        else
+            node_attr[features.NAME[i]] = node_data_attr[i]
         end
     end
 
@@ -333,11 +331,11 @@ Instantiate a `attr_type` struct with `node_attr` keys and values
 - `attr_type::DataType`: the type of the structure used to hold the attributes
 - `node_attr::String`: The node attributes as a [`Base.Dict`](@ref)
 """
-function node_attributes(attr_type::Type{T}, node_attr) where T <: Union{NamedTuple,MutableNamedTuple}
+function node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{NamedTuple,MutableNamedTuple}}
     attr_type{tuple(Symbol.(keys(node_attr))...)}(tuple(values(node_attr)...))
 end
 
-function node_attributes(attr_type::Type{T}, node_attr) where T <: Union{AbstractDict}
+function node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{AbstractDict}}
     Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)), values(node_attr)))
 end
 
@@ -346,6 +344,6 @@ function init_empty_attr(attr_type)
     attr_type()
 end
 
-function init_empty_attr(attr_type::Type{T}) where T <: Union{AbstractDict}
+function init_empty_attr(attr_type::Type{T}) where {T<:Union{AbstractDict}}
     attr_type{Symbol,Any}()
 end
