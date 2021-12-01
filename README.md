@@ -131,6 +131,8 @@ To do before v1:
   - [x] Add test for when the scale of the element is not found in the classes (see line 59 and 141 of parse_mtg.jl, i.e. `classes.SCALE[node_element[2] .== classes.SYMBOL][1]`
   - [x] Add test in parse_section! for empty lines in section (such as a while loop to ignore it).
 - [ ] Add OPF parser
+- [ ] Add tests for insert_parent!, insert_generation!, insert_child!, insert_sibling!
+- [ ] Add tests for insert_parents!, insert_generations!, insert_children!, insert_siblings!
 - [ ] Add conversion from DataFrame and from MetaGraph
 
 ## 4. Acknowledgments

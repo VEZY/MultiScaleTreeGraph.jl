@@ -1,32 +1,38 @@
 """
-insert_nodes!(mtg::Node,template,<keyword arguments>)
+    insert_parents!(node::Node, template, <keyword arguments>)
+    insert_generations!(node::Node, template, <keyword arguments>)
+    insert_children!(node::Node, template, <keyword arguments>)
+    insert_siblings!(node::Node, template, <keyword arguments>)
 
-Insert new nodes in the mtg following filters rules. It is important to note that it always
-return the root node, whether it is the old one or a new inserted one, so the user is
+Insert new nodes in the mtg following filters rules. It is important to note the function
+always return the root node, whether it is the old one or a new inserted one, so the user is
 encouraged to assign the results to an object.
+
+Insert nodes programmatically in an MTG as:
+- new parents of the filtered nodes: `insert_parents!`
+- new children of the filtered nodes: `insert_children!`
+- new siblings of the filtered node: `insert_siblings!`
+- new children of the filtered nodes, but the previous children of the filtered node become
+the children of the inserted node: `insert_generations!`
 
 # Arguments
 
 ## Mandatory arguments
 
 - `node::Node`: The node to start at.
-- `template::Node`: A template node used for all inserted nodes.
+- `template`:
+    - A template [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref) used for the inserted node,
+    - A NamedTuple with values for link, symbol, index, and scale
+    - Or a function taking the node as input and returning said template
 
 ## Keyword Arguments (filters)
 
 - `scale = nothing`: The scale at which to insert. Usually a Tuple-alike of integers.
 - `symbol = nothing`: The symbol at which to insert. Usually a Tuple-alike of Strings.
-- `link = nothing`: The link with the previous node at which to insert. Usually a Tuple-alike of Char.
+- `link = nothing`: The link with at which to insert. Usually a Tuple-alike of Char.
 - `all::Bool = true`: Continue after the first insertion (`true`), or stop.
 - `filter_fun = nothing`: Any function taking a node as input, e.g. [`isleaf`](@ref) to decide
-where to insert.
-
-# Notes
-
-1. The nodes are always inserted before a filtered node because we can't decide if a new node would
-be considered a new child or a new parent of the children otherwise.
-1. The function does not do anything fancy, it let the user take care of its own rules when
-inserting nodes. So if you insert a branching node, the whole subtree will be branched.
+on which node the insertion will be based on.
 
 # Examples
 
@@ -34,13 +40,81 @@ inserting nodes. So if you insert a branching node, the whole subtree will be br
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","A1B1.mtg")
 mtg = read_mtg(file)
 
-mtg = insert_nodes!(mtg, MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1), scale = 2) # Will insert new nodes before all scale 2
+# Insert new Shoot nodes before all scale 2 nodes:
+mtg = insert_parents!(mtg, MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1), scale = 2)
+
 mtg
 ```
 """
-function insert_nodes!(
+insert_parents!, insert_generations!, insert_children!, insert_siblings!
+
+function insert_parents!(
     node,
     template;
+    scale = nothing,
+    symbol = nothing,
+    link = nothing,
+    all::Bool = true,
+    filter_fun = nothing
+)
+    insert_nodes!(
+        node, template, insert_parent!;
+        scale = scale, symbol = symbol, link = link, all = all, filter_fun = filter_fun
+    )
+end
+
+function insert_generations!(
+    node,
+    template;
+    scale = nothing,
+    symbol = nothing,
+    link = nothing,
+    all::Bool = true,
+    filter_fun = nothing
+)
+    insert_nodes!(
+        node, template, insert_generation!;
+        scale = scale, symbol = symbol, link = link, all = all, filter_fun = filter_fun
+    )
+end
+
+function insert_children!(
+    node,
+    template;
+    scale = nothing,
+    symbol = nothing,
+    link = nothing,
+    all::Bool = true,
+    filter_fun = nothing
+)
+    insert_nodes!(
+        node, template, insert_child!;
+        scale = scale, symbol = symbol, link = link, all = all, filter_fun = filter_fun
+    )
+end
+
+function insert_siblings!(
+    node,
+    template;
+    scale = nothing,
+    symbol = nothing,
+    link = nothing,
+    all::Bool = true,
+    filter_fun = nothing
+)
+    insert_nodes!(
+        node, template, insert_sibling!;
+        scale = scale, symbol = symbol, link = link, all = all, filter_fun = filter_fun
+    )
+end
+
+"""
+Actual workhorse of insert_parents!, insert_generations!, insert_children!, insert_siblings!
+"""
+function insert_nodes!(
+    node,
+    template,
+    fn;
     scale = nothing,
     symbol = nothing,
     link = nothing,
@@ -54,24 +128,24 @@ function insert_nodes!(
     filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
     if filtered
-        node = insert_node!(node, template, max_id)
+        node = fn(node, template, max_id)
         # Don't go further if all == false
         all ? nothing : return nothing
     end
 
-    insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)
+    insert_nodes!_(node, template, fn, max_id, scale, symbol, link, all, filter_fun)
 
     # Always return the root, whether it is the same one or a new one
     return get_root(node)
 end
 
-function insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter_fun)
+function insert_nodes!_(node, template, fn, max_id, scale, symbol, link, all, filter_fun)
 
     # Is there any filter happening for the current node? (true is inserted):
     filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
     if filtered
-        node = insert_node!(node, template, max_id)
+        node = fn(node, template, max_id)
         # Don't go further if all == false
         all ? true : return node
     end
@@ -79,23 +153,77 @@ function insert_nodes!_(node, template, max_id, scale, symbol, link, all, filter
     if !isleaf(node)
         # First we apply the algorithm recursively on the children:
         for chnode in ordered_children(node)
-            insert_nodes!_(chnode, template, max_id, scale, symbol, link, all, filter_fun)
+            insert_nodes!_(chnode, template, fn, max_id, scale, symbol, link, all, filter_fun)
         end
     end
     return node
 end
 
-"""
-    insert_node!(node, template, max_id)
 
-Insert a node as the new parent of node.
+"""
+    new_node_MTG(node, template<:Union{NodeMTG,MutableNodeMTG,NamedTuple,MutableNamedTuple})
+    new_node_MTG(node, fn)
+
+Returns a new NodeMTG matching the one used in node (either `NodeMTG` or `MutableNodeMTG`)
+based on a template, or on a function that takes a node as input and return said template.
+
+# Examples
+
+```julia
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
+
+# using a NodeMTG as a template:
+MultiScaleTreeGraph.new_node_MTG(mtg, NodeMTG("/", "Leaf", 1, 2))
+# Note that it returns a MutableNodeMTG because `mtg` is using this type instead of a `NodeMTG`
+
+# using a NamedTuple as a template:
+MultiScaleTreeGraph.new_node_MTG(mtg, (link = "/", symbol = "Leaf", index = 1, scale = 2))
+
+# using a function that returns a template based on the first child of the node:
+MultiScaleTreeGraph.new_node_MTG(
+    mtg,
+    x -> (
+            link = x[1].MTG.link,
+            symbol = x[1].MTG.symbol,
+            index = x[1].MTG.index,
+            scale = x[1].MTG.scale)
+        )
+```
+"""
+function new_node_MTG(node, fn)
+    template = fn(node)
+    new_node_MTG(node, template)
+end
+
+function new_node_MTG(node, template::T) where {T<:Union{NodeMTG,MutableNodeMTG,NamedTuple,MutableNamedTuple}}
+    typeof(node.MTG)(template.link, template.symbol, template.index, template.scale)
+end
+
+"""
+    insert_parent!(node, template, max_id = [new_name(node)])
+    insert_generation!(node, template, max_id = [new_name(node)])
+    insert_child!(node, template, max_id = [new_name(node)])
+    insert_sibling!(node, template, max_id = [new_name(node)])
+
+Insert a node in an MTG as:
+
+- a new parent of node: `insert_parent!`
+- a new child of node: `insert_child!`
+- a new sibling of node: `insert_sibling!`
+- a new child of node, but the children of node become the children of the inserted node:
+`insert_generation!`
 
 # Arguments
 
-- `node::Node`: The node at which to insert a node as a parent.
-- `template::Node`: A template node used as the inserted nodes.
-- `max_id::Vector{Int64}`: The maximum id of the mtg as a vector of 1 value, used to compute
-the name of the inserted node. It is incremented in the function.
+- `node::Node`: The node from which to insert a node (as its parent, child or sibling).
+- `template`:
+    - A template [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref) used for the inserted node,
+    - A NamedTuple with values for link, symbol, index, and scale
+    - Or a function taking the node as input and returning said template
+- `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of one value.
+Used to compute the name of the inserted node. It is incremented in the function, and use by
+default the value from [`new_name`](@ref).
 
 # Examples
 
@@ -105,14 +233,29 @@ mtg = read_mtg(file)
 
 template = MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1)
 max_id = parse(Int, MultiScaleTreeGraph.max_name(mtg)[6:end])
-mtg = insert_node!(mtg[1][1], template, max_id)
+mtg = insert_parent!(mtg[1][1], template, max_id)
 mtg
+
+# The template can be a function that returns the template. For example a dummy example would
+# be a function that uses the NodeMTG of the first child of the node:
+
+mtg = insert_parent!(
+    mtg[1][1],
+    x -> (
+        link = x[1].MTG.link,
+        symbol = x[1].MTG.symbol,
+        index = x[1].MTG.index,
+        scale = x[1].MTG.scale)
+    )
+)
 ```
 """
-function insert_node!(node, template, max_id)
+insert_parent!, insert_generation!, insert_child!, insert_sibling!
+
+function insert_parent!(node, template, max_id = [new_name(node)])
 
     # Using the template MTG to create the new one (except for the name that we increment):
-    new_node_MTG = typeof(node.MTG)(template.link, template.symbol, template.index, template.scale)
+    new_node_MTG_ = MultiScaleTreeGraph.new_node_MTG(node, template)
 
     max_id[1] += 1
 
@@ -123,7 +266,7 @@ function insert_node!(node, template, max_id)
             nothing,
             Dict{String,Node}(node.name => node),
             nothing,
-            new_node_MTG,
+            new_node_MTG_,
             typeof(node.attributes)() # No attributes at the moment
         )
 
@@ -144,7 +287,7 @@ function insert_node!(node, template, max_id)
             node.parent,
             Dict{String,Node}(node.name => node),
             nothing,
-            new_node_MTG,
+            new_node_MTG_,
             typeof(node.attributes)() # No attributes at the moment
         )
 
@@ -158,3 +301,70 @@ function insert_node!(node, template, max_id)
 
     return node
 end
+
+
+function insert_child!(node, template, max_id = [new_name(node)])
+
+    # Using the template MTG to create the new one (except for the name that we increment):
+    new_node_MTG_ = new_node_MTG(node, template)
+
+    max_id[1] += 1
+
+    new_node = Node(
+        join(["node_", max_id[1]]),
+        node,
+        new_node_MTG_,
+        typeof(node.attributes)() # No attributes at the moment
+    )
+
+    # Add the new node to the children:
+    push!(node.children, new_node.name => new_node)
+
+    return node
+end
+
+
+function insert_sibling!(node, template, max_id = [new_name(node)])
+
+    # Using the template MTG to create the new one (except for the name that we increment):
+    new_node_MTG_ = new_node_MTG(node, template)
+
+    max_id[1] += 1
+
+    new_node = Node(
+        join(["node_", max_id[1]]),
+        parent(node),
+        new_node_MTG_,
+        typeof(node.attributes)() # No attributes at the moment
+    )
+
+    # Add the new node to the children of the parent node:
+    push!(parent(node).children, new_node.name => new_node)
+
+    return node
+end
+
+function insert_generation!(node, template, max_id = [new_name(node)])
+
+    # Using the template MTG to create the new one (except for the name that we increment):
+    new_node_MTG_ = new_node_MTG(node, template)
+
+    max_id[1] += 1
+
+    new_node = Node(
+        join(["node_", max_id[1]]),
+        node,
+        new_node_MTG_,
+        typeof(node.attributes)() # No attributes at the moment
+    )
+
+    # Add the children of the node as children of the new node:
+    append!(new_node.children, node.children)
+
+    # Add the new node as the only child of the node:
+    node.children = Dict{String,Node}(new_node.name => new_node)
+
+    return node
+end
+
+@deprecate insert_node!(node, template, max_id) insert_parent!(node, template, max_id)

@@ -67,8 +67,8 @@ export @mutate_mtg!
 export is_filtered
 export delete_nodes!
 export delete_node!
-export insert_nodes!
-export insert_node!
+export insert_parents!, insert_generations!, insert_children!, insert_siblings!
+export insert_parent!, insert_generation!, insert_child!, insert_sibling!
 export write_mtg
 export is_segment!
 export descendants, ancestors, descendants!

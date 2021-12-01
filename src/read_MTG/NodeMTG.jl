@@ -46,6 +46,14 @@ end
 """
     Node(name::String, MTG<:AbstractNodeMTG, attributes)
     Node(name::String, parent::Node, MTG<:AbstractNodeMTG, attributes)
+    Node(
+        name::String,
+        parent::Node,
+        children::Union{Nothing,Dict{String,Node}},
+        siblings::Union{Nothing,Dict{String,Node}},
+        MTG<:AbstractNodeMTG,
+        attributes
+    )
 
 Type that defines an MTG node (*i.e.* an element) with the name of the node, its parent (only
 if its not the root node), children, MTG encoding (see [`NodeMTG`](@ref) or
