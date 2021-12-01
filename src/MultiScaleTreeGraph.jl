@@ -85,5 +85,6 @@ export branching_order!
 export nleaves!, nleaves, nleaves_siblings!
 export pipe_model!
 export get_node
+export new_child_link
 
 end

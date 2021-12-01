@@ -28,5 +28,3 @@ You can find out how to use the package on the [Getting started](@ref) section, 
 ## References
 
 Godin, C., et Y. Caraglio. 1998. « A Multiscale Model of Plant Topological Structures ». Journal of Theoretical Biology 191 (1): 1‑46. https://doi.org/10.1006/jtbi.1997.0561.
-
-Image: https://upload.wikimedia.org/wikipedia/commons/4/44/Grassy_grass_plant.svg
