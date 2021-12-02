@@ -24,6 +24,9 @@ the children of the inserted node: `insert_generations!`
     - A template [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref) used for the inserted node,
     - A NamedTuple with values for link, symbol, index, and scale
     - Or a function taking the node as input and returning said template
+- `attr`: Attributes for the node. Similarly to `template`, can be:
+    - An attribute of the same type as of node attributes (*e.g.* a Dict or a NamedTuple)
+    - A function to compute new attributes (should also return same type for the attributes)
 
 ## Keyword Arguments (filters)
 
@@ -50,22 +53,25 @@ insert_parents!, insert_generations!, insert_children!, insert_siblings!
 
 function insert_parents!(
     node,
-    template;
+    template,
+    attr = typeof(node.attributes)();
     scale = nothing,
     symbol = nothing,
     link = nothing,
     all::Bool = true,
     filter_fun = nothing
 )
+
     insert_nodes!(
-        node, template, insert_parent!;
+        node, template, insert_parent!, attr;
         scale = scale, symbol = symbol, link = link, all = all, filter_fun = filter_fun
     )
 end
 
 function insert_generations!(
     node,
-    template;
+    template,
+    attr = typeof(node.attributes)();
     scale = nothing,
     symbol = nothing,
     link = nothing,
@@ -73,14 +79,15 @@ function insert_generations!(
     filter_fun = nothing
 )
     insert_nodes!(
-        node, template, insert_generation!;
+        node, template, insert_generation!, attr;
         scale = scale, symbol = symbol, link = link, all = all, filter_fun = filter_fun
     )
 end
 
 function insert_children!(
     node,
-    template;
+    template,
+    attr = typeof(node.attributes)();
     scale = nothing,
     symbol = nothing,
     link = nothing,
@@ -88,14 +95,15 @@ function insert_children!(
     filter_fun = nothing
 )
     insert_nodes!(
-        node, template, insert_child!;
+        node, template, insert_child!, attr;
         scale = scale, symbol = symbol, link = link, all = all, filter_fun = filter_fun
     )
 end
 
 function insert_siblings!(
     node,
-    template;
+    template,
+    attr = typeof(node.attributes)();
     scale = nothing,
     symbol = nothing,
     link = nothing,
@@ -103,7 +111,7 @@ function insert_siblings!(
     filter_fun = nothing
 )
     insert_nodes!(
-        node, template, insert_sibling!;
+        node, template, insert_sibling!, attr;
         scale = scale, symbol = symbol, link = link, all = all, filter_fun = filter_fun
     )
 end
@@ -114,7 +122,8 @@ Actual workhorse of insert_parents!, insert_generations!, insert_children!, inse
 function insert_nodes!(
     node,
     template,
-    fn;
+    fn,
+    attr = typeof(node.attributes)();
     scale = nothing,
     symbol = nothing,
     link = nothing,
@@ -127,25 +136,32 @@ function insert_nodes!(
     check_filters(node, scale = scale, symbol = symbol, link = link)
     filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
+    if isempty(methods(attr)) && !isa(attr, Function)
+        # Attr is not given as a function, making it a function
+        attr_fun = x -> attr
+    else
+        attr_fun = attr
+    end
+
     if filtered
-        node = fn(node, template, max_node_id)
+        node = fn(node, template, attr_fun, max_node_id)
         # Don't go further if all == false
         all ? nothing : return nothing
     end
 
-    insert_nodes!_(node, template, fn, max_node_id, scale, symbol, link, all, filter_fun)
+    insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
 
     # Always return the root, whether it is the same one or a new one
     return get_root(node)
 end
 
-function insert_nodes!_(node, template, fn, max_node_id, scale, symbol, link, all, filter_fun)
+function insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
 
     # Is there any filter happening for the current node? (true is inserted):
     filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
     if filtered
-        node = fn(node, template, max_node_id)
+        node = fn(node, template, attr_fun, max_node_id)
         # Don't go further if all == false
         all ? true : return node
     end
@@ -153,7 +169,7 @@ function insert_nodes!_(node, template, fn, max_node_id, scale, symbol, link, al
     if !isleaf(node)
         # First we apply the algorithm recursively on the children:
         for chnode in ordered_children(node)
-            insert_nodes!_(chnode, template, fn, max_node_id, scale, symbol, link, all, filter_fun)
+            insert_nodes!_(chnode, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
         end
     end
     return node
@@ -201,10 +217,10 @@ function new_node_MTG(node, template::T) where {T<:Union{NodeMTG,MutableNodeMTG,
 end
 
 """
-    insert_parent!(node, template, max_id = [max_id(node)])
-    insert_generation!(node, template, max_id = [max_id(node)])
-    insert_child!(node, template, max_id = [max_id(node)])
-    insert_sibling!(node, template, max_id = [max_id(node)])
+    insert_parent!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
+    insert_generation!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
+    insert_child!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
+    insert_sibling!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
 
 Insert a node in an MTG as:
 
@@ -221,6 +237,9 @@ Insert a node in an MTG as:
     - A template [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref) used for the inserted node,
     - A NamedTuple with values for link, symbol, index, and scale
     - Or a function taking the node as input and returning said template
+- `attr_fun`: A function to compute new attributes based on the filtered node. Should return
+attribute values of the same type as of the nodes attributes in the MTG (*e.g.* Dict or
+NamedTuple). If you need to just pass attributes values to a node use `x -> your_values`.
 - `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of length one.
 Used to compute the name of the inserted node. It is incremented in the function, and use by
 default the value from [`max_id`](@ref).
@@ -251,10 +270,10 @@ mtg = insert_parent!(
 """
 insert_parent!, insert_generation!, insert_child!, insert_sibling!
 
-function insert_parent!(node, template, max_id = [max_id(node)])
+function insert_parent!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
 
     # Using the template MTG to create the new one (except for the id that we increment):
-    new_node_MTG_ = MultiScaleTreeGraph.new_node_MTG(node, template)
+
 
     max_id[1] += 1
 
@@ -266,8 +285,8 @@ function insert_parent!(node, template, max_id = [max_id(node)])
             nothing,
             Dict{Int,Node}(node.id => node),
             nothing,
-            new_node_MTG_,
-            typeof(node.attributes)() # No attributes at the moment
+            new_node_MTG(node, template),
+            attr_fun(node)
         )
 
         # Add to the new root the mandatory root attributes:
@@ -288,8 +307,8 @@ function insert_parent!(node, template, max_id = [max_id(node)])
             node.parent,
             Dict{Int,Node}(node.id => node),
             nothing,
-            new_node_MTG_,
-            typeof(node.attributes)() # No attributes at the moment
+            new_node_MTG(node, template),
+            attr_fun(node)
         )
 
         # Add the new node to the parent:
@@ -304,10 +323,7 @@ function insert_parent!(node, template, max_id = [max_id(node)])
 end
 
 
-function insert_child!(node, template, max_id = [max_id(node)])
-
-    # Using the template MTG to create the new one (except for the id that we increment):
-    new_node_MTG_ = new_node_MTG(node, template)
+function insert_child!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
 
     max_id[1] += 1
 
@@ -315,8 +331,8 @@ function insert_child!(node, template, max_id = [max_id(node)])
         join(["node_", max_id[1]]),
         max_id[1],
         node,
-        new_node_MTG_,
-        typeof(node.attributes)() # No attributes at the moment
+        new_node_MTG(node, template),
+        attr_fun(node)
     )
 
     # Add the new node to the children:
@@ -326,10 +342,7 @@ function insert_child!(node, template, max_id = [max_id(node)])
 end
 
 
-function insert_sibling!(node, template, max_id = [max_id(node)])
-
-    # Using the template MTG to create the new one (except for the id that we increment):
-    new_node_MTG_ = new_node_MTG(node, template)
+function insert_sibling!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
 
     max_id[1] += 1
 
@@ -337,8 +350,8 @@ function insert_sibling!(node, template, max_id = [max_id(node)])
         join(["node_", max_id[1]]),
         max_id[1],
         parent(node),
-        new_node_MTG_,
-        typeof(node.attributes)() # No attributes at the moment
+        new_node_MTG(node, template),
+        attr_fun(node)
     )
 
     # Add the new node to the children of the parent node:
@@ -347,10 +360,7 @@ function insert_sibling!(node, template, max_id = [max_id(node)])
     return node
 end
 
-function insert_generation!(node, template, max_id = [max_id(node)])
-
-    # Using the template MTG to create the new one (except for the id that we increment):
-    new_node_MTG_ = new_node_MTG(node, template)
+function insert_generation!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
 
     max_id[1] += 1
 
@@ -360,8 +370,8 @@ function insert_generation!(node, template, max_id = [max_id(node)])
         node,
         node.children,
         nothing,
-        new_node_MTG_,
-        typeof(node.attributes)() # No attributes at the moment
+        new_node_MTG(node, template),
+        attr_fun(node)
     )
 
     # Add the new node as the only child of the node:
