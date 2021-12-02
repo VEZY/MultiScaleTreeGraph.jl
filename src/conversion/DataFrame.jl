@@ -29,7 +29,7 @@ function DataFrames.DataFrame(mtg::Node, key::T) where {T<:Union{AbstractArray,T
         traverse(
             mtg,
             node -> (
-                node_id = parse(Int, node.name[6:end]),
+                node_id = node.id,
                 node_symbol = node.MTG.symbol,
                 node_scale = node.MTG.scale,
                 node_index = node.MTG.index,
@@ -80,6 +80,6 @@ end
 
 function get_parent_id(x)
     if !isroot(x)
-        return parse(Int, x.parent.name[6:end])
+        return parse(Int, x.parent.id)
     end
 end

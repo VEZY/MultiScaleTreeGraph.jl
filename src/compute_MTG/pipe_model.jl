@@ -85,7 +85,7 @@ function pipe_model!(node, var_name, threshold_value; allow_missing = false)
 
     if node[var_name] === nothing && !allow_missing
         error(
-            "$var_name not found (`== nothing`) in `$(node.name)`. ",
+            "$var_name not found (`== nothing`) in node `$(node.name)` (id: $(node.id)). ",
             "Please make sure all nodes have a value, or use `allow_missing = true`."
         )
     end
@@ -128,7 +128,8 @@ function pipe_model!(node, var_name, threshold_value; allow_missing = false)
                         val = 0
                     else
                         error(
-                            "$var_name not found (`== nothing`) in `$(node_siblings[i].name)`. ",
+                            "$var_name not found (`== nothing`) in `$(node_siblings[i].name)`",
+                            "(id: $(node_siblings[i].id)). ",
                             "Please make sure all nodes have a value, or use `allow_missing = true`."
                         )
                     end

@@ -15,13 +15,13 @@ MetaGraph(mtg)
 """
 function MetaGraph(g::Node)
     meta_mtg =
-    MetaGraph(
-        DiGraph(),
-        Label = String,
-        VertexMeta = typeof(mtg.attributes),
-        EdgeMeta = String,
-        gprops = "MTG"
-    )
+        MetaGraph(
+            DiGraph(),
+            Label = String,
+            VertexMeta = typeof(g.attributes),
+            EdgeMeta = Int,
+            gprops = "MTG"
+        )
 
     traverse!(g, to_MetaGraph, meta_mtg)
     return meta_mtg
@@ -29,11 +29,11 @@ end
 
 
 function to_MetaGraph(node, meta_mtg)
-    meta_mtg[node.name] = node.attributes
+    meta_mtg[node.id] = node.attributes
 
     if !isroot(node)
-        code_node = code_for(meta_mtg, node.name)
-        code_parent = code_for(meta_mtg, parent(node).name)
+        code_node = code_for(meta_mtg, node.id)
+        code_parent = code_for(meta_mtg, parent(node).id)
         add_edge!(meta_mtg, code_parent, code_node, node.MTG.link)
     end
 end

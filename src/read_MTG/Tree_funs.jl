@@ -40,13 +40,13 @@ end
 """
 Add a new child to a parent node, and add the parent node as the parent.
 """
-function addchild!(parent::Node, name::String, MTG::M, attributes) where {M<:AbstractNodeMTG}
-    child = Node(name, parent, MTG, attributes)
+function addchild!(parent::Node, id::Int, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    child = Node(id, parent, MTG, attributes)
     addchild!(parent, child)
 end
 
-function addchild!(parent::Node, name::String, MTG::M) where {M<:AbstractNodeMTG}
-    child = Node(name, parent, MTG)
+function addchild!(parent::Node, id::Int, MTG::M) where {M<:AbstractNodeMTG}
+    child = Node(id, parent, MTG)
     addchild!(parent, child)
 end
 
@@ -59,9 +59,9 @@ function addchild!(parent::Node, child::Node; force = false)
     end
 
     if parent.children === nothing
-        parent.children = Dict(child.name => child)
+        parent.children = Dict{Int,Node}(child.id => child)
     else
-        push!(parent.children, child.name => child)
+        push!(parent.children, child.is => child)
     end
 end
 
@@ -110,35 +110,36 @@ function nextsibling(node::Node)
 end
 
 """
-    max_name(mtg)
+    max_id(mtg)
 
-Returns the maximum name of the mtg based on its index
+Returns the maximum id of the mtg
 """
-function max_name(mtg)
-    maxname = [0]
+function max_id(mtg)
+    maxid = [0]
 
-    function update_maxname(name, maxname)
-        name_int = parse(Int, name[6:end])
-        parse(Int, name[6:end]) > maxname[1] ? maxname[1] = name_int : nothing
+    function update_maxname(id, maxid)
+        id > maxid[1] ? maxid[1] = id : nothing
     end
-    traverse!(mtg, x -> update_maxname(x.name, maxname))
-    string(mtg.name[1:5], maxname[1])
+
+    traverse!(mtg, x -> update_maxname(x.id, maxid))
+
+    return maxid[1]
 end
 
 """
-    new_name(mtg)
-    new_name(mtg,max_name)
+    new_id(mtg)
+    new_id(mtg, max_id)
 
-Make a new unique identifier by incrementing on the maximum name (names are names+index).
-Hint: prefer using `max_name = max_name(mtg)` and then `new_name(mtg,max_name)` for performance
+Make a new unique identifier by incrementing on the maximum node id.
+Hint: prefer using `max_id = max_id(mtg)` and then `new_id(mtg, max_is)` for performance
 if you do it repeatidely.
 """
-function new_name(mtg, max_name)
-    string(mtg.name[1:5], parse(Int, max_name[6:end]) + 1)
+function new_id(max_id::Int)
+    max_id + 1
 end
 
-function new_name(mtg)
-    new_name(mtg, max_name(mtg))
+function new_id(mtg::Node)
+    new_id(max_id(mtg))
 end
 
 """

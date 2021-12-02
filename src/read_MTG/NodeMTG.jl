@@ -44,10 +44,13 @@ mutable struct MutableNodeMTG <: AbstractNodeMTG
 end
 
 """
-    Node(name::String, MTG<:AbstractNodeMTG, attributes)
-    Node(name::String, parent::Node, MTG<:AbstractNodeMTG, attributes)
+    Node(id::Int, MTG<:AbstractNodeMTG, attributes)
+    Node(name::String, id::Int, MTG<:AbstractNodeMTG, attributes)
+    Node(id::Int, parent::Node, MTG<:AbstractNodeMTG, attributes)
+    Node(name::String, id::Int, parent::Node, MTG<:AbstractNodeMTG, attributes)
     Node(
         name::String,
+        id::Int,
         parent::Node,
         children::Union{Nothing,Dict{String,Node}},
         siblings::Union{Nothing,Dict{String,Node}},
@@ -55,8 +58,8 @@ end
         attributes
     )
 
-Type that defines an MTG node (*i.e.* an element) with the name of the node, its parent (only
-if its not the root node), children, MTG encoding (see [`NodeMTG`](@ref) or
+Type that defines an MTG node (*i.e.* an element) with the name of the node, its unique id,
+its parent (only if its not the root node), children, MTG encoding (see [`NodeMTG`](@ref) or
 [`MutableNodeMTG`](@ref)) and attributes.
 
 The node is an entry point to a Mutli-Scale Tree Graph, meaning we can move through the MTG from any
@@ -67,6 +70,8 @@ biological sense.
 mutable struct Node{T<:AbstractNodeMTG,A}
     "Name of the node. Should be unique in the MTG."
     name::String
+    "Node unique ID"
+    id::Int
     "Parent node."
     parent::Union{Nothing,Node}
     "Dictionary of children nodes, or Nothing if no children."
@@ -82,33 +87,40 @@ end
 # Shorter way of instantiating a Node:
 
 # - for the root:
-Node(name::String, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(name, nothing, nothing, nothing, MTG, attributes)
+Node(name::String, id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(name, id, nothing, nothing, nothing, MTG, attributes)
+
+# If the name is not given, we compute one from the id:
+Node(id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(join(["node_", id]), id, MTG, attributes)
 
 # Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
 # can't mutate attributes, i.e. we get somthing like
 # Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
 # Node{NodeMTG,MutableNamedTuple}
-function Node(name::String, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    Node{typeof(MTG),MutableNamedTuple}(name, nothing, nothing, nothing, MTG, attributes)
+function Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
+    Node{typeof(MTG),MutableNamedTuple}(name, id, nothing, nothing, nothing, MTG, attributes)
 end
 
-function Node(name::String, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    Node{typeof(MTG),NamedTuple}(name, nothing, nothing, nothing, MTG, attributes)
+function Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
+    Node{typeof(MTG),NamedTuple}(name, id, nothing, nothing, nothing, MTG, attributes)
 end
 
 # - for all others:
-function Node(name::String, parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
-    node = Node(name, parent, nothing, nothing, MTG, attributes)
+function Node(name::String, id::Int, parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    node = Node(name, id, parent, nothing, nothing, MTG, attributes)
     addchild!(parent, node)
     return node
 end
 
 # Idem for MutableNamedTuple here:
-function Node(name::String, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    node = Node{typeof(MTG),MutableNamedTuple}(name, parent, nothing, nothing, MTG, attributes)
+function Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
+    node = Node{typeof(MTG),MutableNamedTuple}(name, id, parent, nothing, nothing, MTG, attributes)
     addchild!(parent, node)
     return node
 end
+
+# Idem, if the name is not given, we compute one from the id:
+Node(id::Int, parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(join(["node_", id]), id, parent, MTG, attributes)
+
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"]

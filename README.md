@@ -93,7 +93,7 @@ To do before v1:
   - [x] `@mutate_mtg!()`
   - [x] `traverse!()` for a more julian way
   - [x] `delete_nodes!()` to delete nodes in the tree based on filters
-  - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_name()` for naming them.
+  - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_id()` for id them.
   - [ ] Add possibility to mutate a node using an anonymous function, e.g. `@mutate_mtg!(mtg, x -> x*2)`. NB: there's `traverse()` for that.
   - [ ] Use DataFrame-like API?
     - [ ] select!

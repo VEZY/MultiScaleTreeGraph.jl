@@ -155,7 +155,7 @@ function delete_node!(node; child_link_fun = new_child_link)
         end
 
         # Delete the node as child of his parent:
-        pop!(parent_node.children, node.name)
+        pop!(parent_node.children, node.id)
 
         node_return = parent_node
     end

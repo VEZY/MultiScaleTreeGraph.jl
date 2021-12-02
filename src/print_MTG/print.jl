@@ -1,5 +1,5 @@
 function AbstractTrees.printnode(io::IO, node::Node)
-    print(io, join(["Node: ",node.name,", Link: ",node.MTG.link,"Index: ", node.MTG.index]))
+    print(io, join(["Node -> ID:", node.id, "Name: ", node.name, ", Link: ", node.MTG.link, "Index: ", node.MTG.index]))
 end
 
 """
@@ -35,7 +35,7 @@ function Base.print(node::Node, vars; leading::AbstractString = "", io::IO = std
 end
 
 function Base.show(io::IO, node::Node)
-    print(node;io = io)
+    print(node; io = io)
 end
 
 """
@@ -44,7 +44,7 @@ end
 Format the printing of the tree according to link: follow or branching
 """
 function get_printing(node::Node; leading::AbstractString = "")
-    node_vec = [node.MTG.link * " " * node.name[6:end] * ": " * node.MTG.symbol]
+    node_vec = [node.MTG.link * " " * node.id * ": " * node.MTG.symbol]
     print_below = get_printing_(node; leading = "")
     if print_below !== nothing
         append!(node_vec, print_below)
@@ -62,10 +62,10 @@ function get_printing_(node::Node; leading::AbstractString = "")
         for chnode in ordered_children(node)
             i += 1
             if i != last
-                to_print    = leading * "\u251C\u2500 " * chnode.MTG.link * " " * chnode.name[6:end] * ": " * chnode.MTG.symbol
+                to_print = leading * "\u251C\u2500 " * chnode.MTG.link * " " * chnode.id * ": " * chnode.MTG.symbol
                 new_leading = leading * "\u2502  "
             else
-                to_print    = leading * "\u2514\u2500 " * chnode.MTG.link * " " * chnode.name[6:end] * ": " * chnode.MTG.symbol
+                to_print = leading * "\u2514\u2500 " * chnode.MTG.link * " " * chnode.id * ": " * chnode.MTG.symbol
                 new_leading = leading * "   "
             end
             append!(child_vec, [to_print])

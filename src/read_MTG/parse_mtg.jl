@@ -78,7 +78,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     scale = classes.SCALE[symbol_in_classes][1]
     attrs = parse_MTG_node_attr(splitted_MTG, attr_type, features, attr_column_start, line)
 
-    root_node = Node("node_1", mtg_type(link, symbol, index, scale), attrs)
+    root_node = Node("node_1", 1, mtg_type(link, symbol, index, scale), attrs)
 
     # Initializing the last column to which MTG was attached to keep track of which column
     # to attach the new MTG line
@@ -87,7 +87,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     last_node_column[1] = 1
     node_id = 2
 
-    tree_dict = Dict{String,Node}("node_1" => root_node)
+    tree_dict = Dict{Int,Node}(1 => root_node)
     # for i in Iterators.drop(1:length(splitted_MTG), 1)
     try
         while !eof(f)
@@ -191,10 +191,10 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 )
 
                 # Instantiating the current node (mutable):
-                child = Node(node_name, tree_dict[parent_node], childMTG, node_k_attr)
+                child = Node(node_name, node_id, tree_dict[parent_node], childMTG, node_k_attr)
 
                 # Add the node to tree_dict to be able to access it by name:
-                push!(tree_dict, node_name => child)
+                push!(tree_dict, node_id => child)
 
                 # Keeping track of the last node used in the current MTG column
                 last_node_column[node_column] = node_id
