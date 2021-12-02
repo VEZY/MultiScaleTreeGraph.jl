@@ -5,7 +5,7 @@
     max_node_id = [max_id(mtg)]
     length_before = length(mtg)
 
-    insert_parent!(mtg[1][1], template, max_node_id) # providing max_id
+    insert_parent!(mtg[1][1], template, node -> typeof(node.attributes)(), max_node_id) # providing max_id
 
     @test length(mtg) == length_before + 1
     @test mtg[1][1].MTG.link == template.link
@@ -41,6 +41,26 @@
     insert_parent!(mtg_4, template)
 
     @test get_root(mtg_4).MTG == template
+
+    # Test inserting with attributes:
+
+    mtg_5 = read_mtg("files/simple_plant.mtg")
+
+    # Just a constant value:
+    insert_parent!(mtg_5, template, x -> Dict{Symbol,Any}(:Length => 1,))
+
+    # Using descendants values
+    insert_parent!(
+        get_root(mtg_5),
+        template,
+        node -> Dict{Symbol,Any}(:Total_Length => sum(descendants(node, :Length, ignore_nothing = true)),)
+    )
+
+    mtg_5 = get_root(mtg_5)
+
+    @test mtg_5.MTG == template
+    @test mtg_5[:Total_Length] == 32.0
+    @test mtg_5[1][:Length] == 1
 end
 
 
@@ -48,11 +68,17 @@ end
     mtg = read_mtg("files/simple_plant.mtg")
     template = MutableNodeMTG("/", "Shoot", 0, 1)
     length_before = length(mtg)
-    insert_parents!(mtg, template, scale = 2)
+    insert_parents!(
+        mtg,
+        template,
+        node -> Dict{Symbol,Any}(:Total_Length => sum(descendants(node, :Length, ignore_nothing = true)),),
+        scale = 2
+    )
 
     @test length(mtg) == length_before + 1
     @test mtg[1][1].MTG == template
     @test mtg[1][1].name == "node_8"
+    @test mtg[1][1].attributes == Dict{Symbol,Any}(:Total_Length => 32.0)
 end
 
 
@@ -64,7 +90,7 @@ end
 
     mtg_orig = deepcopy(mtg)
 
-    insert_child!(mtg[1], template, max_node_id) # providing max_id
+    insert_child!(mtg[1], template, node -> typeof(node.attributes)(), max_node_id) # providing max_id
     insert_parent!(mtg_orig[1][1], template)
 
     @test length(mtg) == length(mtg_orig)
@@ -93,7 +119,7 @@ end
 
     mtg_orig = deepcopy(mtg)
 
-    insert_child!(mtg[1], template, max_node_id) # providing max_id
+    insert_child!(mtg[1], template, node -> typeof(node.attributes)(), max_node_id) # providing max_id
     insert_generation!(mtg_orig[1], template)
 
     @test length(mtg) == length(mtg_orig)
@@ -121,7 +147,7 @@ end
 
     mtg_orig = deepcopy(mtg)
 
-    insert_child!(mtg, template, max_node_id) # providing max_id
+    insert_child!(mtg, template, node -> typeof(node.attributes)(), max_node_id) # providing max_id
     insert_sibling!(mtg_orig[1], template)
 
     @test length(mtg) == length(mtg_orig)
