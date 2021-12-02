@@ -121,7 +121,7 @@ function max_id(mtg)
         id > maxid[1] ? maxid[1] = id : nothing
     end
 
-    traverse!(mtg, x -> update_maxname(x.id, maxid))
+    traverse!(get_root(mtg), x -> update_maxname(x.id, maxid))
 
     return maxid[1]
 end
