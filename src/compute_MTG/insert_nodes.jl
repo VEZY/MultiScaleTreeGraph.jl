@@ -358,12 +358,11 @@ function insert_generation!(node, template, max_id = [max_id(node)])
         join(["node_", max_id[1]]),
         max_id[1],
         node,
+        node.children,
+        nothing,
         new_node_MTG_,
         typeof(node.attributes)() # No attributes at the moment
     )
-
-    # Add the children of the node as children of the new node:
-    append!(new_node.children, node.children)
 
     # Add the new node as the only child of the node:
     node.children = Dict{Int,Node}(new_node.id => new_node)
