@@ -99,6 +99,9 @@ Node(name::String, id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG} = Nod
 
 # If the name is not given, we compute one from the id:
 Node(id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(join(["node_", id]), id, MTG, attributes)
+# If the id is not given, it is the root node, so we use 1
+Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
+
 
 # Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
 # can't mutate attributes, i.e. we get somthing like
@@ -128,16 +131,22 @@ end
 
 # Idem, if the name is not given, we compute one from the id:
 Node(id::Int, parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(join(["node_", id]), id, parent, MTG, attributes)
+# If the id is not given, it is the root node, so we use 1
+Node(parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(new_id(get_root(parent)), parent, MTG, attributes)
+
 
 """
     ==(a::Node, b::Node)
 
-Test Node quality. The children and siblings are not tested, only their id is.
+Test Node equality. The parent, children and siblings are not tested, only their id is.
 """
 function Base.:(==)(a::T, b::T) where {T<:Node}
     isequal(a.name, b.name) &&
         isequal(a.id, b.id) &&
-        isequal(a.parent, b.parent) &&
+        isequal(
+            isroot(a) ? nothing : parent(a).id,
+            isroot(b) ? nothing : parent(b).id
+        ) &&
         isequal(
             a.children !== nothing ? keys(a.children) : nothing,
             a.children !== nothing ? keys(a.children) : nothing
