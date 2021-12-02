@@ -201,10 +201,10 @@ function new_node_MTG(node, template::T) where {T<:Union{NodeMTG,MutableNodeMTG,
 end
 
 """
-    insert_parent!(node, template, max_id = [new_id(node)])
-    insert_generation!(node, template, max_id = [new_id(node)])
-    insert_child!(node, template, max_id = [new_id(node)])
-    insert_sibling!(node, template, max_id = [new_id(node)])
+    insert_parent!(node, template, max_id = [max_id(node)])
+    insert_generation!(node, template, max_id = [max_id(node)])
+    insert_child!(node, template, max_id = [max_id(node)])
+    insert_sibling!(node, template, max_id = [max_id(node)])
 
 Insert a node in an MTG as:
 
@@ -223,7 +223,7 @@ Insert a node in an MTG as:
     - Or a function taking the node as input and returning said template
 - `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of length one.
 Used to compute the name of the inserted node. It is incremented in the function, and use by
-default the value from [`new_id`](@ref).
+default the value from [`max_id`](@ref).
 
 # Examples
 
@@ -251,7 +251,7 @@ mtg = insert_parent!(
 """
 insert_parent!, insert_generation!, insert_child!, insert_sibling!
 
-function insert_parent!(node, template, max_id = [new_id(node)])
+function insert_parent!(node, template, max_id = [max_id(node)])
 
     # Using the template MTG to create the new one (except for the id that we increment):
     new_node_MTG_ = MultiScaleTreeGraph.new_node_MTG(node, template)
@@ -304,7 +304,7 @@ function insert_parent!(node, template, max_id = [new_id(node)])
 end
 
 
-function insert_child!(node, template, max_id = [new_id(node)])
+function insert_child!(node, template, max_id = [max_id(node)])
 
     # Using the template MTG to create the new one (except for the id that we increment):
     new_node_MTG_ = new_node_MTG(node, template)
@@ -326,7 +326,7 @@ function insert_child!(node, template, max_id = [new_id(node)])
 end
 
 
-function insert_sibling!(node, template, max_id = [new_id(node)])
+function insert_sibling!(node, template, max_id = [max_id(node)])
 
     # Using the template MTG to create the new one (except for the id that we increment):
     new_node_MTG_ = new_node_MTG(node, template)
@@ -347,7 +347,7 @@ function insert_sibling!(node, template, max_id = [new_id(node)])
     return node
 end
 
-function insert_generation!(node, template, max_id = [new_id(node)])
+function insert_generation!(node, template, max_id = [max_id(node)])
 
     # Using the template MTG to create the new one (except for the id that we increment):
     new_node_MTG_ = new_node_MTG(node, template)

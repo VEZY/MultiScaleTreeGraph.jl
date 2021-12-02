@@ -43,6 +43,14 @@ mutable struct MutableNodeMTG <: AbstractNodeMTG
     scale::Int
 end
 
+# Implement == for AbstractNodeMTG:
+function Base.:(==)(a::T, b::T) where {T<:AbstractNodeMTG}
+    isequal(a.link, b.link) &&
+        isequal(a.symbol, b.symbol) &&
+        isequal(a.index, b.index) &&
+        isequal(a.scale, b.scale)
+end
+
 """
     Node(id::Int, MTG<:AbstractNodeMTG, attributes)
     Node(name::String, id::Int, MTG<:AbstractNodeMTG, attributes)
@@ -121,6 +129,26 @@ end
 # Idem, if the name is not given, we compute one from the id:
 Node(id::Int, parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(join(["node_", id]), id, parent, MTG, attributes)
 
+"""
+    ==(a::Node, b::Node)
+
+Test Node quality. The children and siblings are not tested, only their id is.
+"""
+function Base.:(==)(a::T, b::T) where {T<:Node}
+    isequal(a.name, b.name) &&
+        isequal(a.id, b.id) &&
+        isequal(a.parent, b.parent) &&
+        isequal(
+            a.children !== nothing ? keys(a.children) : nothing,
+            a.children !== nothing ? keys(a.children) : nothing
+        ) &&
+        isequal(
+            a.siblings !== nothing ? keys(a.siblings) : nothing,
+            a.siblings !== nothing ? keys(a.siblings) : nothing
+        ) &&
+        isequal(a.MTG, b.MTG) &&
+        isequal(a.attributes, b.attributes)
+end
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"]

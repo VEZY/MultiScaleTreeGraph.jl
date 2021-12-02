@@ -76,6 +76,7 @@ export Node
 export AbstractNodeMTG
 export NodeMTG
 export MutableNodeMTG
+export (==)
 export check_filters
 export get_features, get_attributes
 export get_classes
@@ -86,6 +87,6 @@ export nleaves!, nleaves, nleaves_siblings!
 export pipe_model!
 export get_node
 export new_child_link
-export new_id
+export new_id, max_id
 
 end
