@@ -240,9 +240,9 @@ Insert a node in an MTG as:
     - A template [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref) used for the inserted node,
     - A NamedTuple with values for link, symbol, index, and scale
     - Or a function taking the node as input and returning said template
-- `attr_fun`: A function to compute new attributes based on the filtered node. Should return
-attribute values of the same type as of the nodes attributes in the MTG (*e.g.* Dict or
-NamedTuple). If you need to just pass attributes values to a node use `x -> your_values`.
+- `attr_fun`: A function to compute new attributes based on the filtered node. Must return
+attribute values of the same type as the one used in other nodes from the MTG (*e.g.* Dict or
+NamedTuple). If you just need to pass attributes values to a node use `x -> your_values`.
 - `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of length one.
 Used to compute the name of the inserted node. It is incremented in the function, and use by
 default the value from [`max_id`](@ref).
@@ -260,13 +260,13 @@ mtg
 # The template can be a function that returns the template. For example a dummy example would
 # be a function that uses the NodeMTG of the first child of the node:
 
-mtg = insert_parent!(
+insert_parent!(
     mtg[1][1],
-    x -> (
-        link = x[1].MTG.link,
-        symbol = x[1].MTG.symbol,
-        index = x[1].MTG.index,
-        scale = x[1].MTG.scale)
+    node -> (
+        link = node[1].MTG.link,
+        symbol = node[1].MTG.symbol,
+        index = node[1].MTG.index,
+        scale = node[1].MTG.scale)
     )
 )
 ```
@@ -332,7 +332,7 @@ function insert_child!(node, template, attr_fun = node -> typeof(node.attributes
         max_id[1],
         node,
         nothing,
-        children(node),
+        node.children,
         new_node_MTG(node, template),
         attr_fun(node)
     )
