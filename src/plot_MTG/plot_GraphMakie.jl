@@ -11,7 +11,7 @@ function mtg_layout(g::MetaGraph)
     y = zeros(nv(g))
     z = zeros(nv(g))
 
-    for i = 1:nv(meta_mtg)
+    for i = 1:nv(g)
         node_string = "node_" * string(i)
         x[i] = meta_mtg[node_string][:XX]
         y[i] = meta_mtg[node_string][:YY]

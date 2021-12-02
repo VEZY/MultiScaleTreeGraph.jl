@@ -164,9 +164,9 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 end
 
                 if k == minimum(building_nodes)
-                    parent_node = join(["node_", parent_column])
+                    parent_node = parent_column
                 else
-                    parent_node = join(["node_", node_id - 1])
+                    parent_node = node_id - 1
                 end
 
                 symbol_in_classes = node_element[2] .== classes.SYMBOL

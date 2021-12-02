@@ -41,7 +41,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 
 # Using a leaf node from the mtg:
-leaf_node = mtg.children["node_2"].children["node_3"].children["node_4"].children["node_5"]
+leaf_node = mtg.children[2].children[3].children[4].children[5]
 
 ancestors(leaf_node, :Length) # Short to write, but slower to execute
 

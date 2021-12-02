@@ -17,9 +17,9 @@ function MetaGraph(g::Node)
     meta_mtg =
         MetaGraph(
             DiGraph(),
-            Label = String,
+            Label = Int,
             VertexMeta = typeof(g.attributes),
-            EdgeMeta = Int,
+            EdgeMeta = String,
             gprops = "MTG"
         )
 

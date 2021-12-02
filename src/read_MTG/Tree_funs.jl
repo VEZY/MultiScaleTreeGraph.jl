@@ -61,7 +61,7 @@ function addchild!(parent::Node, child::Node; force = false)
     if parent.children === nothing
         parent.children = Dict{Int,Node}(child.id => child)
     else
-        push!(parent.children, child.is => child)
+        push!(parent.children, child.id => child)
     end
 end
 

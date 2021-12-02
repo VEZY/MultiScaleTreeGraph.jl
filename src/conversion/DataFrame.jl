@@ -80,6 +80,6 @@ end
 
 function get_parent_id(x)
     if !isroot(x)
-        return parse(Int, x.parent.id)
+        return x.parent.id
     end
 end

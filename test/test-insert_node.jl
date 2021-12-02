@@ -6,7 +6,7 @@
     length_before = length(mtg)
 
     insert_parent!(mtg[1][1], template, max_id) # providing max_id
-    insert_parent!(mtg[1][1], template) # not providing max_id
+    # insert_parent!(mtg[1][1], template) # not providing max_id
 
     @test length(mtg) == length_before + 1
     @test mtg[1][1].MTG.link == template.link
