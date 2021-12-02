@@ -134,7 +134,7 @@ function insert_nodes!(
     max_node_id = [max_id(node)]
     # # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale = scale, symbol = symbol, link = link)
-    filtered = is_filtered(node, scale, symbol, link, filter_fun)
+    keep = is_filtered(node, scale, symbol, link, filter_fun) # true is inserted²²
 
     if isempty(methods(attr)) && !isa(attr, Function)
         # Attr is not given as a function, making it a function
@@ -143,13 +143,15 @@ function insert_nodes!(
         attr_fun = attr
     end
 
-    if filtered
-        node = fn(node, template, attr_fun, max_node_id)
-        # Don't go further if all == false
-        all ? nothing : return nothing
+    # Only go to the children if we keep the current node and don't want all values:
+    if all || !keep
+        insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
     end
 
-    insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
+    # We apply the function *after* visiting the children to be sure we don't add nodes indefinitely:
+    if keep
+        node = fn(node, template, attr_fun, max_node_id)
+    end
 
     # Always return the root, whether it is the same one or a new one
     return get_root(node)
@@ -158,20 +160,21 @@ end
 function insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
 
     # Is there any filter happening for the current node? (true is inserted):
-    filtered = is_filtered(node, scale, symbol, link, filter_fun)
+    keep = is_filtered(node, scale, symbol, link, filter_fun)
 
-    if filtered
-        node = fn(node, template, attr_fun, max_node_id)
-        # Don't go further if all == false
-        all ? true : return node
-    end
-
-    if !isleaf(node)
+    # Only go to the children if we keep the current node and don't want all values:
+    if !isleaf(node) && (all || !keep)
         # First we apply the algorithm recursively on the children:
         for chnode in ordered_children(node)
             insert_nodes!_(chnode, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
         end
     end
+
+    # We apply the function *after* visiting the children to be sure we don't add nodes indefinitely:
+    if keep
+        node = fn(node, template, attr_fun, max_node_id)
+    end
+
     return node
 end
 
@@ -272,9 +275,6 @@ insert_parent!, insert_generation!, insert_child!, insert_sibling!
 
 function insert_parent!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
 
-    # Using the template MTG to create the new one (except for the id that we increment):
-
-
     max_id[1] += 1
 
     if isroot(node)
@@ -331,6 +331,8 @@ function insert_child!(node, template, attr_fun = node -> typeof(node.attributes
         join(["node_", max_id[1]]),
         max_id[1],
         node,
+        nothing,
+        children(node),
         new_node_MTG(node, template),
         attr_fun(node)
     )
@@ -350,6 +352,8 @@ function insert_sibling!(node, template, attr_fun = node -> typeof(node.attribut
         join(["node_", max_id[1]]),
         max_id[1],
         parent(node),
+        nothing,
+        parent(node).children,
         new_node_MTG(node, template),
         attr_fun(node)
     )
