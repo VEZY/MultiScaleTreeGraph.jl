@@ -327,18 +327,7 @@ function insert_child!(node, template, attr_fun = node -> typeof(node.attributes
 
     max_id[1] += 1
 
-    new_node = Node(
-        join(["node_", max_id[1]]),
-        max_id[1],
-        node,
-        nothing,
-        node.children,
-        new_node_MTG(node, template),
-        attr_fun(node)
-    )
-
-    # Add the new node to the children:
-    push!(node.children, new_node.id => new_node)
+    addchild!(node, max_id[1], new_node_MTG(node, template), attr_fun(node))
 
     return node
 end

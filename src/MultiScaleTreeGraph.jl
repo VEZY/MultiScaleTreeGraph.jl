@@ -9,7 +9,7 @@ import XLSX: readxlsx, sheetnames
 import SHA.sha1 # for naming the cache variable
 import Base.setindex!
 import DataFrames: transform!, transform # We define our own version for transforming the MTG
-import DataFrames.rename! # We define our own version for renaming node attributes
+import DataFrames: rename!, names # We define our own version for renaming node attributes
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
 using RecipesBase # For plotting with Plots.jl backends

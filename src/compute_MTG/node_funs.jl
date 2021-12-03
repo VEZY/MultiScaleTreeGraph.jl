@@ -87,9 +87,7 @@ Return the siblings of `node` as a vector of nodes (or `nothing` if non-existant
 function siblings(node::Node)
     # If there is no parent, no siblings, return nothing:
     node.parent !== nothing || return nothing
-    # If the siblings field is not empty, return its value:
-    node.siblings !== nothing && return node.siblings
-    # Else, compute the siblings:
+
     all_siblings = children(node.parent)
 
     all_siblings[findall(x -> x != node, all_siblings)]
@@ -151,6 +149,13 @@ Get all attributes names available on the node and its children.
 """
 get_attributes(node) = unique(vcat(traverse(node, node -> collect(keys(node.attributes)))...))
 
+"""
+    names(node)
+
+Get all attributes names available on the node and its children. This is an alias for
+[`get_attributes`](@ref).
+"""
+names(node::Node) = get_attributes(node)
 
 """
     list_nodes(node)
