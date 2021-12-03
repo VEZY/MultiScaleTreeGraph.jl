@@ -39,6 +39,8 @@ end
 
 """
 Add a new child to a parent node, and add the parent node as the parent.
+
+See also [`insert_child!`](@ref) for a more user-friendly approach.
 """
 function addchild!(parent::Node, id::Int, MTG::M, attributes) where {M<:AbstractNodeMTG}
     child = Node(id, parent, MTG, attributes)
@@ -148,3 +150,11 @@ end
 Get all attributes names available on the node and its children.
 """
 get_attributes(node) = unique(vcat(traverse(node, node -> collect(keys(node.attributes)))...))
+
+
+"""
+    list_nodes(node)
+
+List all nodes IDs in the subtree of `node`.
+"""
+list_nodes(node) = traverse(node, node -> node.id)

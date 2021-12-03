@@ -14,15 +14,18 @@ import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
 using RecipesBase # For plotting with Plots.jl backends
 
-include("read_MTG/NodeMTG.jl")
+include("types/AbstractNodeMTG.jl")
+include("types/Node.jl")
 include("read_MTG/read_MTG.jl")
 include("read_MTG/strip_comments.jl")
 include("read_MTG/utils-string.jl")
 include("read_MTG/parse_section.jl")
 include("read_MTG/parse_mtg.jl")
 include("read_MTG/expand_node.jl")
-include("read_MTG/Tree_funs.jl")
+include("compute_MTG/node_funs.jl")
 include("print_MTG/print.jl")
+include("compute_MTG/equality.jl")
+include("compute_MTG/indexing.jl")
 include("compute_MTG/descendants.jl")
 include("compute_MTG/ancestors.jl")
 include("compute_MTG/check_filters.jl")
@@ -79,6 +82,7 @@ export MutableNodeMTG
 export (==)
 export check_filters
 export get_features, get_attributes
+export list_nodes
 export get_classes
 export get_description
 export clean_cache!

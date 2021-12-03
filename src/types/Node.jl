@@ -1,57 +1,4 @@
 """
-Abstract supertype for all types describing the MTG coding
-for a node.
-
-See [`NodeMTG`](@ref) and [`MutableNodeMTG`](@ref) for examples
-of implementation.
-"""
-abstract type AbstractNodeMTG end
-
-"""
-    NodeMTG(link, symbol, index, scale)
-    MutableNodeMTG(link, symbol, index, scale)
-
-# NodeMTG structure
-
-Builds an MTG node to hold data about the link to the previous node,
-the symbol of the node, and its index.
-
-# Note
-
-- The symbol should match the possible values listed in the `SYMBOL` column of the `CLASSES` section
- in the mtg file if read from a file.
-
-- The index is totaly free, and can be used as a way to *e.g.* keep track of the branching order.
-
-```julia
-NodeMTG("<", "Leaf", 2, 0)
-```
-"""
-NodeMTG, MutableNodeMTG
-
-struct NodeMTG <: AbstractNodeMTG
-    link::String
-    symbol::Union{String,SubString,Char}
-    index::Union{Int,Nothing}
-    scale::Int
-end
-
-mutable struct MutableNodeMTG <: AbstractNodeMTG
-    link::String
-    symbol::Union{String,SubString,Char}
-    index::Union{Int,Nothing}
-    scale::Int
-end
-
-# Implement == for AbstractNodeMTG:
-function Base.:(==)(a::T, b::T) where {T<:AbstractNodeMTG}
-    isequal(a.link, b.link) &&
-        isequal(a.symbol, b.symbol) &&
-        isequal(a.index, b.index) &&
-        isequal(a.scale, b.scale)
-end
-
-"""
     Node(id::Int, MTG<:AbstractNodeMTG, attributes)
     Node(name::String, id::Int, MTG<:AbstractNodeMTG, attributes)
     Node(id::Int, parent::Node, MTG<:AbstractNodeMTG, attributes)
@@ -102,7 +49,6 @@ Node(id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(join(["node_
 # If the id is not given, it is the root node, so we use 1
 Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
 
-
 # Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
 # can't mutate attributes, i.e. we get somthing like
 # Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
@@ -135,114 +81,6 @@ Node(id::Int, parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Nod
 Node(parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(new_id(get_root(parent)), parent, MTG, attributes)
 
 
-"""
-    ==(a::Node, b::Node)
-
-Test Node equality. The parent, children and siblings are not tested, only their id is.
-"""
-function Base.:(==)(a::T, b::T) where {T<:Node}
-    isequal(a.name, b.name) &&
-        isequal(a.id, b.id) &&
-        isequal(
-            isroot(a) ? nothing : parent(a).id,
-            isroot(b) ? nothing : parent(b).id
-        ) &&
-        isequal(
-            a.children !== nothing ? keys(a.children) : nothing,
-            a.children !== nothing ? keys(a.children) : nothing
-        ) &&
-        isequal(
-            a.siblings !== nothing ? keys(a.siblings) : nothing,
-            a.siblings !== nothing ? keys(a.siblings) : nothing
-        ) &&
-        isequal(a.MTG, b.MTG) &&
-        isequal(a.attributes, b.attributes)
-end
-
-"""
-Indexing Node attributes from node, e.g. node[:length] or node["length"]
-"""
-Base.getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
-Base.getindex(node::Node, key::Symbol) = unsafe_getindex(node, key)
-
-"""
-Indexing a Node using an integer will index in its children
-"""
-Base.getindex(n::Node, i::Integer) = n.children[collect(keys(n.children))[i]]
-function Base.getindex(n::Node{T,MutableNamedTuple}, i::Integer) where {T<:AbstractNodeMTG}
-    n.children[collect(keys(n.children))[i]]
-end
-
-Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
-Base.getindex(x::Node, ::AbstractTrees.ImplicitRootState) = x
-
-"""
-Indexing Node attributes from node, e.g. node[:length] or node["length"],
-but in an unsafe way, meaning it returns `nothing` when the key is not found
-instead of returning an error. It is primarily used when traversing the tree,
-so if a node does not have a field, it does not return an error.
-"""
-function unsafe_getindex(node::Node, key::Symbol)
-    try
-        getproperty(node.attributes, key)
-    catch err
-        if err.msg == "type NamedTuple has no field $key" || err.msg == "type Nothing has no field $key"
-            nothing
-        else
-            error(err.msg)
-        end
-    end
-end
-
-unsafe_getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
-
-function unsafe_getindex(
-    node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,S} where {S}},
-    key::Symbol
-)
-    get(node.attributes, key, nothing)
-end
-
-function unsafe_getindex(node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,S} where {S}}, key)
-    unsafe_getindex(node, Symbol(key))
-end
-
-Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict{Symbol,S} where {S}}, x, key) = setindex!(node, x, Symbol(key))
-Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict{Symbol,S} where {S}}, x, key::Symbol) = node.attributes[key] = x
-
-# function setindex(node::Node{M<:AbstractNodeMTG, Dict{Symbol, Any}}, key::Symbol)
-#     try
-#         getindex(node.attributes,key)
-#     catch err
-#         if typeof(err) == KeyError
-#             nothing
-#         else
-#             error(err.msg)
-#         end
-#     end
-# end
-
-# getindex(node::Node{M<:AbstractNodeMTG, Dict{Symbol, Any}}, key) = getindex(node,Symbol(key))
-
-"""
-Returns the length of the subtree below the node (including it)
-"""
-function Base.length(node::Node)
-    i = [1]
-    length_subtree(node::Node, i)
-    return i[1]
-end
-
-function length_subtree(node::Node, i)
-    if !isleaf(node)
-        for chnode in ordered_children(node)
-            i[1] = i[1] + 1
-            length_subtree(chnode, i)
-        end
-    end
-end
-
-
 #  Next lines are adapted from either:
 # <https://github.com/JuliaCollections/AbstractTrees.jl>
 # <https://github.com/dellison/ConstituencyTrees.jl/blob/master/src/trees.jl>
@@ -255,7 +93,7 @@ Base.IteratorEltype(::Type{<:TreeIterator{Node{T,D}}}) where {T,D} = Base.HasElt
 Base.eltype(::Type{Node{T,D}}) where {T,D} = Node{T,D}
 
 
-# Iteartion over the immediate children:
+# Iteration over the immediate children:
 function Base.iterate(node::T) where {T<:Node}
     isleaf(node) ? nothing : (node[1], 1)
 end
