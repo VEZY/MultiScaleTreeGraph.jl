@@ -14,10 +14,12 @@ import DataFrames: rename!, names # We define our own version for renaming node 
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
 using RecipesBase # For plotting with Plots.jl backends
-
+using EzXML: readxml, root, StreamReader, attributes, expandtree # For reading OPF files
+using EzXML: eachelement, nodename, nodecontent
 include("types/AbstractNodeMTG.jl")
 include("types/Node.jl")
 include("read_MTG/read_MTG.jl")
+include("read_opf/read_opf.jl")
 include("read_MTG/strip_comments.jl")
 include("read_MTG/utils-string.jl")
 include("read_MTG/parse_section.jl")

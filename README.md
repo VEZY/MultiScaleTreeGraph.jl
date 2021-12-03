@@ -94,11 +94,10 @@ To do before v1:
   - [x] `traverse!()` for a more julian way
   - [x] `delete_nodes!()` to delete nodes in the tree based on filters
   - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_id()` for id them.
-  - [ ] Add possibility to mutate a node using an anonymous function, e.g. `@mutate_mtg!(mtg, x -> x*2)`. NB: there's `traverse()` for that.
   - [ ] Use DataFrame-like API?
     - [x] select!
     - [x] transform!
-    - [ ] filter!
+    - [x] filter! -> cannot implement this one, we cannot predict before-hand how to link the nodes of other scales when deleting all nodes of a given scale. It really depends on the MTG itself.
     - [x] names (return feature names)
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
@@ -107,7 +106,6 @@ To do before v1:
   - [x] attributes using Symbols or anything else
   - [x] node fields using the dot notation
 - [x] iterable
-- [ ] Work by default at the finer scale. Hence we can make a function to dump the scales we don't want to work with, which would speed-up the computations. Careful though, we probably have to change the links between nodes then.
 - [x] Use MutableNamedTuple for `node.children` by default -> rolled back to Dict instead
 - [ ] Tree printing:
   - [x] Tree printing
