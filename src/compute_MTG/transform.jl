@@ -156,7 +156,10 @@ function transform!(
     filter_fun_ = filter_fun
 
     for nc in args
-        if nc isa Base.Callable
+        if nc isa Symbol || nc isa String
+            # The expression is just a variable name, we ignore it and pas sto the next expression
+            continue
+        elseif nc isa Base.Callable
             # If we provide just a function, it is applied to the node directly, so it must handle
             # a node as the first argument.
             # ?NOTE: Here the function takes a node as input
@@ -188,18 +191,9 @@ function transform!(
             # `Name => function` form, i.e. :x => sqrt
             # ?NOTE: Here the function takes one or more attributes as input
             col_idx, fun = nc
-            if !isa(col_idx, Vector)
-                col_idx = [col_idx]
-            end
-            fnname = Symbol(fun)
-            fnname_string = String(fnname)
-            col_idx_name = join([String(i) for i in col_idx], "_")
 
-            if startswith(fnname_string, '#')
-                newname = Symbol(string(col_idx_name, "_function"))
-            else
-                newname = Symbol(join([col_idx_name, String(fnname)], "_"))
-            end
+            newname, col_idx = col_name_from_call(col_idx, fun)
+
             fun_ = x -> x[newname] = fun([x[i] for i in col_idx]...)
 
             # Add a filter to the filtering function: checks if the node has the attributes
@@ -238,8 +232,27 @@ function transform(
         scale = scale,
         symbol = symbol,
         link = link,
-        filter_fun = filter_fun
+        filter_fun = filter_fun,
+        ignore_nothing = ignore_nothing
     )
 
     return new_mtg
+end
+
+
+function col_name_from_call(col_idx, fun)
+    if !isa(col_idx, Vector)
+        col_idx = [col_idx]
+    end
+    fnname = Symbol(fun)
+    fnname_string = String(fnname)
+    col_idx_name = join([String(i) for i in col_idx], "_")
+
+    if startswith(fnname_string, '#')
+        newname = Symbol(string(col_idx_name, "_function"))
+    else
+        newname = Symbol(join([col_idx_name, String(fnname)], "_"))
+    end
+
+    return newname, col_idx
 end

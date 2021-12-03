@@ -96,10 +96,10 @@ To do before v1:
   - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_id()` for id them.
   - [ ] Add possibility to mutate a node using an anonymous function, e.g. `@mutate_mtg!(mtg, x -> x*2)`. NB: there's `traverse()` for that.
   - [ ] Use DataFrame-like API?
-    - [ ] select!
+    - [x] select!
     - [x] transform!
     - [ ] filter!
-    - [ ] names (return feature names)
+    - [x] names (return feature names)
 - [ ] Use `sizehint!` in descendants, etc...
 - [x] Make `Node` compatible with `AbstractTrees.jl`
 - [x] Make `Node` indexable for:
@@ -123,7 +123,7 @@ To do before v1:
     - [ ]  min/max scale
     - [ ]  nb nodes in total / for a given scale
 - [ ] Add documentation
-  - [ ] Add tutorial
+  - [x] Add tutorials
   - [x] Add documentation on helper functions, e.g. get_features, get_node...
 - [x] Add tests
   - [x] Add test on the row at which the columns are declared (at ENTITY-CODE!)

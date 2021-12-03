@@ -9,6 +9,7 @@ import XLSX: readxlsx, sheetnames
 import SHA.sha1 # for naming the cache variable
 import Base.setindex!
 import DataFrames: transform!, transform # We define our own version for transforming the MTG
+import DataFrames: select!, select # We define our own version for transforming the MTG
 import DataFrames: rename!, names # We define our own version for renaming node attributes
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
@@ -33,6 +34,7 @@ include("compute_MTG/mutation.jl")
 include("compute_MTG/append_attributes.jl")
 include("compute_MTG/traverse.jl")
 include("compute_MTG/transform.jl")
+include("compute_MTG/select.jl")
 include("compute_MTG/delete_nodes.jl")
 include("compute_MTG/filter/filter-funs.jl")
 include("write_mtg/update_sections.jl")
@@ -54,7 +56,7 @@ export children
 export addchild!
 export traverse!
 export traverse
-export transform!, transform
+export transform!, transform, select!, select
 export get_root
 export nextsibling
 export print
