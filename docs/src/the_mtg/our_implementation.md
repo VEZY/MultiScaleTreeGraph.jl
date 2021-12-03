@@ -26,28 +26,36 @@ fieldnames(Node)
 
 Here is a little description of each field:
 
-- `name`: The name of the node. It is completely free, but is usually computing automatically when reading the MTG. The automatic name is based on the index of the node in the MTG, *e.g.* "node_1" for the first node.
+- `name`: The name of the node. It is completely free, but is usually set automatically when reading the MTG. The automatic name is based on the id of the node in the MTG, *e.g.* "node_1" for the first node.
+- `id`: The unique integer identifier of the node. It can be set by the user but is usually set automatically.
 - `parent`: The parent node of the curent node. If the curent node is the root node, it will return `nothing`. You can test whether a node is a root node sing the [`isroot`](@ref) function.
-- `children`: A dictionary with the children of the current node as values, and their name as keys.
-- `siblings`: A dictionary with the siblings of the current node as values, and their name as keys.
-- `MTG`: The MTG description of the node (see below)
-- `attributes`: the node attributes, usually of the form of a dictionary, but the type is optional (can be a vector, a tuple...).
+- children: a dictionary of the children nodes with their `id` as key, or `nothing` if none;
+- siblings: a dictionary of siblings nodes if any, with their `id` as key. Can be `nothing` if none or not computed;
+- `MTG`: The MTG encoding of the node (see below, or [`NodeMTG`](@ref))
+- `attributes`: the node attributes. Usually a `NamedTuple`, a `MutableNamedTuple` or a `Dict` or similar (e.g. `OrderedDict`), but the type is optional. The choice of the data structure depends mainly on how much you plan to change the attributes and their values. Attributes include for example the length or diameter of a node, its colour, 3d position...
 
-
-The MTG field of a node describes the topology of the node (see [Node MTG and attributes](@ref) and [The MTG section](@ref) for more details). It is a data structure called [`NodeMTG`](@ref), which has four fields:
+The MTG field of a node describes the topology encoding of the node: its type of link with its parent (decompose: `/`, follow: `<`, and branch: `+`), its symbol, index, and scale (see [Node MTG and attributes](@ref) and [The MTG section](@ref) for more details). The MTG field must be encoded in a data structure called [`NodeMTG`](@ref) or in a [`MutableNodeMTG`](@ref). They have four fields corresponding to the topology encoding:
 
 ```@example usepkg
 fieldnames(NodeMTG)
 ```
 
-These fields correspond to the topology encoding of the node: the type of link with the parent node (decompose: `/`, follow: `<`, and branch: `+`), the symbol of the node, its index, and its description scale.
+Creating a [`NodeMTG`](@ref) is very simple, just pass the arguments by position. For example if we have an Axis that decomposes its parent node ("/"), with an index 0 and a scale of 1, we would declare it as follows:
+
+```@example usepkg
+axis_mtg_encoding = NodeMTG("/", "Axis", 0, 1)
+```
+
+The we can access the data using the dot syntax:
+
+```@example usepkg
+axis_mtg_encoding.symbol
+```
 
 !!! note
     [`NodeMTG`](@ref) is the immutable data type, meaning that information cannot be changed once read. By default the package the mutable equivalent called [`MutableNodeMTG`](@ref). Accessing the information of a mutable data structure is slower, but it is more convenient if we need to change its values.
 
 ## Learning by example
-
-### Read an MTG
 
 Let's print again the example MTG from the previous section:
 
@@ -71,72 +79,3 @@ typeof(mtg)
 
 !!! note
     The [`Node`](@ref) is a parametric type, that's why `typeof(mtg)` also returns the type used for the MTG data in the node (`MutableNodeMTG`) and the type used for the attributes (`Dict{Symbol, Any}`). But this is not important here.
-
-### Accessing a node
-
-The first node of the whole MTG is all we need to access every other nodes in the MTG, because they are all linked together. For example we can access the data of its child either using its name:
-
-```@example usepkg
-mtg.children["node_2"]
-```
-
-Or directly by indexing the node with an integer:
-
-```@example usepkg
-mtg[1]
-```
-
-We can iteratively index into the nodes to access the descendants of a node. For example if we need to access the 6th node (the 2nd Internode), we would do:
-
-```@example usepkg
-node_6 = mtg[1][1][1][2]
-```
-
-Or more simply, we can use the [`get_node`](@ref) function with the name of the node:
-
-```@example usepkg
-node_6 = get_node(mtg, "node_6")
-```
-
-To access the parent of a node, we would do:
-
-```@example usepkg
-node_6.parent
-```
-
-### Accessing node data
-
-We can access the data of a node using the dot notation. For example to get its MTG data:
-
-```@example usepkg
-mtg.MTG
-```
-
-Or its attributes:
-
-```@example usepkg
-mtg.attributes
-```
-
-!!! note
-    The attributes of the root node always include the data from the header sections of an MTG file: the scales of the MTG, the description and the symbols. You can learn more in [The MTG sections](@ref) if you want.
-
-We can also access the attributes of a node by indexing the node with a Symbol:
-
-```@example usepkg
-node_6[:Length]
-```
-
-... or a String:
-
-```@example usepkg
-node_6["Length"]
-```
-
-Which are both equivalent to:
-
-```@example usepkg
-node_6.attributes[:Length]
-```
-
-You'll find more information on how to make computations over the MTG, how to transform it into a DataFrame, how to write it back to disk, or how to delete and insert new nodes in the tutorials.

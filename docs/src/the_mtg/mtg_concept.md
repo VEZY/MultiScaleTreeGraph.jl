@@ -56,6 +56,9 @@ Like any other tree graph, each node in an MTG keeps track of which node is its 
 
 ### Attributes
 
-Attributes are used to attach data about a node. The MTG standard for the `.mtg` file format specifies that attributes can be of type a integer, real or character only. But in Julia it is also possible to use any type (e.g. a DataFrame, a user type...). As soon as you don't plan to write it to the disk it is completely fine.
+Attributes are used to attach data about a node. The MTG standard for the `.mtg` file format specifies that attributes can be of type integer, real or character only. But in Julia it is also possible to use any type (e.g. a DataFrame, a user type...). As soon as you don't plan to write it to the disk it is completely fine.
+
+!!! note
+    `MultiScaleTreeGraph.jl` does not check if the attributes are in the correct format when writing to disk. The user should check before writing. This is because the package allows all types for attribues, so we cannot filter on type.
 
 [^1]: The SVG was made by [Kelvin13](https://commons.wikimedia.org/wiki/User:Kelvin13) and [found on Wikimedia](https://upload.wikimedia.org/wikipedia/commons/4/44/Grassy_grass_plant.svg).

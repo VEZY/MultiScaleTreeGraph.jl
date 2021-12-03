@@ -4,7 +4,7 @@ The `.mtg` file format was developed in the [AMAP lab](https://amap.cirad.fr/) t
 
 The file format is generally used when measuring a plant on the field or to write on disk the results of an architectural model such as AMAPSim or VPalm for example. This format helps exchange and archive data about plants in a standard and efficient way.
 
-The format is described in details in the original paper from Godin et al. (1997), but our implementation in Julia is detailed in this section.
+The format is described in details in the original paper from Godin et al. (1998), but our implementation in Julia is detailed in this section.
 
 ## Example MTG
 
@@ -41,7 +41,7 @@ An MTG file is divided into five sections. These sections are defined by a keywo
 
 ### The CODE section
 
-The first section of an MTG file is the `CODE` section. It must appear first in the file as it is used to determine which version of the format specification the MTG file is following. The standard format in 2021 is the `FORM-A` specification.
+The first section of an MTG file is the `CODE` section. It must appear first in the file as it is used to determine which version of the format specification the MTG file is following. The standard format in 2021 is the `FORM-A` specification. A new format is under reflexion but is not yet available.
 
 ### The CLASSES section
 
@@ -73,7 +73,7 @@ The `LEFT` column designates the symbol of a parent node, the `RIGHT` column the
 These rules are mainly used to check the integrity of an MTG that has been written by hand on the field.
 
 !!! warning
-    This package does not implement any check on the rules yet. You can let this section empty (with the header) for your mtg if you don't plan to read it with other tools than `MultiScaleTreeGraph.jl`.
+    This package does not implement any check on the rules yet. You can let this section empty (with the header) for your MTG if you don't plan to read it with other tools than `MultiScaleTreeGraph.jl`.
 
 ### The FEATURES section
 
@@ -114,9 +114,30 @@ The node symbol is used to determine the scale of the node and eventually its pr
 
 The node index is completely free. It is mainly used to keep track of the number of following segments on an axis, or the branching order.
 
-The second node in our example is `^/Individual0`. It introduces a new character used as prefix: `^`. This character is used to tell us the parent of the current node is the last node in the same column. If this character is absent, then the parent of the node is the last node found on the column before.
+The second node in our example is `^/Individual0`. It introduces a new character used as a prefix: `^`.
+By default the parent of a node is defined as the last node present in the column preceding it, *e.g.*:
 
-We can find such example in the 5th row of the table where a leaf is declared like so: `+Leaf0`. The missing `^` tells us that the parent of this node is the one found on the column before, which is `^/Internode0`.
+| node1 |       |
+| ----- | ----- |
+|       | node2 |
+|       | node3 |
+
+Here node1 is the parent of node2 **and** node3. But if we want node2 as the parent of node3, we would have to create a new column:
+
+| node1 |       |       |
+| ----- | ----- | ----- |
+|       | node2 |       |
+|       |       | node3 |
+
+
+This means large MTGs would require a lot of columns for the topology encoding. This is where `^` becomes useful. It allows us to write a child in the same column as its parent, as long as the parent has only on child:
+
+| node1 |        |
+| ----- | ------ |
+|       | node2  |
+|       | ^node3 |
+
+In the example above, node1 is the parent of node2, and node2 is the parent of node3.
 
 !!! note
     Because there is no explicit need to change column when nodes are decomposing or following, we usually create a new column only when a node branches to reduce the number of columns in the `ENTITY-CODE`.
@@ -124,4 +145,4 @@ We can find such example in the 5th row of the table where a leaf is declared li
 Attributes are then declared in their respective columns defined in the header. If there is no value for an attribute, it is usually declared as an empty column
 
 !!! note
-    MTGs entered manually on the field are usually done in a spreadsheet software such as MS Excel or Only Office / Open Office / Libre Office Calc. Here is an [example spreadsheet](https://github.com/VEZY/MultiScaleTreeGraph.jl/raw/master/test/files/tree3h.xlsx) used on the field. We have one with a Macro too. Just sent us an email to get one.
+    MTGs entered manually on the field are usually done in a spreadsheet software such as MS Excel or Only Office / Open Office / Libre Office Calc. Here is an [example spreadsheet](https://github.com/VEZY/MultiScaleTreeGraph.jl/raw/master/test/files/tree3h.xlsx) used on the field.

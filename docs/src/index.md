@@ -19,7 +19,7 @@ The goal of MultiScaleTreeGraph.jl is to read, write, analyse and plot MTG (Mult
 
 The Multi-Scale Tree Graph, or MTG, is a data structure used to encode a plant to describe its topology (*i.e.* structure) and any attributes (*e.g.* geometry, colours, state...). It was developed in the [AMAP lab](https://amap.cirad.fr/) in the 90's to cope with the need of a generic yet scalable structure for plant topology and traits measurement, analysis and modelling.
 
-The format is described in details in the original paper from Godin et al. (1997).
+The format is described in details in the original paper from Godin et Caraglio (1998).
 
 The MTG format helps describe the plant at different scales at the same time. For example we can describe a plant at the scale of the organ (e.g. leaf, internode), the scale of a growth unit, the scale of the axis, the crown or even at the whole plant.
 

@@ -36,20 +36,19 @@ The interface of the function is inspired from the one used in
 The `args...` provided can be of the following forms:
 
 1. a `:var_name => :new_var_name` pair. This form is used to rename an attribute name
-2. a `:var_name => function` or `[:var_name1, :var_name2...] => function` pair. The variables
-are declared as a Symbol or a String (or a vector of), and they are passed as positional
-arguments to the function. This form automatically generates the new column name by
-concatenating the source column name(s) and the function name if any.
-3. a `:var_name => function => :new_var_name` form that does the same as the previous form
-but explicitly naming the resulting variable (can take several variables on left-hand side).
-4. a `function => :new_var_name` form that applies a function to a node and puts the results
+2. a `:var_name => function => :new_var_name` or
+`[:var_name1, :var_name2...] => function => :new_var_name` pair. The variables are declared
+as a Symbol or a String (or a vector of), and they are passed as positional
+arguments to the function. The new attribute name is optional and is automatically generated
+if not provided by concatenating the source column name(s) and the function name if any.
+3. a `function => :new_var_name` form that applies a function to a node and puts the results
 in a new attribute. This form is usually applied when searching ancestors or descendants values.
-5. a `function` form that applies a mutating function to a node, without expecting any output.
+4. a `function` form that applies a mutating function to a node, without expecting any output.
 This form is adapted when using a function that already mutates the node, without the need to
 return anything, *e.g.* [`branching_order!`](@ref).
 
-Carefull to the form you use! Form 2 and 3 expect a function that uses one or more node
-attributes (== variables) as inputs, while form 4 and 5 expect a function that uses a node.
+Carefull to the form you use! Form 2 expect a function that takes one or more node
+attributes (== variables) as inputs, while form 3 and 4 expect a function that takes a node.
 
 # Examples
 
@@ -124,7 +123,7 @@ transform!(
 )
 DataFrame(mtg, [:vol, :mass])
 
-# Finnaly, we can use variables from ancestors/descendants using the `function => :new_var` form:
+# Finally, we can use variables from ancestors/descendants using the `function => :new_var` form:
 function get_mass_descendants(x)
     masses = descendants(x, :mass, ignore_nothing = true)
     if length(masses) == 0

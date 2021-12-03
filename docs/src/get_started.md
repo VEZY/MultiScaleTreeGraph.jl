@@ -6,6 +6,10 @@ This page let's you take a peek at what the package is capable of. If you want a
 
 ## Installation
 
+You must have a working Julia installation on your computer. The version of Julia should be greater than 1.3.
+
+If you want to install Julia for the first time, you can download it frome [julialang.org](https://julialang.org/downloads/). If you want a little introduction on Julia + VSCode, you can check out [this video](https://youtu.be/oi5dZxPGNlk).
+
 You can install the latest stable version of MultiScaleTreeGraph.jl using this command:
 
 ```julia
@@ -21,7 +25,6 @@ You can install the latest stable version of MultiScaleTreeGraph.jl using this c
 using MultiScaleTreeGraph
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
-transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 100.) => :length_mm)
 ```
 
 Read a simple MTG file:
@@ -41,7 +44,19 @@ transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 100.) => :length_m
 
 The design of [`transform!`](@ref) is heavily inspired from the eponym function from [`DataFrame.jl`](https://dataframes.juliadata.org/stable/), with little tweaks for MTGs.
 
-If you prefer a more R-like design, you can use [`@mutate_mtg!`](@ref) instead:
+You can see the newly-computed attributes using descendants like so:
+
+```@example usepkg
+descendants(mtg, :length_mm)
+```
+
+Or by transforming your MTG into a DataFrame:
+
+```@example usepkg
+DataFrame(mtg, :length_mm)
+```
+
+If you prefer a more R-like design for transforming your MTG, you can use [`@mutate_mtg!`](@ref) instead:
 
 ```@example usepkg
 @mutate_mtg!(mtg, length_mm = node.Length * 100., filter_fun = x -> !isnothing(x[:Length]))
@@ -53,13 +68,7 @@ Then you can write the MTG back to disk like so:
 write_mtg("test.mtg",mtg)
 ```
 
-You can also transform it into a DataFrame while selecting the variables you want:
-
-```@example usepkg
-DataFrame(mtg, [:length_mm, :XX])
-```
-
-Or convert it to a [MetaGraph](https://juliagraphs.org/MetaGraphsNext.jl/dev/):
+You can also convert your MTG to a [MetaGraph](https://juliagraphs.org/MetaGraphsNext.jl/dev/):
 
 ```@example usepkg
 MetaGraph(mtg)
