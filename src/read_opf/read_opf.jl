@@ -1,14 +1,49 @@
 """
-Read an OPF file, parse its values and return the result as an OrderedDict.
+    read_opf(file, attr_type = Dict, mtg_type = MutableNodeMTG)
+
+Read an OPF file, and returns an MTG.
+
+# Arguments
+
+- `file::String`: The path to the opf file.
+- `attr_type::DataType = Dict`: the type used to hold the attribute values for each node.
+- `mtg_type = MutableNodeMTG`: the type used to hold the mtg encoding for each node (*i.e.*
+link, symbol, index, scale). See details section below.
+
+# Details
+
+`attr_type` should be:
+
+- `NamedTuple` if you don't plan to modify the attributes of the mtg, *e.g.* to use them for
+plotting or computing statistics...
+- `MutableNamedTuple` if you plan to modify the attributes values but not adding new attributes
+very often, *e.g.* recompute an attribute value...
+- `Dict` or similar (*e.g.* `OrderedDict`) if you plan to heavily modify the attributes, *e.g.*
+adding/removing attributes a lot
+
+The `MultiScaleTreeGraph` package provides two types for `mtg_type`, one immutable ([`NodeMTG`](@ref)), and
+one mutable ([`MutableNodeMTG`](@ref)). If you're planning on modifying the mtg encoding of
+some of your nodes, you should use [`MutableNodeMTG`](@ref), and if you don't want to modify
+anything, use [`NodeMTG`](@ref) instead as it should be faster.
+
+# Note
+
+See the documentation of the MTG format from the package documentation for further details,
+*e.g.* [The MTG concept](@ref).
+
+# Returns
+
+The MTG root node.
 
 # Examples
 
 ```julia
+using MultiScaleTreeGraph
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_OPF_shapes.opf")
 opf = read_opf(file)
 ```
 """
-function read_opf(file)
+function read_opf(file, attr_type = Dict, mtg_type = MutableNodeMTG)
 
     doc = readxml(file)
     xroot = root(doc)
@@ -24,42 +59,50 @@ function read_opf(file)
 
     editable = parse(Bool, xroot["editable"])
 
-    # node = elements(xroot)[2]
+    opf_attr = attr_type()
+    # node = elements(xroot)[5]
     for node in eachelement(xroot)
         if node.name == "meshBDD"
-            meshBDD = parse_meshBDD!(node)
+            push!(opf_attr, :meshBDD => parse_meshBDD!(node))
         end
 
         if node.name == "materialBDD"
-            materialBDD = parse_opf_elements!(
-                node,
-                "materialBDD",
-                "material",
-                [Int64, Float64, Float64, Float64, Float64, Float64]
+            push!(
+                opf_attr,
+                :materialBDD => parse_opf_elements!(
+                    node,
+                    [Float64, Float64, Float64, Float64, Float64]
+                )
             )
-
         end
 
         if node.name == "shapeBDD"
-
+            push!(
+                opf_attr,
+                :shapeBDD => parse_opf_elements!(
+                    node,
+                    [String, Int64, Int64]
+                )
+            )
         end
 
         if node.name == "attributeBDD"
-
+            push!(opf_attr, :attributeBDD => parse_opf_attributeBDD!(node))
         end
 
         if node.name == "topology"
-            mtg = Node()
+            global mtg = parse_opf_topology!(
+                node,
+                nothing,
+                get_attr_type(opf_attr[:attributeBDD]),
+                attr_type,
+                mtg_type
+            )
+            append!(mtg, opf_attr)
+
+            return mtg
         end
     end
-    # close(reader)
-
-    parse_opf_elements!(opf, "materialBDD", "material", [Int64, Float64, Float64, Float64, Float64, Float64])
-    parse_opf_elements!(opf, "shapeBDD", "shape", [Int64, String, Int64, Int64])
-    parse_opf_attributeBDD!(opf)
-    parse_opf_topology!(opf, attr_type(opf["attributeBDD"]))
-
-    return opf
 end
 
 
@@ -111,44 +154,44 @@ Generic parser for OPF elements.
 # Arguments
 
 - `opf::OrderedDict`: the opf Dict (using [XMLDict.xml_dict])
-- `child::String`: the child name (e.g. "materialBDD")
-- `subchild::String`: the sub-child name (e.g. "material")
 - `elem_types::Array`: the target types of the element (e.g. "[String, Int64]")
 
 # Details
 
 `elem_types` should be of the same length as the number of elements found in each
 item of the subchild.
-
-child = "materialBDD"
-subchild = "material"
-elem_types = [Int64, Float64, Float64, Float64, Float64, Float64]
+elem_types = [Float64, Float64, Float64, Float64, Float64, Float64]
 """
-function parse_opf_elements!(node, child, subchild, elem_types)
-    elements(elements(elements(node)[1])[1])
-
-    for m = 1:length(node[child][subchild])
-        elem_keys = collect(keys(node[child][subchild][m]))
-        for i = 1:length(elem_keys)
-            if !isa(node[child][subchild][m][elem_keys[i]], Array)
-                node[child][subchild][m][elem_keys[i]] =
-                    parse_opf_array(opf[child][subchild][m][elem_keys[i]], elem_types[i])
+function parse_opf_elements!(node, elem_types)
+    elem_dict = Dict()
+    for m in eachelement(node)
+        elems_ = Dict()
+        for (i, el) in enumerate(elements(m))
+            content = parse_opf_array(el.content, elem_types[i])
+            if length(content) > 0
+                push!(elems_, el.name => content)
             end
         end
+        push!(elem_dict, parse(Int, m["Id"]) => elems_)
     end
+    return elem_dict
 end
 
 """
  Parse the opf attributes as a Dict.
 """
-function parse_opf_attributeBDD!(opf)
-    opf["attributeBDD"] = Dict([a[:name] => a[:class] for a in opf["attributeBDD"]["attribute"]])
+function parse_opf_attributeBDD!(node)
+    elem_dict = Dict()
+    for m in eachelement(node)
+        push!(elem_dict, m["name"] => m["class"])
+    end
+    return elem_dict
 end
 
 """
 Get the attributes types in Julia `DataType`.
 """
-attr_type = function (attr)
+function get_attr_type(attr)
     attr_Type = Dict{String,DataType}()
     for i in keys(attr)
         if attr[i] in ["Object", "String", "Color", "Image"]
@@ -170,11 +213,20 @@ Parse the geometry element of the OPF.
 
 # Note
 The transformation matrix is 3*4.
+elem = elem.content
 """
 function parse_geometry(elem)
-    elem["mat"] = SMatrix{3,4}(transpose(reshape(parse_opf_array(elem["mat"]), 4, 3)))
-    elem["dUp"] = parse_opf_array(elem["dUp"])
-    elem["dDwn"] = parse_opf_array(elem["dDwn"])
+    geom = Dict()
+    for i in eachelement(elem)
+        if i.name == "mat"
+            push!(geom, "mat" => SMatrix{3,4}(transpose(reshape(parse_opf_array(i.content), 4, 3))))
+        elseif i.name == "dUp"
+            push!(geom, "dUp" => parse_opf_array(i.content))
+        elseif i.name == "dDwn"
+            push!(geom, "dDwn" => parse_opf_array(i.content))
+        end
+    end
+    return geom
 end
 
 
@@ -184,33 +236,52 @@ Parser for OPF topology.
 # Note
 
 The transformation matrices in `geometry` are 3*4.
+parse_opf_topology!(elem, node_i, features)
+node = elem
+mtg = node_i
 """
-function parse_opf_topology!(node, attrType, child = "topology")
-    node[child][:scale] = parse_opf_array(node[child][:scale], Int32)
-    node[child][:id] = parse_opf_array(node[child][:id], Int32)
-
-    # Parsing the attributes to their true type:
-    for i in intersect(collect(keys(attrType)), collect(keys(node[child])))
-        node[child][i] = parse_opf_array(node[child][i], attrType[i])
+function parse_opf_topology!(node, mtg, features, attr_type, mtg_type)
+    if node.name == "topology" # First node
+        link = "/"
+    elseif node.name == "decomp"
+        link = "/"
+    elseif node.name == "branch"
+        link = "+"
+    elseif node.name == "follow"
+        link = "<"
     end
 
-    # Parse the geometry (transformation matrix and dUp and dDwn):
-    try
-        parse_geometry(node[child]["geometry"])
-    catch
-        nothing
+    MTG = mtg_type(
+        link,
+        node["class"],
+        parse(Int, node["id"]),
+        parse(Int, node["scale"])
+    )
+
+    if mtg !== nothing
+        node_i = Node(mtg.id + 1, mtg, MTG, attr_type())
+    else
+        # First node:
+        node_i = Node(1, MTG, attr_type())
     end
 
-    # Make the function recursive for each component:
-    for i in intersect(collect(keys(node[child])), ["decomp", "branch", "follow"])
-        # If it is an Array (several "follow" are represented as an Array under only
-        # one "follow" to avoid several same key names in a Dict), then do it for each:
-        if isa(node[child][i], Array)
-            for j = 1:length(node[child][i])
-                parse_opf_topology!(node[child][i], attrType, j)
-            end
+    attrs = attr_type()
+
+    # Handle the children, can be attributes of children nodes:
+    # elem = elements(node)[5]
+    for elem in eachelement(node)
+        # If an element is an attribute, add it to the attributes of the Node:
+        if elem.name in keys(features)
+            push!(attrs, elem.name => parse_opf_array(elem.content, features[elem.name]))
+        elseif elem.name == "geometry"
+            # Parse the geometry (transformation matrix and dUp and dDwn):
+            push!(attrs, elem.name => parse_geometry(elem))
         else
-            parse_opf_topology!(node[child], attrType, i)
+            parse_opf_topology!(elem, node_i, features, attr_type, mtg_type)
         end
     end
+
+    node_i.attributes = attrs
+
+    return node_i
 end

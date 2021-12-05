@@ -15,7 +15,9 @@ import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
 using RecipesBase # For plotting with Plots.jl backends
 using EzXML: readxml, root, StreamReader, attributes, expandtree # For reading OPF files
-using EzXML: eachelement, nodename, nodecontent
+using EzXML: eachelement, nodename, nodecontent, elements
+using StaticArrays: SMatrix
+
 include("types/AbstractNodeMTG.jl")
 include("types/Node.jl")
 include("read_MTG/read_MTG.jl")
@@ -51,7 +53,7 @@ include("conversion/MetaGraph.jl")
 include("plot_MTG/coordinates.jl")
 include("plot_MTG/plot.jl")
 
-export read_mtg
+export read_mtg, read_opf
 export isleaf
 export isroot
 export children
