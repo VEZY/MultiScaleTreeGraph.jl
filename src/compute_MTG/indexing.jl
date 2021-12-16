@@ -35,6 +35,15 @@ end
 
 unsafe_getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
 
+# For a vector of keys:
+unsafe_getindex(node::Node, key::Union{Vector{Symbol},Vector{String}}) = [unsafe_getindex(node, i) for i in key]
+function unsafe_getindex(
+    node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,S} where {S}},
+    key::Union{Vector{Symbol},Vector{String}}
+)
+    [unsafe_getindex(node, i) for i in key]
+end
+
 function unsafe_getindex(
     node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,S} where {S}},
     key::Symbol
