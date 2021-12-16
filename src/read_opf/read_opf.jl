@@ -136,7 +136,8 @@ function parse_meshBDD!(node)
         mesh = Dict{String,Union{Vector{Float64},Vector{Int}}}()
         for i in eachelement(m)
             if i.name == "faces"
-                push!(mesh, i.name => parse_opf_array(i.content, Int))
+                push!(mesh, i.name => parse_opf_array(i.content, Int) .+ 1)
+                # NB: adding 1 to the faces because the opf is 0-based but Julia is 1-based
             else
                 push!(mesh, i.name => parse_opf_array(i.content))
             end
