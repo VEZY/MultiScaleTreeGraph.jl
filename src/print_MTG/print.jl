@@ -69,7 +69,7 @@ function get_printing_(node::Node; leading::AbstractString = "")
                 new_leading = leading * "   "
             end
             append!(child_vec, [to_print])
-            if children(chnode) !== ()
+            if length(children(chnode)) != 0
                 children_vec = get_printing_(chnode; leading = new_leading)
                 append!(child_vec, children_vec)
             end
