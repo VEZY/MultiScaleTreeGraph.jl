@@ -17,7 +17,7 @@ isroot(node::Node) = node.parent === nothing
 Return the immediate children of `node`.
 """
 function children(node::Node)
-    isleaf(node) ? () : collect(values(node.children))
+    isleaf(node) ? Vector{Node}() : collect(values(node.children))
 end
 
 """
