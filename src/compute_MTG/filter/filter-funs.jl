@@ -40,9 +40,9 @@ function is_segment!(node)
 end
 
 """
-    filter_fun_nothing(filter_fun, ignore_nothing)
+    filter_fun_nothing(filter_fun, ignore_nothing, attr_keys)
 
-Returns a new filtering function that adds a filter on the key value for `nothing` if
+Returns a new filtering function that adds a filter on the keys value for `nothing` if
 `ignore_nothing` is `true`
 """
 function filter_fun_nothing(filter_fun, ignore_nothing, attr_keys)

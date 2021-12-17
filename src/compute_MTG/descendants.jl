@@ -225,6 +225,10 @@ descendants(mtg, :Length, symbol = ("Leaf","Internode"))
 # Filter by function, e.g. get the values for the leaves only:
 descendants(mtg, :Width; filter_fun = isleaf)
 
+# You can also ask for different attributes by passing them as a vector:
+descendants(mtg, [:Width, :Length]; filter_fun = isleaf)
+# The output is an array of arrays of length of the attributes you asked for.
+
 # It is possible to cache the results in the mtg. This is wqy faster when using
 # `@mutate_mtg` (note the `!` at the end of the function name):
 @mutate_mtg!(mtg, subtree_length = sum(descendants!(node, :Length, symbol = "Internode")), symbol = "Internode")
