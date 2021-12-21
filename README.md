@@ -131,7 +131,7 @@ To do before v1:
 - [x] Add tests for insert_parent!, insert_generation!, insert_child!, insert_sibling!
 - [x] Add tests for insert_parents!, insert_generations!, insert_children!, insert_siblings!
 - [ ] Add conversion from DataFrame and from MetaGraph
-- [ ] Add OPF parser
+- [x] Add OPF parser (moved to PlantGeom.jl)
 - [ ] Add possibility to prune from a node
 - [ ] Add possibility to insert a sub_tree
 
