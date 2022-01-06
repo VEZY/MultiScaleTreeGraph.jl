@@ -56,12 +56,6 @@ Or by transforming your MTG into a DataFrame:
 DataFrame(mtg, :length_mm)
 ```
 
-If you prefer a more R-like design for transforming your MTG, you can use [`@mutate_mtg!`](@ref) instead:
-
-```@example usepkg
-@mutate_mtg!(mtg, length_mm = node.Length * 100., filter_fun = x -> !isnothing(x[:Length]))
-```
-
 Then you can write the MTG back to disk like so:
 
 ```julia

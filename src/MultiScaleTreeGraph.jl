@@ -6,7 +6,7 @@ import MutableNamedTuples: MutableNamedTuple
 using DelimitedFiles
 using OrderedCollections
 import XLSX: readxlsx, sheetnames
-import SHA.sha1 # for naming the cache variable
+import SHA: sha1 # for naming the cache variable
 import Base.setindex!
 import DataFrames: transform!, transform # We define our own version for transforming the MTG
 import DataFrames: select!, select # We define our own version for transforming the MTG
@@ -25,6 +25,7 @@ include("read_MTG/parse_mtg.jl")
 include("read_MTG/expand_node.jl")
 include("compute_MTG/node_funs.jl")
 include("print_MTG/print.jl")
+include("compute_MTG/caching.jl")
 include("compute_MTG/equality.jl")
 include("compute_MTG/indexing.jl")
 include("compute_MTG/descendants.jl")

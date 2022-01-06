@@ -94,7 +94,7 @@ To do before v1:
   - [x] `traverse!()` for a more julian way
   - [x] `delete_nodes!()` to delete nodes in the tree based on filters
   - [x] `insert_nodes!()` to add new nodes in the tree (e.g. a new scale). Use `new_id()` for id them.
-  - [ ] Use DataFrame-like API?
+  - [x] Use DataFrame-like API?
     - [x] select!
     - [x] transform!
     - [x] filter! -> cannot implement this one, we cannot predict before-hand how to link the nodes of other scales when deleting all nodes of a given scale. It really depends on the MTG itself.
@@ -120,7 +120,7 @@ To do before v1:
     - [ ]  nb scales
     - [ ]  min/max scale
     - [ ]  nb nodes in total / for a given scale
-- [ ] Add documentation
+- [x] Add documentation
   - [x] Add tutorials
   - [x] Add documentation on helper functions, e.g. get_features, get_node...
 - [x] Add tests

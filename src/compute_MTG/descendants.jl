@@ -73,8 +73,7 @@ function descendants!(
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale = scale, symbol = symbol, link = link)
 
-    key_cache = "_cache_" * bytes2hex(sha1(join([key, scale, symbol, link, all, self, filter_fun, type])))
-
+    key_cache = cache_name(key, scale, symbol, link, all, self, filter_fun, type)
     val = Array{type,1}()
 
     # Change the filtering function if we also want to remove nodes with nothing values:
