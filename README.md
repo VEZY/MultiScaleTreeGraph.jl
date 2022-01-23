@@ -69,15 +69,7 @@ Or convert it to a [MetaGraph](https://juliagraphs.org/MetaGraphsNext.jl/dev/):
 MetaGraph(mtg)
 ```
 
-Finally, we can plot the MTG using any backends from `Plots`, *e.g.* Plotly:
-
-```julia
-using Plots
-# import Pkg; Pkg.add("PlotlyJS")
-plotlyjs()
-
-plot(mtg)
-```
+Finally, we can plot the MTG using the companion package [`PlantGeom.jl`](https://github.com/VEZY/PlantGeom.jl).
 
 You can learn more about MultiScaleTreeGraph.jl in the [documentation of the package](https://vezy.github.io/MultiScaleTreeGraph.jl/dev/).
 
@@ -134,6 +126,7 @@ To do before v1:
 - [x] Add OPF parser (moved to PlantGeom.jl)
 - [ ] Add possibility to prune from a node
 - [ ] Add possibility to insert a sub_tree
+- [x] Export plotting to PlantGeom.jl so we remove one more dependency away.
 
 ## 4. Acknowledgments
 

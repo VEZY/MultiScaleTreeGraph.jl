@@ -10,10 +10,10 @@ import SHA: sha1 # for naming the cache variable
 import Base.setindex!
 import DataFrames: transform!, transform # We define our own version for transforming the MTG
 import DataFrames: select!, select # We define our own version for transforming the MTG
-import DataFrames: rename!, names # We define our own version for renaming node attributes
+import DataFrames: rename! # We define our own version for renaming node attributes
+import Base.names
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
-using RecipesBase # For plotting with Plots.jl backends
 
 include("types/AbstractNodeMTG.jl")
 include("types/Node.jl")
@@ -47,8 +47,6 @@ include("compute_MTG/pipe_model.jl")
 include("compute_MTG/get_node.jl")
 include("conversion/DataFrame.jl")
 include("conversion/MetaGraph.jl")
-include("plot_MTG/coordinates.jl")
-include("plot_MTG/plot.jl")
 
 export read_mtg
 export isleaf
@@ -84,7 +82,7 @@ export NodeMTG
 export MutableNodeMTG
 export (==)
 export check_filters
-export get_features, get_attributes
+export get_features, get_attributes, names
 export list_nodes
 export get_classes
 export get_description

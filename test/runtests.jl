@@ -2,8 +2,6 @@ using Test
 using MultiScaleTreeGraph
 using DataFrames
 using MutableNamedTuples
-using RecipesBase
-using Plots # Add this dependency because else the tests on plot recip return an error (I don't know why)
 using Graphs
 
 @testset "read_mtg" begin
@@ -23,10 +21,6 @@ end
     include("test-insert_node.jl")
     include("test-traverse.jl")
     include("test-transform.jl")
-end
-
-@testset "plot recipes" begin
-    include("test-plot-recipe.jl")
 end
 
 @testset "conversion" begin

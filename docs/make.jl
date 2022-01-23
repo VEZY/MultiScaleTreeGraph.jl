@@ -1,6 +1,8 @@
 using MultiScaleTreeGraph
 using Documenter
-using Plots
+using CairoMakie
+using PlantGeom
+
 DocMeta.setdocmeta!(MultiScaleTreeGraph, :DocTestSetup, :(using MultiScaleTreeGraph); recursive = true)
 
 makedocs(;

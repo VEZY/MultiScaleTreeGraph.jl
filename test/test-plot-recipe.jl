@@ -1,5 +1,5 @@
 @testset "Plots recipe" begin
-    mtg = read_mtg("files/simple_plant.mtg", Dict);
+    mtg = read_mtg("files/simple_plant.mtg", Dict)
 
     recipe = RecipesBase.apply_recipe(Dict{Symbol,Any}(), mtg)
 
@@ -15,19 +15,19 @@
 
     @test recipe[7].args[1] == df_coordinates.XX
     @test recipe[7].plotattributes == Dict{Symbol,Any}(
-            :label => "",
-            :seriescolor => :viridis,
-            :hover => [
-                "name: `node_1`, link: `/`, symbol: `\$`, index: `0`",
-                "name: `node_2`, link: `/`, symbol: `Individual`, index: `0`",
-                "name: `node_3`, link: `/`, symbol: `Axis`, index: `0`",
-                "name: `node_4`, link: `/`, symbol: `Internode`, index: `0`",
-                "name: `node_5`, link: `+`, symbol: `Leaf`, index: `0`",
-                "name: `node_6`, link: `<`, symbol: `Internode`, index: `1`",
-                "name: `node_7`, link: `+`, symbol: `Leaf`, index: `0`"
-            ],
-            :seriestype => :scatter,
-            :colorbar_entry => false,
-            :marker_z => Any[1, 1, 1, 1, 2, 1, 2]
-        )
+        :label => "",
+        :seriescolor => :viridis,
+        :hover => [
+            "name: `node_1`, link: `/`, symbol: `\$`, index: `0`",
+            "name: `node_2`, link: `/`, symbol: `Individual`, index: `0`",
+            "name: `node_3`, link: `/`, symbol: `Axis`, index: `0`",
+            "name: `node_4`, link: `/`, symbol: `Internode`, index: `0`",
+            "name: `node_5`, link: `+`, symbol: `Leaf`, index: `0`",
+            "name: `node_6`, link: `<`, symbol: `Internode`, index: `1`",
+            "name: `node_7`, link: `+`, symbol: `Leaf`, index: `0`"
+        ],
+        :seriestype => :scatter,
+        :colorbar_entry => false,
+        :marker_z => Any[1, 1, 1, 1, 2, 1, 2]
+    )
 end

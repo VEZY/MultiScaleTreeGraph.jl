@@ -155,7 +155,7 @@ get_attributes(node) = unique(vcat(traverse(node, node -> collect(keys(node.attr
 Get all attributes names available on the node and its children. This is an alias for
 [`get_attributes`](@ref).
 """
-names(node::Node) = get_attributes(node)
+Base.names(node::T) where {T<:Node} = get_attributes(node)
 
 """
     list_nodes(node)
