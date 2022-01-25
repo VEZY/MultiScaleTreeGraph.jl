@@ -106,8 +106,6 @@ To do before v1:
 - [x] Functions to plot the MTG
 - [ ] Easy handling of the scales in:
   - [x]  tree traversal
-  - [ ]  Printing
-  - [ ]  Plotting
   - [ ]  Get stats for scales:
     - [ ]  nb scales
     - [ ]  min/max scale
