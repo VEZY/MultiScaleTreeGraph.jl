@@ -123,7 +123,7 @@ To do before v1:
 - [ ] Add conversion from DataFrame and from MetaGraph
 - [x] Add OPF parser (moved to PlantGeom.jl)
 - [ ] Add possibility to prune from a node
-- [ ] Add possibility to insert a sub_tree
+- [x] Add possibility to insert a sub_tree
 - [x] Export plotting to PlantGeom.jl so we remove one more dependency away.
 
 ## 4. Acknowledgments

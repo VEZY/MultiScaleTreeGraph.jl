@@ -23,6 +23,10 @@ end
     include("test-transform.jl")
 end
 
+@testset "Deletion / Pruning" begin
+    include("test-delete-prune.jl")
+end
+
 @testset "conversion" begin
     include("test-conversion.jl")
 end
