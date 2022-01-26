@@ -104,12 +104,11 @@ To do before v1:
   - [x] Link + symbol + unique ID
   - [ ] Color for scales
 - [x] Functions to plot the MTG
-- [ ] Easy handling of the scales in:
-  - [x]  tree traversal
-  - [ ]  Get stats for scales:
-    - [ ]  nb scales
-    - [ ]  min/max scale
-    - [ ]  nb nodes in total / for a given scale
+- [x] Easy handling of the scales in tree traversal
+- [ ]  Get stats for scales:
+  - [ ]  nb scales
+  - [ ]  min/max scale
+  - [ ]  nb nodes in total / for a given scale
 - [x] Add documentation
   - [x] Add tutorials
   - [x] Add documentation on helper functions, e.g. get_features, get_node...
@@ -122,7 +121,9 @@ To do before v1:
 - [x] Add tests for insert_parents!, insert_generations!, insert_children!, insert_siblings!
 - [ ] Add conversion from DataFrame and from MetaGraph
 - [x] Add OPF parser (moved to PlantGeom.jl)
-- [ ] Add possibility to prune from a node
+- [x] Add possibility to prune from a node: add it to the docs
+- [x] Add tests for delete_node! and delete_nodes!
+- [ ] Add prune!, delete_node! and delete_nodes! to the docs
 - [x] Add possibility to insert a sub_tree
 - [x] Export plotting to PlantGeom.jl so we remove one more dependency away.
 

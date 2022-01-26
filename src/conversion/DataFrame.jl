@@ -47,7 +47,7 @@ function DataFrame(mtg::Node, key::T) where {T<:Union{AbstractArray,Tuple}}
 
     # Build the DataFrame:
     df = DataFrame(nodes_info)
-    DataFrames.insertcols!(df, 1, :tree => get_printing(mtg))
+    insertcols!(df, 1, :tree => get_printing(mtg))
 
     for var in key
         insertcols!(df, var => [descendants(mtg, var, self = true)...])

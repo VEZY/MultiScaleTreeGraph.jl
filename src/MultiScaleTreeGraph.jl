@@ -8,7 +8,7 @@ using OrderedCollections
 import XLSX: readxlsx, sheetnames
 import SHA: sha1 # for naming the cache variable
 import Base.setindex!
-import DataFrames: DataFrame
+import DataFrames: DataFrame, insertcols!
 import DataFrames: transform!, transform # We define our own version for transforming the MTG
 import DataFrames: select!, select # We define our own version for transforming the MTG
 import DataFrames: rename! # We define our own version for renaming node attributes
