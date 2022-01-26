@@ -1,13 +1,14 @@
 module MultiScaleTreeGraph
+
 using AbstractTrees
 using Printf
-using DataFrames
 import MutableNamedTuples: MutableNamedTuple
 using DelimitedFiles
 using OrderedCollections
 import XLSX: readxlsx, sheetnames
 import SHA: sha1 # for naming the cache variable
 import Base.setindex!
+import DataFrames: DataFrame
 import DataFrames: transform!, transform # We define our own version for transforming the MTG
 import DataFrames: select!, select # We define our own version for transforming the MTG
 import DataFrames: rename! # We define our own version for renaming node attributes
@@ -37,6 +38,7 @@ include("compute_MTG/traverse.jl")
 include("compute_MTG/transform.jl")
 include("compute_MTG/select.jl")
 include("compute_MTG/delete_nodes.jl")
+include("compute_MTG/prune.jl")
 include("compute_MTG/filter/filter-funs.jl")
 include("write_mtg/update_sections.jl")
 include("write_mtg/write_mtg.jl")
@@ -71,6 +73,7 @@ export @mutate_mtg!
 export is_filtered
 export delete_nodes!
 export delete_node!
+export prune!
 export insert_parents!, insert_generations!, insert_children!, insert_siblings!
 export insert_parent!, insert_generation!, insert_child!, insert_sibling!
 export write_mtg
