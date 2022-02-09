@@ -229,13 +229,13 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
 [[deps.MultiScaleTreeGraph]]
-deps = ["AbstractTrees", "DataFrames", "DelimitedFiles", "Graphs", "MetaGraphsNext", "MutableNamedTuples", "OrderedCollections", "Printf", "SHA", "XLSX"]
-path = ".."
+deps = ["AbstractTrees", "DataFrames", "DelimitedFiles", "EzXML", "Graphs", "MetaGraphsNext", "MutableNamedTuples", "OrderedCollections", "Printf", "RecipesBase", "SHA", "StaticArrays", "XLSX"]
+git-tree-sha1 = "6616cea758112975ede92fa9e7ef871cc7bc99c3"
 uuid = "dd4a991b-8a45-4075-bede-262ee62d5583"
-version = "0.3.0"
+version = "0.2.0"
 
 [[deps.MutableNamedTuples]]
-path = "../../MutableNamedTuples"
+git-tree-sha1 = "f84525e443ce35292f4c3bc7fa9642f90c6991ba"
 uuid = "af6c499f-54b4-48cc-bbd2-094bba7533c7"
 version = "0.1.0"
 
@@ -290,6 +290,11 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[deps.RecipesBase]]
+git-tree-sha1 = "6bf3f380ff52ce0832ddd3a2a7b9538ed1bcca7d"
+uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+version = "1.2.1"
 
 [[deps.Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
