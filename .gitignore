@@ -1,2 +1,5 @@
-/Manifest.toml
 docs/build/
+docs/site/
+Manifest.toml
+.DS_Store
+.vscode
