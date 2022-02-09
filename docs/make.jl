@@ -1,7 +1,7 @@
 using MultiScaleTreeGraph
 using Documenter
 using CairoMakie
-using PlantGeom
+# using PlantGeom
 
 DocMeta.setdocmeta!(MultiScaleTreeGraph, :DocTestSetup, :(using MultiScaleTreeGraph); recursive = true)
 
@@ -29,7 +29,7 @@ makedocs(;
             "tutorials/2.descendants_ancestors_filters.md",
             "tutorials/3.transform_mtg.md",
             "tutorials/4.convert_mtg.md",
-            "tutorials/5.plotting.md",
+            # "tutorials/5.plotting.md",
             "tutorials/6.add_remove_nodes.md",
         ],
         "API" => "api.md",

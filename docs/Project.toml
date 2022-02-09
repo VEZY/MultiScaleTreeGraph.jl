@@ -2,4 +2,3 @@
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 MultiScaleTreeGraph = "dd4a991b-8a45-4075-bede-262ee62d5583"
-PlantGeom = "5edaa67e-25db-4eb9-bf81-05d793b2238d"

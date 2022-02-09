@@ -90,12 +90,6 @@ git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
 
-[[CategoricalArrays]]
-deps = ["DataAPI", "Future", "Missings", "Printf", "Requires", "Statistics", "Unicode"]
-git-tree-sha1 = "c308f209870fdbd84cb20332b6dfaf14bf3387f8"
-uuid = "324d7699-5711-5eae-9e2f-1d82baa6b597"
-version = "0.10.2"
-
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
 git-tree-sha1 = "54fc4400de6e5c3e27be6047da2ef6ba355511f8"
@@ -107,12 +101,6 @@ deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
 git-tree-sha1 = "bf98fa45a0a4cee295de98d4c1462be26345b9a1"
 uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
 version = "0.1.2"
-
-[[CircularArrays]]
-deps = ["OffsetArrays"]
-git-tree-sha1 = "0598a9ea22c65bfde7f07f21485ebf60deee3302"
-uuid = "7a955b69-7140-5f4e-a0ed-f168c5e2e749"
-version = "1.3.0"
 
 [[ColorBrewer]]
 deps = ["Colors", "JSON", "Test"]
@@ -160,12 +148,6 @@ git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.5.7"
 
-[[CoordinateTransformations]]
-deps = ["LinearAlgebra", "StaticArrays"]
-git-tree-sha1 = "681ea870b918e7cff7111da58791d7f718067a19"
-uuid = "150eb455-5306-5404-9cee-2592286d6298"
-version = "0.6.2"
-
 [[Crayons]]
 git-tree-sha1 = "249fe38abf76d48563e2f4556bebd215aa317e15"
 uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
@@ -206,12 +188,6 @@ deps = ["InverseFunctions", "Test"]
 git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
 uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 version = "0.4.0"
-
-[[Distances]]
-deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "3258d0659f812acde79e8a74b11f17ac06d0ca04"
-uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-version = "0.10.7"
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -652,18 +628,6 @@ version = "0.2.1"
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 
-[[MeshViz]]
-deps = ["CategoricalArrays", "Colors", "Makie", "Meshes", "Tables"]
-git-tree-sha1 = "520b20530034a035586807e45ab0c1ab16726dad"
-uuid = "9ecf9c4f-6e5a-4b5e-83ae-06f2c7a661d8"
-version = "0.3.2"
-
-[[Meshes]]
-deps = ["CategoricalArrays", "CircularArrays", "Distances", "IterTools", "IteratorInterfaceExtensions", "LinearAlgebra", "NearestNeighbors", "Random", "RecipesBase", "ReferenceFrameRotations", "SimpleTraits", "SparseArrays", "SpecialFunctions", "StaticArrays", "StatsBase", "TableTraits", "Tables"]
-git-tree-sha1 = "3e2ae8b840a8300ab30ffde7a936a8f5e4f161e8"
-uuid = "eacbb407-ea5a-433e-ab97-5258b1ca43fa"
-version = "0.19.5"
-
 [[MetaGraphsNext]]
 deps = ["Graphs", "JLD2"]
 git-tree-sha1 = "f8e0351036278130f6bf966cb903e5fddb93778c"
@@ -703,12 +667,6 @@ version = "0.1.0"
 git-tree-sha1 = "f755f36b19a5116bb580de457cda0c140153f283"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "0.3.6"
-
-[[NearestNeighbors]]
-deps = ["Distances", "StaticArrays"]
-git-tree-sha1 = "16baacfdc8758bc374882566c9187e785e85c2f0"
-uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
-version = "0.4.9"
 
 [[Netpbm]]
 deps = ["FileIO", "ImageCore"]
@@ -837,14 +795,6 @@ git-tree-sha1 = "a7a7e1a88853564e551e4eba8650f8c38df79b37"
 uuid = "eebad327-c553-4316-9ea0-9fa01ccd7688"
 version = "0.1.1"
 
-[[PlantGeom]]
-deps = ["ColorSchemes", "Colors", "CoordinateTransformations", "EzXML", "LinearAlgebra", "Makie", "MeshViz", "Meshes", "MultiScaleTreeGraph", "StaticArrays"]
-git-tree-sha1 = "252da3ec37d27c05f4f50cf790e2f670f888b39d"
-repo-rev = "main"
-repo-url = "https://github.com/VEZY/PlantGeom.jl"
-uuid = "5edaa67e-25db-4eb9-bf81-05d793b2238d"
-version = "0.1.0"
-
 [[PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "Statistics"]
 git-tree-sha1 = "6f1b25e8ea06279b5689263cc538f51331d7ca17"
@@ -910,21 +860,10 @@ git-tree-sha1 = "01d341f502250e81f6fec0afe662aa861392a3aa"
 uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 version = "0.4.2"
 
-[[RecipesBase]]
-git-tree-sha1 = "6bf3f380ff52ce0832ddd3a2a7b9538ed1bcca7d"
-uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-version = "1.2.1"
-
 [[Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
 version = "1.2.2"
-
-[[ReferenceFrameRotations]]
-deps = ["Crayons", "LinearAlgebra", "Printf", "Random", "StaticArrays"]
-git-tree-sha1 = "ec9bde2e30bc221e05e20fcec9a36a9c315e04a6"
-uuid = "74f56ac7-18b3-5285-802d-d4bd4f104033"
-version = "3.0.0"
 
 [[RelocatableFolders]]
 deps = ["SHA", "Scratch"]
