@@ -178,7 +178,7 @@ function transform!(
             # ?NOTE: Here the function takes one or more attributes as input
             col_idx, (fun, newname) = nc
 
-            if !isa(col_idx, Vector)
+            if !isa(col_idx, Vector) && !isa(col_idx, Tuple)
                 col_idx = [col_idx]
             end
 
