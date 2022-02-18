@@ -40,7 +40,7 @@ include("compute_MTG/select.jl")
 include("compute_MTG/delete_nodes.jl")
 include("compute_MTG/prune.jl")
 include("compute_MTG/filter/filter-funs.jl")
-include("write_mtg/update_sections.jl")
+include("compute_MTG/summary.jl")
 include("write_mtg/write_mtg.jl")
 include("compute_MTG/insert_nodes.jl")
 include("compute_MTG/mutation_helpers.jl")
@@ -85,7 +85,8 @@ export NodeMTG
 export MutableNodeMTG
 export (==)
 export check_filters
-export get_features, get_attributes, names
+export get_features, get_attributes
+export names, scales, symbols, components
 export list_nodes
 export get_classes
 export get_description

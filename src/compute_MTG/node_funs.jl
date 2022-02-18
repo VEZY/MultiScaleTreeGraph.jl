@@ -110,23 +110,6 @@ function nextsibling(node::Node)
 end
 
 """
-    max_id(mtg)
-
-Returns the maximum id of the mtg
-"""
-function max_id(mtg)
-    maxid = [0]
-
-    function update_maxname(id, maxid)
-        id > maxid[1] ? maxid[1] = id : nothing
-    end
-
-    traverse!(get_root(mtg), x -> update_maxname(x.id, maxid))
-
-    return maxid[1]
-end
-
-"""
     new_id(mtg)
     new_id(mtg, max_id)
 
@@ -141,25 +124,3 @@ end
 function new_id(mtg::Node)
     new_id(max_id(mtg))
 end
-
-"""
-    get_attributes(node)
-
-Get all attributes names available on the node and its children.
-"""
-get_attributes(node) = unique(vcat(traverse(node, node -> collect(keys(node.attributes)))...))
-
-"""
-    names(node)
-
-Get all attributes names available on the node and its children. This is an alias for
-[`get_attributes`](@ref).
-"""
-Base.names(node::T) where {T<:Node} = get_attributes(node)
-
-"""
-    list_nodes(node)
-
-List all nodes IDs in the subtree of `node`.
-"""
-list_nodes(node) = traverse(node, node -> node.id)

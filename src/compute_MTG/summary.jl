@@ -63,3 +63,65 @@ function get_features(mtg)
 
     return df
 end
+
+"""
+    scales(mtg)
+
+Get all the scales of an MTG.
+"""
+function scales(mtg)
+    unique(traverse(mtg, node -> node.MTG.scale))
+end
+
+function symbols(mtg)
+    unique(traverse(mtg, node -> node.MTG.symbol))
+end
+
+components = symbols
+
+"""
+    symbols(mtg)
+    components(mtg)
+
+Get all the symbols names, a.k.a. components of an MTG.
+"""
+components, symbols
+
+"""
+    get_attributes(mtg)
+
+Get all attributes names available on the mtg and its children.
+"""
+get_attributes(mtg) = unique(vcat(traverse(mtg, node -> collect(keys(node.attributes)))...))
+
+"""
+    names(mtg)
+
+Get all attributes names available on the mtg and its children. This is an alias for
+[`get_attributes`](@ref).
+"""
+names(mtg::T) where {T<:MultiScaleTreeGraph.Node} = get_attributes(mtg)
+
+"""
+    list_nodes(mtg)
+
+List all nodes IDs in the subtree of `mtg`.
+"""
+list_nodes(mtg) = traverse(mtg, node -> node.id)
+
+"""
+    max_id(mtg)
+
+Returns the maximum id of the mtg
+"""
+function max_id(mtg)
+    maxid = [0]
+
+    function update_maxname(id, maxid)
+        id > maxid[1] ? maxid[1] = id : nothing
+    end
+
+    traverse!(get_root(mtg), x -> update_maxname(x.id, maxid))
+
+    return maxid[1]
+end
