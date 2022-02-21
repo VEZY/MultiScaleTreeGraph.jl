@@ -7,12 +7,11 @@ using DelimitedFiles
 using OrderedCollections
 import XLSX: readxlsx, sheetnames
 import SHA: sha1 # for naming the cache variable
-import Base.setindex!
+import Base
 import DataFrames: DataFrame, insertcols!
 import DataFrames: transform!, transform # We define our own version for transforming the MTG
 import DataFrames: select!, select # We define our own version for transforming the MTG
 import DataFrames: rename! # We define our own version for renaming node attributes
-import Base.names
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
 

@@ -100,7 +100,7 @@ get_attributes(mtg) = unique(vcat(traverse(mtg, node -> collect(keys(node.attrib
 Get all attributes names available on the mtg and its children. This is an alias for
 [`get_attributes`](@ref).
 """
-names(mtg::T) where {T<:MultiScaleTreeGraph.Node} = get_attributes(mtg)
+Base.names(mtg::T) where {T<:MultiScaleTreeGraph.Node} = get_attributes(mtg)
 
 """
     list_nodes(mtg)

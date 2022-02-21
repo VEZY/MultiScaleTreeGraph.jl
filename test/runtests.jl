@@ -8,6 +8,10 @@ using Graphs
     include("test-read_mtg.jl")
 end
 
+@testset "simple node functions" begin
+    include("test-nodes.jl")
+end
+
 @testset "descendants()" begin
     include("test-descendants.jl")
 end
