@@ -22,9 +22,9 @@ end
 
 @testset "test features" begin
     @test typeof(features) == DataFrame
-    @test size(features) == (7, 2)
-    @test features.NAME == [:FileName, :YY, :XX, :ZZ, :Length, :Width, :XEuler]
-    @test features.TYPE == ["STRING", "REAL", "REAL", "REAL", "REAL", "REAL", "REAL"]
+    @test size(features) == (3, 2)
+    @test features.NAME == [:Length, :Width, :XEuler]
+    @test features.TYPE == ["REAL", "REAL", "REAL"]
 end
 
 @testset "test mtg content" begin
