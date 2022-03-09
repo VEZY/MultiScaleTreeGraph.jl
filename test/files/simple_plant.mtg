@@ -15,20 +15,16 @@ Internode	Internode,Leaf	<	?
 
 FEATURES:
 NAME	TYPE
-XX	REAL
-YY	REAL
-ZZ	REAL
-FileName	ALPHA
 Length	ALPHA
 Width	ALPHA
 XEuler	REAL
 
 MTG:
-ENTITY-CODE		XX	YY	ZZ	FileName	Length	Width	XEuler
+ENTITY-CODE		Length	Width	XEuler
 /Scene0
-^/Individual0		0.0	0.0	0.0	simple_OPF.opf
+^/Individual0
 ^/Axis0
-^/Internode0						4.0	1.0
-	+Leaf0					10.0	6.0
-^<Internode1						6.0		170.0
-	+Leaf0					12.0	7.0
+^/Internode0		0.1	0.02
+	+Leaf0	0.2	0.1
+^<Internode1		0.1	0.02	180.0
+	+Leaf0	0.2	0.1
