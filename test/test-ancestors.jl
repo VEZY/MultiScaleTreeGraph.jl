@@ -1,6 +1,6 @@
 @testset "ancestors" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    width_all = [nothing, nothing, nothing, 1.0, 6.0, nothing, 7.0]
+    width_all = [nothing, nothing, nothing, 0.02, 0.1, 0.02, 0.1] # from print(descendants(mtg, :Width, self = true))
 
     # Using a leaf node from the mtg:
     leaf_node = mtg.children[2].children[3].children[4].children[5]
@@ -17,5 +17,5 @@
     @test ancestors(leaf_node, :Width, symbol = ("Leaf", "Internode")) == width_all[[4]]
 
     @test ancestors(leaf_node, :Width, symbol = ("Leaf", "Internode"), self = true) ==
-          width_all[5:-1:4]
+          width_all[end:-1:end-1]
 end

@@ -39,19 +39,19 @@ end
     delete_nodes!(mtg, symbol = "Leaf")
     @test length(mtg) === length_start - 2
 
-    # Delete with a function, here we delete all nodes that have a parent with Length < 5:
+    # Delete with a function, here we delete all nodes that have a parent with Length < 0.2:
     mtg = read_mtg(file)
     delete_nodes!(
         mtg,
         filter_fun = function (node)
             if !isroot(node)
-                node.parent[:Length] !== nothing ? node.parent[:Length] < 5 : false
+                node.parent[:Length] !== nothing ? node.parent[:Length] < 0.2 : false
             else
                 false
             end
         end
     )
-    @test length(mtg) === length_start - 2
+    @test length(mtg) === length_start - 3
 end
 
 @testset "prune! a node" begin

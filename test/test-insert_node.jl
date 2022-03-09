@@ -59,7 +59,7 @@
     mtg_5 = get_root(mtg_5)
 
     @test mtg_5.MTG == template
-    @test mtg_5[:Total_Length] == 32.0
+    @test mtg_5[:Total_Length] ≈ 0.6
     @test mtg_5[1][:Length] == 1
 end
 
@@ -71,14 +71,14 @@ end
     insert_parents!(
         mtg,
         template,
-        node -> Dict{Symbol,Any}(:Total_Length => sum(descendants(node, :Length, ignore_nothing = true)),),
+        node -> Dict{Symbol,Any}(:Total_Length => round(sum(descendants(node, :Length, ignore_nothing = true)), digits = 1),),
         scale = 2
     )
 
     @test length(mtg) == length_before + 1
     @test mtg[1][1].MTG == template
     @test mtg[1][1].name == "node_8"
-    @test mtg[1][1].attributes == Dict{Symbol,Any}(:Total_Length => 32.0)
+    @test mtg[1][1].attributes == Dict{Symbol,Any}(:Total_Length => 0.6)
 end
 
 
