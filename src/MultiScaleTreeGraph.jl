@@ -52,13 +52,13 @@ include("conversion/MetaGraph.jl")
 export read_mtg
 export isleaf
 export isroot
-export children
+export children, lastchild
 export addchild!
 export traverse!
 export traverse
 export transform!, transform, select!, select
 export get_root
-export nextsibling
+export nextsibling, prevsibling, lastsibling
 export print
 export show
 export length

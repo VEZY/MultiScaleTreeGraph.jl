@@ -7,7 +7,6 @@
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
-
 The goal of MultiScaleTreeGraph.jl is to read, write, analyse and plot MTG (Multi-scale Tree Graph) files. These files describe the plant topology (*i.e.* structure) along with some attributes for each node (*e.g.* geometry, colors, state...).
 
 > The package is under intensive development and is in a very early version. The functions may heavily change from one version to another until a more stable version is released.
@@ -126,6 +125,7 @@ To do before v1:
 - [ ] Add prune!, delete_node! and delete_nodes! to the docs
 - [x] Add possibility to insert a sub_tree
 - [x] Export plotting to PlantGeom.jl so we remove one more dependency away.
+- [ ] Make transform! parallel. Look into <https://github.com/JuliaFolds/FLoops.jl>.
 
 ## 4. Acknowledgments
 

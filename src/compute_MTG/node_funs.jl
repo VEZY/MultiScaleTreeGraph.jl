@@ -38,6 +38,21 @@ function ordered_children(node)
 end
 
 """
+    lastchild(node::Node)
+
+Get the last child of `node`, or `nothing` if the node is a leaf.
+
+"""
+function lastchild(node::Node)
+    if isleaf(node)
+        return nothing
+    else
+        allchildren = node.children
+        return allchildren[maximum(keys(allchildren))]
+    end
+end
+
+"""
 Add a new child to a parent node, and add the parent node as the parent.
 
 See also [`insert_child!`](@ref) for a more user-friendly approach.
@@ -86,19 +101,22 @@ Return the siblings of `node` as a vector of nodes (or `nothing` if non-existant
 """
 function siblings(node::Node)
     # If there is no parent, no siblings, return nothing:
-    node.parent !== nothing || return nothing
+    node.parent === nothing && return nothing
 
     all_siblings = children(node.parent)
 
     all_siblings[findall(x -> x != node, all_siblings)]
 end
 
+"""
+    nextsibling(node::Node)
+
+Return the next sibling of `node` (or `nothing` if non-existant).
+"""
 function nextsibling(node::Node)
     # If there is no parent, no siblings, return nothing:
-    node.parent !== nothing || return nothing
-    # If the siblings field is not empty, return its value:
-    node.siblings !== nothing && return node.siblings
-    # Else, compute the siblings:
+    node.parent === nothing && return nothing
+
     all_siblings = children(node.parent)
     # Get the index of the current node in the siblings:
     node_index = findfirst(x -> x == node, all_siblings)
@@ -107,6 +125,41 @@ function nextsibling(node::Node)
     else
         nothing
     end
+end
+
+"""
+    prevsibling(node::Node)
+
+Return the previous sibling of `node` (or `nothing` if non-existant).
+"""
+function prevsibling(node::Node)
+    # If there is no parent, no siblings, return nothing:
+    node.parent === nothing && return nothing
+
+    all_siblings = children(node.parent)
+    # Get the index of the current node in the siblings:
+    node_index = findfirst(x -> x == node, all_siblings)
+    if node_index > 0
+        all_siblings[node_index-1]
+    else
+        nothing
+    end
+end
+
+
+"""
+    lastsibling(node::Node)
+
+Return the last sibling of `node` (or `nothing` if non-existant).
+"""
+function lastsibling(node::Node)
+    # If there is no parent, no siblings, return nothing:
+    node.parent === nothing && return nothing
+
+    all_siblings = children(node.parent)
+    # Get the index of the current node in the siblings:
+
+    all_siblings[maximum(keys(all_siblings))]
 end
 
 """
