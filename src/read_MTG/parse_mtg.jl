@@ -236,7 +236,7 @@ function parse_MTG_node(l)
     link = string(l[1:1])
 
     # Match the index at the end of the string:
-    stringmatch = match(r"[^[:alpha:]]+$", l[2:end])
+    stringmatch = match(r"[0-9]+$", l[2:end])
     if stringmatch === nothing
         symbol = l[2:end]
         index = nothing

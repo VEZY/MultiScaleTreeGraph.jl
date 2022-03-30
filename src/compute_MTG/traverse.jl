@@ -40,6 +40,8 @@ traverse!(mtg) do x
 end
 ```
 """
+traverse!,traverse
+
 function traverse!(
         node::Node,
         f::Function,
