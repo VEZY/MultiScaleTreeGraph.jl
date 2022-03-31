@@ -40,17 +40,17 @@ traverse!(mtg) do x
 end
 ```
 """
-traverse!,traverse
+traverse!, traverse
 
 function traverse!(
-        node::Node,
-        f::Function,
-        args...;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
+    node::Node,
+    f::Function,
+    args...;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing
+)
 
     if is_filtered(node, scale, symbol, link, filter_fun)
         if !isempty(args)
@@ -66,17 +66,17 @@ function traverse!(
                 chnode,
                 f,
                 args...;
-                scale = scale, symbol = symbol, link = link, filter_fun = filter_fun
+                scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
             )
         end
     end
 end
 
 function traverse!(node::Node, f::Function;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing)
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing)
 
     if is_filtered(node, scale, symbol, link, filter_fun)
         f(node)
@@ -87,7 +87,7 @@ function traverse!(node::Node, f::Function;
             traverse!(
                 chnode,
                 f;
-                scale = scale, symbol = symbol, link = link, filter_fun = filter_fun
+                scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
             )
         end
     end
@@ -96,14 +96,14 @@ end
 # Non-mutating version:
 # Set-up array of value and call the workhorse (traverse_)
 function traverse(
-        node::Node,
-        f::Function,
-        args...;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
+    node::Node,
+    f::Function,
+    args...;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing
+)
 
     val = []
     # NB: f has to return someting here, if its a mutating function, use traverse!
@@ -112,18 +112,18 @@ function traverse(
         f,
         val,
         args...;
-        scale = scale, symbol = symbol, link = link, filter_fun = filter_fun)
+        scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
     return val
 end
 
 # Actual workhorse:
 function traverse_(
-        node::Node,
-        f::Function,
-        val,
-        args...;
-        scale, symbol, link, filter_fun
-    )
+    node::Node,
+    f::Function,
+    val,
+    args...;
+    scale, symbol, link, filter_fun
+)
 
     if is_filtered(node, scale, symbol, link, filter_fun)
         push!(val, f(node, args...))
@@ -136,7 +136,7 @@ function traverse_(
                 f,
                 val,
                 args...;
-                scale = scale, symbol = symbol, link = link, filter_fun = filter_fun
+                scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
             )
         end
     end
@@ -144,28 +144,28 @@ end
 
 # Same but with no arguments passed to the function:
 function traverse(
-        node::Node,
-        f::Function;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
+    node::Node,
+    f::Function;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing
+)
     val = []
     # NB: f has to return someting here, if its a mutating function, use traverse!
-    traverse_(node, f, val, scale = scale, symbol = symbol, link = link, filter_fun = filter_fun)
+    traverse_(node, f, val, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
     return val
 end
 
 function traverse_(
-        node::Node,
-        f::Function,
-        val;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
+    node::Node,
+    f::Function,
+    val;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing
+)
 
     if is_filtered(node, scale, symbol, link, filter_fun)
         push!(val, f(node))
@@ -173,7 +173,7 @@ function traverse_(
 
     if !isleaf(node)
         for chnode in ordered_children(node)
-            traverse_(chnode, f, val, scale = scale, symbol = symbol, link = link, filter_fun = filter_fun)
+            traverse_(chnode, f, val, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
         end
     end
 end
@@ -181,48 +181,48 @@ end
 
 # Used for the do...end block notation
 function traverse!(
-        f::Function,
-        node::Node,
-        args...;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
-    traverse!(node, f, args...; scale = scale, symbol = symbol, link = link, filter_fun = filter_fun)
+    f::Function,
+    node::Node,
+    args...;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing
+)
+    traverse!(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
 end
 # Same here but without arguments
 function traverse!(
-        f::Function,
-        node::Node;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
-    traverse!(node, f; scale = scale, symbol = symbol, link = link, filter_fun = filter_fun)
+    f::Function,
+    node::Node;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing
+)
+    traverse!(node, f; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
 end
 
 # And with the non-mutating version:
 function traverse(
-        f::Function,
-        node::Node,
-        args...;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
-    traverse(node, f, args...; scale = scale, symbol = symbol, link = link, filter_fun = filter_fun)
+    f::Function,
+    node::Node,
+    args...;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing
+)
+    traverse(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
 end
 # Same here but without arguments
 function traverse(
-        f::Function,
-        node::Node;
-        scale = nothing,
-        symbol = nothing,
-        link = nothing,
-        filter_fun = nothing
-    )
-    traverse(node, f; scale = scale, symbol = symbol, link = link, filter_fun = filter_fun)
+    f::Function,
+    node::Node;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing
+)
+    traverse(node, f; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
 end

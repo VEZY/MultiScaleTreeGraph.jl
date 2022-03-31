@@ -27,7 +27,7 @@ write_mtg("test.mtg",mtg)
 ```
 """
 function write_mtg(file, mtg; kwargs...)
-    kwargs = (;kwargs...)
+    kwargs = (; kwargs...)
 
     if !haskey(kwargs, :classes)
         classes = get_classes(mtg)
@@ -68,7 +68,7 @@ function write_mtg(file, mtg, classes, description, features)
             for i in 1:length(description.RIGHT)
                 right = join(description.RIGHT[i], ",")
             end
-            description[!,:RIGHT] .= right
+            description[!, :RIGHT] .= right
 
             writedlm(io, reshape(names(description), (1, :)))
 
@@ -87,9 +87,9 @@ function write_mtg(file, mtg, classes, description, features)
         writedlm(io, [""])
         writedlm(io, ["MTG:"])
         mtg_df, mtg_colnames = paste_node_mtg(mtg, features)
-        writedlm(io, reshape(mtg_colnames, (1, :)), quotes = false)
+        writedlm(io, reshape(mtg_colnames, (1, :)), quotes=false)
         for i in 1:length(mtg_df["mtg_print"])
-            writedlm(io, reshape([mtg_df[k][i] for k in keys(mtg_df)], (1, :)), quotes = false)
+            writedlm(io, reshape([mtg_df[k][i] for k in keys(mtg_df)], (1, :)), quotes=false)
         end
     end
 end
@@ -102,7 +102,7 @@ function paste_node_mtg(mtg, features)
         mtg_refer = MultiScaleTreeGraph.get_reference(node)
     )
 
-    attributes = Dict_attrs(mtg, ["mtg_print",features.NAME...,"lead","mtg_refer"])
+    attributes = Dict_attrs(mtg, ["mtg_print", features.NAME..., "lead", "mtg_refer"])
     max_tabs = maximum(attributes["lead"])
 
     # Build the "ENTITY-CODE" column with necessary "^", leading and trailing tabs
@@ -172,7 +172,7 @@ end
 function Dict_attrs(mtg, attrs)
     df = OrderedDict()
     for var in attrs
-        push!(df, var => descendants(mtg, var, self = true))
+        push!(df, var => descendants(mtg, var, self=true))
     end
     df
 end
