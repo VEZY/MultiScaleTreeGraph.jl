@@ -126,6 +126,18 @@ To do before v1:
 - [x] Add possibility to insert a sub_tree
 - [x] Export plotting to PlantGeom.jl so we remove one more dependency away.
 - [ ] Make transform! parallel. Look into <https://github.com/JuliaFolds/FLoops.jl>.
+- [ ] Delete siblings field from Node
+- [ ] Add option to visit only some scales without the need to visit all nodes in-between
+  - [ ] Add complex + components in Node.
+  - [ ] Update names: children are nodes of the same scale, components of a scale with higher number
+  - [ ] Update `traverse` and `traverse!` to visit children (same scale) if e.g. only the first or second scale is needed, avoid visiting scale 3. For that we need to visit only the components of the first node of scale 1, and then it will visit scale 1 + scale 2 and never scale 3 that is a component of scale 2. To implement this, we can remove the scale arg from the filter, and pass it to an equivalent to `ordered_children` that would test if:
+    - the scale we want include a scale that is above the scale of the node, return the component,
+    - the scale we want is equal, it would return the children
+    - the scale is below, return an error because we shouldn't visit this node
+    We have 2 ideas at the time:
+    - check that a scale is connected to all nodes of that scale (e.g. a leaf in a tree is not connected to others, but all axes are). If a scale is connected we can safely visit all nodes by visiting their children (same scale, all connected). If a scale is not connected we cannot do the same because we would miss some nodes by just visiting the children. So we need to visit all nodes of its complex to make sure we visited every node with our chosen scale. Iteratively if the complex is not connected we have to do the same for this one too and its complex etc until finding a connected complex. A scale is connected if all nodes with a lower scale decompose to the node scale. So to keep track of if a scale is connected, we can put a counter for each scale on the root node, and increment it each time we add a new node of a lower scale, and decrement it each time it is decomposed. Then if a scale has a value of 0, it is connected, and if it has a value > 0, it may not (we dont know). If it is, we can visit just using the children, if it is not, we have to visit all nodes of the upper scale to be sure to visit all.
+    - we could also add a function e.g. `cache_scale()` that would allow a user to cache a dictionary into the root node with keys being the node name and the values the nodes at that scale. So if users regularly visit a scale they can traverse the dictionary instead of the full MTG. It would work for non-connected scales too. But this idea is not concurrent to the previous one because it does not deal with `descendants` and `ancestors` alone (need to avoid visiting all nodes in the tree).
+  - [ ] Update `ancestors` and `descendants` accordingly. See if we can re-use traverse or some functions for descendants to avoid a maintenance nightmare. For `ancestors`, we need a function that checks if we want the same scale (= parent) or a scale with a smaller value (= complex).
 
 ## 4. Acknowledgments
 
