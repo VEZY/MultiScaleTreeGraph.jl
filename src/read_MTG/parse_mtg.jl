@@ -87,7 +87,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     last_node_column[1] = 1
     node_id = 2
 
-    tree_dict = Dict{Int,Node}
+    tree_dict = Dict{Int,Node}(1 => root_node)
     # for i in Iterators.drop(eachindex(splitted_MTG), 1)
     try
         while !eof(f)

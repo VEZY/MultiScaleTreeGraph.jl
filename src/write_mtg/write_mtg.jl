@@ -95,11 +95,12 @@ function write_mtg(file, mtg, classes, description, features)
 end
 
 function paste_node_mtg(mtg, features)
-    @mutate_mtg!(
+
+    transform!(
         mtg,
-        lead = MultiScaleTreeGraph.get_leading_tabs(node),
-        mtg_print = MultiScaleTreeGraph.paste_mtg_node(node),
-        mtg_refer = MultiScaleTreeGraph.get_reference(node)
+        get_leading_tabs => :lead,
+        paste_mtg_node => :mtg_print,
+        get_reference => :mtg_refer
     )
 
     attributes = Dict_attrs(mtg, ["mtg_print", features.NAME..., "lead", "mtg_refer"])
