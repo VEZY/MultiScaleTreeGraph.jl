@@ -32,14 +32,14 @@ classes = MultiScaleTreeGraph.parse_section!(f,["SYMBOL","SCALE","DECOMPOSITION"
 close(f)
 ```
 """
-function parse_section!(f, header, section, line, l;allow_empty = false)
+function parse_section!(f, header, section, line, l; allow_empty=false)
 
     l[1] = next_line!(f, line)
 
     if length(l[1]) == 0
         allow_empty && return
-        error("No header was found for MTG section `",section,"`. did you put an empty line in-between ",
-        "the section name and its header?")
+        error("No header was found for MTG section `", section, "`. did you put an empty line in-between ",
+            "the section name and its header?")
     end
     l_header = split(l[1], "\t")
 
@@ -51,8 +51,8 @@ function parse_section!(f, header, section, line, l;allow_empty = false)
 
     if length(l[1]) == 0
         allow_empty && return
-        error("Data not found in MTG section `",section,"`. Did you put empty lines between the header",
-        " of the section and its header? If so, remove them before proceeding.")
+        error("Data not found in MTG section `", section, "`. Did you put empty lines between the header",
+            " of the section and its header? If so, remove them before proceeding.")
     end
 
     # Return if the line is a new section
@@ -76,5 +76,5 @@ function parse_section!(f, header, section, line, l;allow_empty = false)
         append!(classes, [section_l])
     end
 
-    DataFrame([classes[x][y] for x = 1:length(classes), y = 1:length(l_header)], l_header)
+    DataFrame([classes[x][y] for x = eachindex(classes), y = eachindex(l_header)], l_header)
 end

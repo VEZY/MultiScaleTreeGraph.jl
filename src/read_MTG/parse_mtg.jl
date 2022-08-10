@@ -87,12 +87,12 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     last_node_column[1] = 1
     node_id = 2
 
-    tree_dict = Dict{Int,Node}(1 => root_node)
-    # for i in Iterators.drop(1:length(splitted_MTG), 1)
+    tree_dict = Dict{Int,Node}
+    # for i in Iterators.drop(eachindex(splitted_MTG), 1)
     try
         while !eof(f)
             node_name = join(["node_", node_id])
-            l[1] = next_line!(f, line; whitespace = false)
+            l[1] = next_line!(f, line; whitespace=false)
             if length(l[1]) == 0
                 continue
             end
@@ -140,7 +140,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
                 end
             end
 
-            building_nodes = (1:length(node))[node.!="^"]
+            building_nodes = (eachindex(node))[node.!="^"]
 
             for k in building_nodes
                 node_element = parse_MTG_node(node[k])
@@ -266,7 +266,7 @@ Parse MTG node attributes names, values and type
 A list of attributes
 
 """
-function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, line; force = false)
+function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, line; force=false)
 
     if length(node_data) < attr_column_start
         return init_empty_attr(attr_type)
@@ -279,13 +279,13 @@ function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, 
             ". Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
     end
 
-    node_attr = Dict{String,Any}(zip(features.NAME[1:length(node_data_attr)],
+    node_attr = Dict{String,Any}(zip(features.NAME[eachindex(node_data_attr)],
         fill(missing, length(node_data_attr))))
 
     node_type = features.TYPE
 
     # node_data_attr is always read in order so names and types correspond to values in features
-    for i = 1:length(node_data_attr)
+    for i in eachindex(node_data_attr)
         if node_data_attr[i] == "" || node_data_attr[i] == "NA"
             pop!(node_attr, features.NAME[i])
             continue

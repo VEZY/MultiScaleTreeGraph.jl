@@ -65,7 +65,7 @@ function write_mtg(file, mtg, classes, description, features)
             # Reformat the RIGHT column to match how it is written in an MTG
             right = fill("", size(description)[1])
 
-            for i in 1:length(description.RIGHT)
+            for i in eachindex(description.RIGHT)
                 right = join(description.RIGHT[i], ",")
             end
             description[!, :RIGHT] .= right
@@ -88,7 +88,7 @@ function write_mtg(file, mtg, classes, description, features)
         writedlm(io, ["MTG:"])
         mtg_df, mtg_colnames = paste_node_mtg(mtg, features)
         writedlm(io, reshape(mtg_colnames, (1, :)), quotes=false)
-        for i in 1:length(mtg_df["mtg_print"])
+        for i in eachindex(mtg_df["mtg_print"])
             writedlm(io, reshape([mtg_df[k][i] for k in keys(mtg_df)], (1, :)), quotes=false)
         end
     end

@@ -48,7 +48,7 @@ macro mutate_mtg!(mtg, args...)
 
     expr = quote
         # Check the filters consistency with the mtg:
-        check_filters($(mtg), scale = $(flt.scale), symbol = $(flt.symbol), link = $(flt.link))
+        check_filters($(mtg), scale=$(flt.scale), symbol=$(flt.symbol), link=$(flt.link))
         # Traverse the mtg:
         traversed_mtg = $(kwargs[:traversal])($(mtg))
         for i00000000 in traversed_mtg
@@ -105,7 +105,10 @@ mtg = read_mtg(file)
 macro mutate_node!(node, args...)
     arguments = (args...,)
     rewrite_expr!(:($node), arguments)
-    expr = quote $(arguments...); nothing end
+    expr = quote
+        $(arguments...)
+        nothing
+    end
     esc(expr)
 end
 
@@ -152,9 +155,9 @@ function rewrite_expr!(node_name, arguments::Expr)
     for x in arguments.args
         arg = string(x)
         if isa(x, Expr) &&
-            (x.head == :. || x.head == :ref) &&
-            occursin(r"^node", arg) &&
-            !occursin(string(node_name), arg)
+           (x.head == :. || x.head == :ref) &&
+           occursin(r"^node", arg) &&
+           !occursin(string(node_name), arg)
             # x here is defined either as node.variable or node[:variable], we must replace
             # by node_name[:variable]
             if !(Symbol(replace(arg, "node." => "")) in fieldnames(Node))
@@ -172,7 +175,7 @@ function rewrite_expr!(node_name, arguments::Expr)
             end
         elseif isa(x, Expr) && x.head == :call && occursin("node", arg)
             # Call to a function, and we pass node as argument
-            for i in 1:length(x.args)
+            for i in eachindex(x.args)
                 # The node is given as is to the function, e.g. fn(node):
                 x.args[i] == :node ? x.args[i] = :($(node_name)) : nothing
             end
