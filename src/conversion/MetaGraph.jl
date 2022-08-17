@@ -17,10 +17,10 @@ function MetaGraph(g::Node)
     meta_mtg =
         MetaGraph(
             DiGraph(),
-            Label = Int,
-            VertexMeta = typeof(g.attributes),
-            EdgeMeta = String,
-            gprops = "MTG"
+            Label=Int,
+            VertexData=typeof(g.attributes),
+            EdgeData=String,
+            graph_data="MTG"
         )
 
     traverse!(g, to_MetaGraph, meta_mtg)
