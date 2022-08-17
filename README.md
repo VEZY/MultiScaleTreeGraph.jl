@@ -6,6 +6,7 @@
 [![Coverage](https://codecov.io/gh/VEZY/MultiScaleTreeGraph.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/VEZY/MultiScaleTreeGraph.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5654676.svg)](https://doi.org/10.5281/zenodo.5654676)
 
 The goal of MultiScaleTreeGraph.jl is to read, write, analyse and plot MTG (Multi-scale Tree Graph) files. These files describe the plant topology (*i.e.* structure) along with some attributes for each node (*e.g.* geometry, colors, state...).
 
@@ -145,6 +146,7 @@ To do before v1:
 - [x] Add tests for insert_parent!, insert_generation!, insert_child!, insert_sibling!
 - [x] Add tests for insert_parents!, insert_generations!, insert_children!, insert_siblings!
 - [ ] Add conversion from DataFrame and from MetaGraph
+- [ ] Make the children field a vector of children by default instead of a Dict
 - [x] Add OPF parser (moved to PlantGeom.jl)
 - [x] Add possibility to prune from a node: add it to the docs
 - [x] Add tests for delete_node! and delete_nodes!
