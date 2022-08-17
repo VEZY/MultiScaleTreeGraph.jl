@@ -16,7 +16,7 @@ SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
 
 [compat]
-AbstractTrees = "0.3"
+AbstractTrees = "0.3, 0.4"
 DataFrames = "0.21, 0.22, 1.1"
 Graphs = "1"
 MetaGraphsNext = "0.3"
