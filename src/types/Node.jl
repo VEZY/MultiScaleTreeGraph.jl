@@ -81,48 +81,58 @@ Node(id::Int, parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Nod
 Node(parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(new_id(get_root(parent)), parent, MTG, attributes)
 
 
-#  Next lines are adapted from either:
-# <https://github.com/JuliaCollections/AbstractTrees.jl>
-# <https://github.com/dellison/ConstituencyTrees.jl/blob/master/src/trees.jl>
-# <https://github.com/vh-d/DataTrees.jl/blob/master/src/indexing.jl>
+## AbstractTrees compatibility:
 
-Base.eltype(::Type{<:TreeIterator{Node{T,D}}}) where {T,D} = Node{T,D}
-Base.IteratorEltype(::Type{<:TreeIterator{Node{T,D}}}) where {T,D} = Base.HasEltype()
+# Set the methods for Node:
+AbstractTrees.children(node::Node{T,A}) where {T,A} = isleaf(node) ? Vector{Node{T,A}}() : collect(values(node.children))
+AbstractTrees.nodevalue(node::Node{T,A}) where {T,A} = node.attributes
+Base.parent(node::Node{T,A}) where {T,A} = isdefined(node, :parent) ? node.parent : nothing
+AbstractTrees.parent(node::Node{T,A}) where {T,A} = Base.parent(node)
+AbstractTrees.childrentype(node::Node{T,A}) where {T,A} = Vector{Node{T,A}}
+AbstractTrees.childtype(node::Node{T,A}) where {T,A} = Node{T,A}
+
+# Set the traits for Node:
+# AbstractTrees.ParentLinks(::Type{<:Node{T,D}}) where {T,D} = AbstractTrees.StoredParents()
+AbstractTrees.ParentLinks(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = AbstractTrees.StoredParents()
+AbstractTrees.SiblingLinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredSiblings()
+AbstractTrees.ChildIndexing(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = IndexedChildren()
+AbstractTrees.NodeType(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = HasNodeType()
+AbstractTrees.nodetype(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = Node{T,A}
+# AbstractTrees.parentlinks(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = AbstractTrees.StoredParents()
+# AbstractTrees.siblinglinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredSiblings()
+
+function AbstractTrees.nextsibling(node::Node)
+    # If there is no parent, no siblings, return nothing:
+    node.parent === nothing && return nothing
+
+    all_siblings = children(node.parent)
+    # Get the index of the current node in the siblings:
+    node_index = findfirst(x -> x == node, all_siblings)
+    if node_index < length(all_siblings)
+        all_siblings[node_index+1]
+    else
+        nothing
+    end
+end
+
+function AbstractTrees.prevsibling(node::Node)
+    # If there is no parent, no siblings, return nothing:
+    node.parent === nothing && return nothing
+
+    all_siblings = children(node.parent)
+    # Get the index of the current node in the siblings:
+    node_index = findfirst(x -> x == node, all_siblings)
+    if node_index > 1
+        all_siblings[node_index-1]
+    else
+        nothing
+    end
+end
+
+# Iterations
+
+Base.IteratorEltype(::Type{<:TreeIterator{Node{T,A}}}) where {T<:AbstractNodeMTG,A} = Base.HasEltype()
+Base.eltype(::Type{<:TreeIterator{Node{T,A}}}) where {T<:AbstractNodeMTG,A} = Node{T,A}
 
 # Help Julia infer what's inside a Node when doing iteration (another node)
 Base.eltype(::Type{Node{T,D}}) where {T,D} = Node{T,D}
-
-
-# Iteration over the immediate children:
-function Base.iterate(node::T) where {T<:Node}
-    isleaf(node) ? nothing : (node[1], 1)
-end
-
-function Base.iterate(node::T, state::Int) where {T<:Node}
-    state += 1
-    state > length(children(node)) ? nothing : (node[state], state)
-end
-
-Base.IteratorSize(::Type{Node{T,D}}) where {T,D} = Base.SizeUnknown()
-
-## Things we need to define to leverage the native iterator from AbstractTrees over children
-
-# Set the traits of this kind of tree
-AbstractTrees.parentlinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredParents()
-AbstractTrees.siblinglinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredSiblings()
-AbstractTrees.children(node::Node) = MultiScaleTreeGraph.children(node)
-AbstractTrees.nodetype(::Node) = Node
-
-Base.parent(node::Node) = isdefined(node, :parent) ? node.parent : nothing
-Base.parent(root::Node, node::Node) = isdefined(node, :parent) ? node.parent : nothing
-
-function AbstractTrees.nextsibling(tree::Node, child::Node)
-    MultiScaleTreeGraph.nextsibling(child)
-end
-
-# We also need `pairs` to return something sensible.
-# If you don't like integer keys, you could do, e.g.,
-#   Base.pairs(node::BinaryNode) = BinaryNodePairs(node)
-# and have its iteration return, e.g., `:left=>node.left` and `:right=>node.right` when defined.
-# But the following is easy:
-Base.pairs(node::Node) = enumerate(node)

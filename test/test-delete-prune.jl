@@ -17,11 +17,11 @@ end
 
 @testset "delete_node! with a user function" begin
     mtg = read_mtg(file)
-    delete_node!(get_node(mtg, 4), child_link_fun = node -> node.MTG.link)
+    delete_node!(get_node(mtg, 4), child_link_fun=node -> node.MTG.link)
     # The link of the children didn't change:
     @test get_node(mtg, 6).MTG.link == "<"
 
-    delete_node!(get_node(mtg, 3), child_link_fun = node -> "+")
+    delete_node!(get_node(mtg, 3), child_link_fun=node -> "+")
     # Both children links changes to branching:
     @test get_node(mtg, 5).MTG.link == "+"
     @test get_node(mtg, 6).MTG.link == "+"
@@ -30,21 +30,21 @@ end
 @testset "delete_nodes!" begin
     mtg = read_mtg(file)
     length_start = length(mtg)
-    delete_nodes!(mtg, scale = 2) # Will remove all nodes of scale 2
+    delete_nodes!(mtg, scale=2) # Will remove all nodes of scale 2
     @test get_node(mtg, 3) === nothing
     @test length(mtg) === length_start - 1
 
     # Delete the leaves:
     mtg = read_mtg(file)
-    delete_nodes!(mtg, symbol = "Leaf")
+    delete_nodes!(mtg, symbol="Leaf")
     @test length(mtg) === length_start - 2
 
     # Delete with a function, here we delete all nodes that have a parent with Length < 0.2:
     mtg = read_mtg(file)
     delete_nodes!(
         mtg,
-        filter_fun = function (node)
-            if !isroot(node)
+        filter_fun=function (node)
+            if !MultiScaleTreeGraph.isroot(node)
                 node.parent[:Length] !== nothing ? node.parent[:Length] < 0.2 : false
             else
                 false

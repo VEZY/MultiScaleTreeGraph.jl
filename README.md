@@ -44,7 +44,7 @@ Then you can compute new variables in the MTG like so:
 @mutate_mtg!(mtg, length_mm = node.Length * 100.)
 ```
 
-Or using the more `DataFrame.jl` way:
+Or using the more Julian way inspired by `DataFrame.jl`:
 
 ```julia
 transform!(mtg, :Length => (x -> x * 100.) => :length_mm)
@@ -56,7 +56,9 @@ And then write the MTG back to disk:
 write_mtg("test.mtg",mtg)
 ```
 
-You can also transform it into a DataFrame like so, while selecting the variables you want:
+## 3. Conversion
+
+You can convert an MTG into a DataFrame and select the variables you need:
 
 ```julia
 DataFrame(mtg, [:length_mm, :XX])
@@ -68,9 +70,33 @@ Or convert it to a [MetaGraph](https://juliagraphs.org/MetaGraphsNext.jl/dev/):
 MetaGraph(mtg)
 ```
 
-Finally, we can plot the MTG using the companion package [`PlantGeom.jl`](https://github.com/VEZY/PlantGeom.jl).
+## 4. Compatibility
 
-You can learn more about MultiScaleTreeGraph.jl in the [documentation of the package](https://vezy.github.io/MultiScaleTreeGraph.jl/dev/).
+We can plot the MTG using the companion package [`PlantGeom.jl`](https://github.com/VEZY/PlantGeom.jl).
+
+`MultiScaleTreeGraph.jl` trees are compatible with the [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) package, which means you can use all functions from that package, *e.g.*:
+
+```julia
+using AbstractTrees
+
+node = get_node(mtg, 4)
+
+nodevalue(node)
+parent(node)
+nextsibling(node)
+prevsibling(nextsibling(node))
+childrentype(node)
+childtype(node)
+childstatetype(node)
+getdescendant(mtg, (1, 1, 1, 2))
+collect(PreOrderDFS(mtg))
+collect(PostOrderDFS(mtg))
+collect(Leaves(mtg))
+collect(nodevalues(PreOrderDFS(mtg)))
+print_tree(mtg)
+```
+
+You can learn more about `MultiScaleTreeGraph.jl` in the [documentation of the package](https://vezy.github.io/MultiScaleTreeGraph.jl/dev/).
 
 ## 3. Roadmap
 

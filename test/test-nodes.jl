@@ -16,3 +16,14 @@ end
     mtg[1][1][1][:Width] = 1.0
     @test mtg[1][1][1][:Width] == 1.0
 end
+
+@testset "siblings" begin
+    node = get_node(mtg, 5)
+    @test nextsibling(node) == get_node(mtg, 6)
+    @test prevsibling(nextsibling(node)) == node
+end
+
+@testset "getdescendant" begin
+    # This is the function from AbstractTrees.jl
+    AbstractTrees.getdescendant(mtg, (1, 1, 1, 2)) == get_node(mtg, 6)
+end

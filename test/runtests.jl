@@ -2,7 +2,7 @@ using Test
 using MultiScaleTreeGraph
 using DataFrames
 using MutableNamedTuples
-using Graphs
+using Graphs, AbstractTrees
 
 @testset "read_mtg" begin
     include("test-read_mtg.jl")

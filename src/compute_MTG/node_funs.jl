@@ -11,14 +11,6 @@ Return `true` if `node` is the root node (meaning, it has no parent).
 """
 isroot(node::Node) = node.parent === nothing
 
-"""
-    children(node::Node)
-
-Return the immediate children of `node`.
-"""
-function children(node::Node)
-    isleaf(node) ? Vector{Node}() : collect(values(node.children))
-end
 
 """
     ordered_children(node)
@@ -67,7 +59,7 @@ function addchild!(parent::Node, id::Int, MTG::M) where {M<:AbstractNodeMTG}
     addchild!(parent, child)
 end
 
-function addchild!(parent::Node, child::Node; force = false)
+function addchild!(parent::Node, child::Node; force=false)
 
     if child.parent === missing || force == true
         child.parent = parent
@@ -107,45 +99,6 @@ function siblings(node::Node)
 
     all_siblings[findall(x -> x != node, all_siblings)]
 end
-
-"""
-    nextsibling(node::Node)
-
-Return the next sibling of `node` (or `nothing` if non-existant).
-"""
-function nextsibling(node::Node)
-    # If there is no parent, no siblings, return nothing:
-    node.parent === nothing && return nothing
-
-    all_siblings = children(node.parent)
-    # Get the index of the current node in the siblings:
-    node_index = findfirst(x -> x == node, all_siblings)
-    if node_index < length(all_siblings)
-        all_siblings[node_index+1]
-    else
-        nothing
-    end
-end
-
-"""
-    prevsibling(node::Node)
-
-Return the previous sibling of `node` (or `nothing` if non-existant).
-"""
-function prevsibling(node::Node)
-    # If there is no parent, no siblings, return nothing:
-    node.parent === nothing && return nothing
-
-    all_siblings = children(node.parent)
-    # Get the index of the current node in the siblings:
-    node_index = findfirst(x -> x == node, all_siblings)
-    if node_index > 0
-        all_siblings[node_index-1]
-    else
-        nothing
-    end
-end
-
 
 """
     lastsibling(node::Node)

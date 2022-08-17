@@ -13,7 +13,6 @@ function Base.getindex(n::Node{T,MutableNamedTuple}, i::Integer) where {T<:Abstr
 end
 
 Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
-Base.getindex(x::Node, ::AbstractTrees.ImplicitRootState) = x
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"],
