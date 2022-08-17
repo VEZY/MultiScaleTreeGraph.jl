@@ -1,17 +1,17 @@
 function descendants(
     node, key;
-    scale = nothing,
-    symbol = nothing,
-    link = nothing,
-    all::Bool = true, # like continue in the R package, but actually the opposite
-    self = false,
-    filter_fun = nothing,
-    recursivity_level = -1,
-    ignore_nothing::Bool = false,
-    type::Union{Union,DataType} = Any)
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true, # like continue in the R package, but actually the opposite
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=-1,
+    ignore_nothing::Bool=false,
+    type::Union{Union,DataType}=Any)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
-    check_filters(node, scale = scale, symbol = symbol, link = link)
+    check_filters(node, scale=scale, symbol=symbol, link=link)
 
     # Change the filtering function if we also want to remove nodes with nothing values:
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
@@ -60,18 +60,18 @@ end
 
 function descendants!(
     node, key;
-    scale = nothing,
-    symbol = nothing,
-    link = nothing,
-    all::Bool = true, # like continue in the R package, but actually the opposite
-    self = false,
-    filter_fun = nothing,
-    recursivity_level = -1,
-    ignore_nothing = false,
-    type::Union{Union,DataType} = Any)
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true, # like continue in the R package, but actually the opposite
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=-1,
+    ignore_nothing=false,
+    type::Union{Union,DataType}=Any)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
-    check_filters(node, scale = scale, symbol = symbol, link = link)
+    check_filters(node, scale=scale, symbol=symbol, link=link)
 
     key_cache = cache_name(key, scale, symbol, link, all, self, filter_fun, type)
     val = Array{type,1}()
@@ -144,14 +144,16 @@ Clean the cached variables in the mtg, usually added from [`descendants!`](@ref)
 """
 function clean_cache!(mtg)
     cached_vars = find_cached_vars(mtg)
-    for i in cached_vars
-        traverse!(mtg, x -> pop!(x, i))
-    end
+    traverse!(
+        mtg,
+        node -> [pop!(node, attr) for attr in cached_vars]
+    )
 end
 
 
 function find_cached_vars(node)
-    collect(keys(node.attributes))[findall(x -> occursin("_cache_", x), String.(keys(node.attributes)))]
+    vars = names(node)
+    collect(vars)[findall(x -> occursin("_cache_", x), String.(vars))]
 end
 
 
