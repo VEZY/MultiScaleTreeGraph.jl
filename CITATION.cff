@@ -5,7 +5,7 @@ authors:
     given-names: Rémi
     email: remi.vezy@cirad.fr
     orcid: https://orcid.org/0000-0002-0808-1461
-title: 'MultiScaleTreeGraph.jl: Read, Write, Analyze, Compute and Plot Multi-scale Tree Graph Files'
-version: v0.5.0
+title: "MultiScaleTreeGraph.jl: Read, Write, Analyze, Compute and Plot Multi-scale Tree Graph Files"
+version: v0.7.0
 type: software
-date-released: 2022-03-09
+date-released: 2022-08-24
