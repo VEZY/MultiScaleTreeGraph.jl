@@ -22,9 +22,9 @@ end
 
 @testset "test features" begin
     @test typeof(features) == DataFrame
-    @test size(features) == (3, 2)
-    @test features.NAME == [:Length, :Width, :XEuler]
-    @test features.TYPE == ["REAL", "REAL", "REAL"]
+    @test size(features) == (5, 2)
+    @test features.NAME == [:Length, :Width, :XEuler, :dateDeath, :isAlive]
+    @test features.TYPE == ["REAL", "REAL", "REAL", "DD/MM/YY", "BOOLEAN"]
 end
 
 @testset "test mtg content" begin
@@ -38,6 +38,22 @@ end
     @test typeof(mtg[1]) == Node{NodeMTG,MutableNamedTuple}
     @test mtg[1].name == "node_2"
     @test mtg[1].parent === mtg
+
+    leaf_1 = get_node(mtg, 5)
+    @test leaf_1[:Length] === 0.2
+    @test leaf_1[:Width] === 0.1
+    @test leaf_1[:isAlive] === false
+    @test leaf_1[:dateDeath] === Date("2022-08-24")
+
+    leaf_2 = get_node(mtg, 7)
+    @test leaf_2[:Length] === 0.2
+    @test leaf_2[:Width] === 0.1
+    @test leaf_2[:isAlive] === true
+
+    Internode_2 = get_node(mtg, 6)
+    @test Internode_2[:Length] === 0.1
+    @test Internode_2[:Width] === 0.02
+    @test Internode_2[:isAlive] === true
 end
 
 @testset "test mtg mutation" begin
@@ -48,7 +64,7 @@ end
     node2 = mtg[1]
     @test (mtg.children = nothing) === nothing
     @test (mtg.children = Dict(2 => node2)) == Dict(2 => node2)
-    mtg.attributes = MutableNamedTuple(a = 1)
+    mtg.attributes = MutableNamedTuple(a=1)
 end
 
 @testset "test mtg with NamedTuples" begin

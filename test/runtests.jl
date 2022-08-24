@@ -1,7 +1,6 @@
 using Test
 using MultiScaleTreeGraph
-using DataFrames
-using MutableNamedTuples
+using DataFrames, Dates, MutableNamedTuples
 using Graphs, AbstractTrees
 
 @testset "read_mtg" begin

@@ -1,7 +1,7 @@
 mtg = read_mtg("files/simple_plant.mtg")
 
 @testset "names" begin
-    @test get_attributes(mtg) == [:scales, :description, :symbols, :Length, :Width, :XEuler]
+    @test get_attributes(mtg) == [:scales, :description, :symbols, :XEuler, :Length, :Width, :dateDeath, :isAlive]
     @test names(mtg) == get_attributes(mtg)
     @test names(DataFrame(mtg))[8:end] == string.(names(mtg))
 end

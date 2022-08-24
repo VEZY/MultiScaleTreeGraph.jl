@@ -18,13 +18,15 @@ NAME	TYPE
 Length	ALPHA
 Width	ALPHA
 XEuler	REAL
+isAlive	BOOLEAN
+dateDeath	DD/MM/YY
 
 MTG:
-ENTITY-CODE		Length	Width	XEuler
+ENTITY-CODE		Length	Width	XEuler	isAlive	dateDeath
 /Scene0
 ^/Individual0
 ^/Axis0
-^/Internode0		0.1	0.02
-	+Leaf0	0.2	0.1
-^<Internode1		0.1	0.02	180.0
-	+Leaf0	0.2	0.1
+^/Internode0		0.1	0.02	1
+	+Leaf0	0.2	0.1		0	24/08/2022
+^<Internode1		0.1	0.02	180.0	1
+	+Leaf0	0.2	0.1		1

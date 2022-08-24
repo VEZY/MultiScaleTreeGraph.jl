@@ -297,11 +297,32 @@ function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, 
             catch e
                 if !force
                     error("Found issue in the MTG when converting column $(features[i,1]) ",
-                        "with value $(node_data_attr[i]) into integer.",
+                        "with value $(node_data_attr[i]) into Integer.",
                         " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
                 end
                 pop!(node_attr, features.NAME[i])
-
+            end
+        elseif node_type[i] == "BOOLEAN"
+            try
+                node_attr[features.NAME[i]] = parse(Bool, node_data_attr[i])
+            catch e
+                if !force
+                    error("Found issue in the MTG when converting column $(features[i,1]) ",
+                        "with value $(node_data_attr[i]) into Boolean.",
+                        " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
+                end
+                pop!(node_attr, features.NAME[i])
+            end
+        elseif node_type[i] == "DD/MM/YY"
+            try
+                node_attr[features.NAME[i]] = Date(node_data_attr[i], dateformat"d/m/y")
+            catch e
+                if !force
+                    error("Found issue in the MTG when converting column $(features[i,1]) ",
+                        "with value $(node_data_attr[i]) into a date with format 'day/month/year'.",
+                        " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
+                end
+                pop!(node_attr, features.NAME[i])
             end
         elseif node_type[i] == "REAL" || (node_type[i] == "ALPHA" && in(features.NAME[i], ("Width", "Length")))
             try
@@ -309,7 +330,7 @@ function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, 
             catch e
                 if !force
                     error("Found issue in the MTG when converting column $(features[i,1]) ",
-                        "with value $(node_data_attr[i]) into Float64.",
+                        "with value $(node_data_attr[i]) into Floating point number.",
                         " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
                 end
                 pop!(node_attr, features.NAME[i])
