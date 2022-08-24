@@ -88,7 +88,7 @@ function write_mtg(file, mtg, classes, description, features)
         writedlm(io, ["MTG:"])
         mtg_df, mtg_colnames = paste_node_mtg(mtg, features)
         writedlm(io, reshape(mtg_colnames, (1, :)), quotes=false)
-        for i in eachindex(mtg_df["mtg_print"])
+        for i in eachindex(mtg_df[cache_name("mtg_print")])
             writedlm(io, reshape([mtg_df[k][i] for k in keys(mtg_df)], (1, :)), quotes=false)
         end
     end
@@ -96,33 +96,49 @@ end
 
 function paste_node_mtg(mtg, features)
 
+    lead_name = cache_name("lead")
+    print_name = cache_name("mtg_print")
+    mtg_refer = cache_name("mtg_refer")
+
     transform!(
         mtg,
-        get_leading_tabs => :lead,
-        paste_mtg_node => :mtg_print,
-        get_reference => :mtg_refer
+        (x -> get_leading_tabs(x, lead_name)) => lead_name,
+        paste_mtg_node => print_name,
+        get_reference => mtg_refer
     )
 
-    attributes = Dict_attrs(mtg, ["mtg_print", features.NAME..., "lead", "mtg_refer"])
-    max_tabs = maximum(attributes["lead"])
+    attributes = Dict_attrs(mtg, [print_name, string.(features.NAME)..., lead_name, mtg_refer])
+
+    # Delete the newly created variables:
+    clean_cache!(mtg)
+
+    max_tabs = maximum(attributes[lead_name])
 
     # Build the "ENTITY-CODE" column with necessary "^", leading and trailing tabs
-    attributes["mtg_print"] = string.(
+    attributes[print_name] = string.(
         # Add the leading tabulations:
-        repeat.("\t", attributes["lead"]),
+        repeat.("\t", attributes[lead_name]),
         # Add the "^" keyword before mtg print in case we refer to the column above:
-        attributes["mtg_refer"],
+        attributes[mtg_refer],
         # Add the mtg printing (e.g. "/Axis0"):
-        attributes["mtg_print"],
+        attributes[print_name],
         # Add the trailing tabulations:
-        repeat.("\t", max_tabs .- attributes["lead"])
+        repeat.("\t", max_tabs .- attributes[lead_name])
     )
     # Remove the lead and mtg_refer columns now that we used it:
-    pop!(attributes, "lead")
-    pop!(attributes, "mtg_refer")
+    pop!(attributes, lead_name)
+    pop!(attributes, mtg_refer)
 
-    # Replacing all nothing values by tabulations:
+
     for (key, val) in attributes
+        # If the attribute is a date, write it in the day/month/year format:
+        attr_feature = filter(x -> string(x.NAME) == key, features)
+
+        if size(attr_feature)[1] == 1 && attr_feature[1, 2] == "DD/MM/YY"
+            replace!(x -> isnothing(x) ? x : format(x, dateformat"d/m/Y"), val)
+        end
+
+        # Replacing all nothing values by an empty string:
         replace!(val, nothing => "")
     end
     # Renaming first column and adding tabs:
@@ -147,11 +163,11 @@ end
 Get the number of tabulation the node should have when writting it to a file based on the
 topology of its parent.
 """
-function get_leading_tabs(node)
+function get_leading_tabs(node, lead_name)
     if isroot(node)
         return 0
     else
-        node.MTG.link == "+" ? node.parent[:lead] + 1 : node.parent[:lead]
+        node.MTG.link == "+" ? node.parent[lead_name] + 1 : node.parent[lead_name]
     end
 end
 
@@ -171,7 +187,7 @@ function get_reference(node)
 end
 
 function Dict_attrs(mtg, attrs)
-    df = OrderedDict()
+    df = OrderedDict{String,Vector{Any}}()
     for var in attrs
         push!(df, var => descendants(mtg, var, self=true))
     end

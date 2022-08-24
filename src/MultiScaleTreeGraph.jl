@@ -14,7 +14,7 @@ import DataFrames: select!, select # We define our own version for transforming 
 import DataFrames: rename! # We define our own version for renaming node attributes
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
-import Dates: Date, @dateformat_str
+import Dates: Date, @dateformat_str, format
 
 include("types/AbstractNodeMTG.jl")
 include("types/Node.jl")
