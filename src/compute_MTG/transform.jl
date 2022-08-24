@@ -145,30 +145,30 @@ transform!, transform
 function transform!(
     mtg::Node,
     args...;
-    scale = nothing,
-    symbol = nothing,
-    link = nothing,
-    filter_fun = nothing,
-    ignore_nothing = false
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing,
+    ignore_nothing=false
 )
 
-    check_filters(mtg, scale = scale, symbol = symbol, link = link)
+    check_filters(mtg, scale=scale, symbol=symbol, link=link)
     filter_fun_ = filter_fun
 
     for nc in args
         if nc isa Symbol || nc isa String
-            # The expression is just a variable name, we ignore it and pas sto the next expression
+            # The expression is just a variable name, we ignore it and pass to the next expression
             continue
         elseif nc isa Base.Callable
             # If we provide just a function, it is applied to the node directly, so it must handle
             # a node as the first argument.
             # ?NOTE: Here the function takes a node as input
             fun_ = nc
-        elseif first(nc) isa Symbol && last(nc) isa Symbol
+        elseif (first(nc) isa Symbol || first(nc) isa String) && (last(nc) isa Symbol || last(nc) isa String)
             # `Name => new name` form, i.e. :x => :y.
             # ?NOTE: Here we just rename an attribute
             fun_ = x -> rename!(x, nc)
-        elseif first(nc) isa Base.Callable && last(nc) isa Symbol
+        elseif first(nc) isa Base.Callable && (last(nc) isa Symbol || last(nc) isa String)
             # `function => new name` form, i.e. `node -> sum(descendants(node, :var)) => :newvar`.
             # ?NOTE: Here the function takes a node as input
             fun, newname = nc
@@ -205,10 +205,10 @@ function transform!(
         traverse!(
             mtg,
             fun_;
-            scale = scale,
-            symbol = symbol,
-            link = link,
-            filter_fun = filter_fun_
+            scale=scale,
+            symbol=symbol,
+            link=link,
+            filter_fun=filter_fun_
         )
     end
 end
@@ -217,11 +217,11 @@ end
 function transform(
     mtg::Node,
     args...;
-    scale = nothing,
-    symbol = nothing,
-    link = nothing,
-    filter_fun = nothing,
-    ignore_nothing = false
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing,
+    ignore_nothing=false
 )
 
     new_mtg = deepcopy(mtg)
@@ -229,11 +229,11 @@ function transform(
     transform!(
         new_mtg,
         args...;
-        scale = scale,
-        symbol = symbol,
-        link = link,
-        filter_fun = filter_fun,
-        ignore_nothing = ignore_nothing
+        scale=scale,
+        symbol=symbol,
+        link=link,
+        filter_fun=filter_fun,
+        ignore_nothing=ignore_nothing
     )
 
     return new_mtg
