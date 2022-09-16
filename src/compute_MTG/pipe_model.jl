@@ -1,5 +1,5 @@
 """
-    pipe_model!(node, root_value)
+    pipe_model!(node, root_value; name=:_cache_a7118a60b2a624134bf9eac2d64f2bb32798626a)
 
 Computes the cross-section of `node` considering its topological environment and the
 cross-section at the root node (`root_value`).
@@ -20,19 +20,19 @@ of leaf nodes their subtree has, *i.e.* the total number of terminal nodes of th
 Please call [`clean_cache!`](@ref) after using `pipe_model!` because it creates
 temporary variables.
 """
-function pipe_model!(node, root_value)
+function pipe_model!(node, root_value; name=:_cache_a7118a60b2a624134bf9eac2d64f2bb32798626a)
     if isroot(node)
-        node[:_cache_a7118a60b2a624134bf9eac2d64f2bb32798626a] = root_value
+        node[name] = root_value
         return root_value
     else
-        parent_cross_section = node.parent[:_cache_a7118a60b2a624134bf9eac2d64f2bb32798626a]
-        nleaf_node = nleaves(node)
+        parent_cross_section = node.parent[name]
+        nleaf_node = nleaves!(node)
 
         nleaf_proportion_siblings = nleaf_node / (sum(nleaves_siblings!(node)) + nleaf_node)
 
-        node[:_cache_a7118a60b2a624134bf9eac2d64f2bb32798626a] = parent_cross_section * nleaf_proportion_siblings
+        node[name] = parent_cross_section * nleaf_proportion_siblings
 
-        return node[:_cache_a7118a60b2a624134bf9eac2d64f2bb32798626a]
+        return node[name]
     end
 end
 
@@ -81,7 +81,7 @@ version of `pipe_model!`, unless `allow_missing=true`.
 - Nodes with untrusted values should be
 set to a value below the threshold value to make `pipe_model!` recompute them.
 """
-function pipe_model!(node, var_name, threshold_value; allow_missing = false)
+function pipe_model!(node, var_name, threshold_value; allow_missing=false)
 
     if node[var_name] === nothing && !allow_missing
         error(
