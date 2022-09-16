@@ -67,18 +67,3 @@ You can also convert your MTG to a [MetaGraph](https://juliagraphs.org/MetaGraph
 ```@example usepkg
 MetaGraph(mtg)
 ```
-
-<!-- Finally, we can plot the MTG using any backends from `Plots`, *e.g.* Plotly for the 3d:
-
-```@example usepkg
-using Plots
-# import Pkg; Pkg.add("PlotlyJS")
-plotlyjs()
-
-plot(mtg, mode = "3d") # use mode = "2d" for a 2d plot
-savefig("mtgplot3d.html"); nothing # hide
-```
-
-```@raw html
-<object type="text/html" data="mtgplot3d.html" style="width:100%;height:2100px;"></object>
-``` -->
