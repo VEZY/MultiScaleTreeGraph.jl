@@ -11,7 +11,7 @@ check_filters(mtg, scale = (1,2))
 check_filters(mtg, scale = (1,2), symbol = "Leaf", link = "<")
 ```
 """
-function check_filters(node; scale = nothing, symbol = nothing, link = nothing) where {T}
+function check_filters(node; scale = nothing, symbol = nothing, link = nothing)
 
     root_node = get_root(node)
 
