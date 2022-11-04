@@ -73,7 +73,7 @@ Split the elements (e.g. inter-node, growth unit...) in an MTG line
 A vector of elements (keeping their link, e.g. + or <)
 
 ```julia
-split("/A1+U85/U86<U87<.<U93<U94<.<U96<U97+.+U100", r"(?<=.)(?=[</+])")
+split_MTG_elements("/A1+U85/U86<U87<.<U93<U94<.<U96<U97+.+U100")
 ```
 """
 function split_MTG_elements(l)

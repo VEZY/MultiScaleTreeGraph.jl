@@ -51,7 +51,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","tr
 mtg = read_mtg(file)
 ```
 """
-function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name = nothing)
+function read_mtg(file, attr_type=Dict, mtg_type=MutableNodeMTG; sheet_name=nothing)
 
     file_extension = splitext(basename(file))[2]
 
@@ -71,6 +71,7 @@ function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name 
         close(f)
     else
         # read the mtg file
+        # f = open(file, "r")
         mtg, classes, description, features =
             open(file, "r") do f
                 parse_mtg_file(f, attr_type, mtg_type)
@@ -78,7 +79,7 @@ function read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name 
     end
 
     # Adding overall classes and symbols information to the root node (used for checks):
-    append!(mtg, (symbols = classes.SYMBOL, scales = classes.SCALE, description = description))
+    append!(mtg, (symbols=classes.SYMBOL, scales=classes.SCALE, description=description))
 
     return mtg
 end
@@ -112,7 +113,7 @@ function parse_mtg_file(f, attr_type, mtg_type)
 
         # Parse the mtg DESCRIPTION section:
         if issection(l[1], "DESCRIPTION")
-            global description = parse_section!(f, ["LEFT", "RIGHT", "RELTYPE", "MAX"], "DESCRIPTION", line, l, allow_empty = true)
+            global description = parse_section!(f, ["LEFT", "RIGHT", "RELTYPE", "MAX"], "DESCRIPTION", line, l, allow_empty=true)
             if description !== nothing
                 description.RIGHT = split.(description.RIGHT, ",")
                 if !all([i in description.RELTYPE for i in ("+", "<")])

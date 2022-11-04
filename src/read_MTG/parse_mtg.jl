@@ -23,9 +23,12 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     l[1] = next_line!(f, line)
 
     if length(l[1]) == 0
-        error("No header was found for MTG section `MTG`. Did you put an empty line in-between ",
-            "the section name and its header?")
+        # If there are some blank lines, skip them until we find the "ENTITY-CODE" line
+        while length(l[1]) == 0 && !eof(f)
+            l[1] = next_line!(f, line)
+        end
     end
+
     l_header = strip.(split(l[1], "\t"))
 
     if l_header[1] != "ENTITY-CODE" && l_header[1] != "TOPO"
@@ -54,162 +57,30 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
 
     attr_column_start = findfirst(x -> x == columns[1], l_header)
 
-    l[1] = next_line!(f, line)
-    splitted_MTG = split(l[1], "\t")
-    node_1_node = split_MTG_elements(splitted_MTG[1])
-    # node_1_element = parse_MTG_node(node_1_node[1])
-    link, symbol, index = parse_MTG_node(node_1_node[1])
-
-    # Handling special case of the scene node:
-    if symbol == "Scene"
-        symbol = "\$"
-    end
-
-    symbol_in_classes = symbol .== classes.SYMBOL
-    if !any(symbol_in_classes)
-        error(
-            "The symbol of node `$(node_1_node[1])` defined at line ",
-            line[1],
-            " is not declared on the CLASSES section, ",
-            "please define it first."
-        )
-    end
-
-    scale = classes.SCALE[symbol_in_classes][1]
-    attrs = parse_MTG_node_attr(splitted_MTG, attr_type, features, attr_column_start, line)
-
-    root_node = Node("node_1", 1, mtg_type(link, symbol, index, scale), attrs)
-
     # Initializing the last column to which MTG was attached to keep track of which column
     # to attach the new MTG line
     max_columns = attr_column_start - 1
     last_node_column = zeros(Integer, max_columns)
     last_node_column[1] = 1
-    node_id = 2
+    node_id = [1]
 
-    tree_dict = Dict{Int,Node}(1 => root_node)
+    tree_dict = Dict{Int,Node}()
+
+    l[1] = next_line!(f, line)
     # for i in Iterators.drop(eachindex(splitted_MTG), 1)
+    # tree_dict[4].attributes
     try
         while !eof(f)
-            node_name = join(["node_", node_id])
+            parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type)
             l[1] = next_line!(f, line; whitespace=false)
-            if length(l[1]) == 0
-                continue
-            end
-            splitted_MTG = split(l[1], "\t")
-
-            node_column = findfirst(x -> length(x) > 0, splitted_MTG)
-            # node_data= splitted_MTG[[i]]
-            node_data = splitted_MTG[node_column:end]
-
-            if attr_column_start < node_column
-                error(
-                    "Error in MTG at line ",
-                    line,
-                    ": Found an MTG node declared at column ",
-                    node_column, ", but attributes are declared to start at column ",
-                    attr_column_start, " in the ENTITY-CODE row. \nYou can probably fix the issue by adding",
-                    " some tabs after ENTITY-CODE (try to add ",
-                    node_column - attr_column_start + 1, " tabs)."
-                )
-            end
-            node_attr_column_start = attr_column_start - node_column + 1
-            node = split_MTG_elements(node_data[1])
-            node, shared = expand_node!(node, 1)
-
-            # Get node attributes:
-            node_attr = parse_MTG_node_attr(node_data, attr_type, features, node_attr_column_start, line)
-
-            if node[1] == "^"
-                # The parent node is the last one built on the same column
-                parent_column = last_node_column[node_column]
-                if parent_column == 0
-                    error("Node defined at line ", line,
-                        " uses the '<' notation but is the first on its column.")
-                end
-            else
-                # The parent node is the last one built on column - 1.
-                parent_column = last_node_column[node_column-1]
-
-                if parent_column == 0
-                    error(
-                        "Can't find the parent of Node defined at line ",
-                        line,
-                        ". You may check the number of leading tabs."
-                    )
-                end
-            end
-
-            building_nodes = (eachindex(node))[node.!="^"]
-
-            for k in building_nodes
-                node_element = parse_MTG_node(node[k])
-                # NB: if several nodes are declared on the same line, the attributes are defined
-                # for the last node only, unless "<.<" or "+.+" are used
-
-                # Return an error if the link is not a proper one:
-                if node_element[1] ∉ ("/", "<", "+")
-                    error(
-                        "Node `$(node[k])` defined at line ",
-                        line[1],
-                        " does not have a proper link (i.e. `/`, `<`, `+`), ",
-                        "please define one."
-                    )
-                end
-
-                if k == length(node) || findfirst(x -> x == k, shared) !== nothing
-                    node_k_attr = node_attr
-                else
-                    node_k_attr = nothing
-                end
-
-                if k == minimum(building_nodes)
-                    parent_node = parent_column
-                else
-                    parent_node = node_id - 1
-                end
-
-                symbol_in_classes = node_element[2] .== classes.SYMBOL
-
-                if !any(symbol_in_classes)
-                    error(
-                        "The symbol of node `$(node[k])` defined at line ",
-                        line[1],
-                        " is not declared on the CLASSES section, ",
-                        "please define it first."
-                    )
-                end
-
-                scale = classes.SCALE[symbol_in_classes][1]
-
-                # Instantiating the current node MTG (immutable):
-                childMTG = mtg_type(
-                    node_element[1],
-                    node_element[2],
-                    node_element[3],
-                    scale
-                )
-
-                # Instantiating the current node (mutable):
-                child = Node(node_name, node_id, tree_dict[parent_node], childMTG, node_k_attr)
-
-                # Add the node to tree_dict to be able to access it by name:
-                push!(tree_dict, node_id => child)
-
-                # Keeping track of the last node used in the current MTG column
-                last_node_column[node_column] = node_id
-
-                # Increment node unique ID:
-                node_id = node_id + 1
-            end
         end
     catch e
         error(
             "Error at line $line: ",
-            e.msg
+            hasproperty(e, :msg) ? e.msg : e,
         )
     end
-    root_node
+    tree_dict[1]
 end
 
 """
@@ -360,6 +231,10 @@ function node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{Abstract
     Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)), values(node_attr)))
 end
 
+# node_attributes for DataFrame
+function node_attributes(::Type{DataFrame}, node_attr)
+    DataFrame(node_attr)
+end
 
 function init_empty_attr(attr_type)
     attr_type()
@@ -367,4 +242,137 @@ end
 
 function init_empty_attr(attr_type::Type{T}) where {T<:Union{AbstractDict}}
     attr_type{Symbol,Any}()
+end
+
+
+"""
+    parse_line_to_node!(tree_dict,l,line,attr_column_start,node_id)
+
+Parse a line of the MTG file to a node and add it to the tree dictionary.
+It may also add several nodes if the line contains several MTG elements.
+"""
+function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type)
+
+    splitted_MTG = split(l[1], "\t")
+    node_column = findfirst(x -> length(x) > 0, splitted_MTG)
+    node_data = splitted_MTG[node_column:end]
+
+    if attr_column_start < node_column
+        error(
+            "Error in MTG at line ",
+            line,
+            ": Found an MTG node declared at column ",
+            node_column, ", but attributes are declared to start at column ",
+            attr_column_start, " in the ENTITY-CODE row. \nYou can probably fix the issue by adding",
+            " some tabs after ENTITY-CODE (try to add ",
+            node_column - attr_column_start + 1, " tabs)."
+        )
+    end
+
+    node_attr_column_start = attr_column_start - node_column + 1
+    node = split_MTG_elements(node_data[1])
+    node, shared = expand_node!(node, 1)
+
+    # Get node attributes:
+    node_attr = parse_MTG_node_attr(node_data, attr_type, features, node_attr_column_start, line)
+
+    if node[1] == "^"
+        # The parent node is the last one built on the same column
+        parent_column = last_node_column[node_column]
+        if parent_column == 0
+            error("Node defined at line ", line,
+                " uses the '<' notation but is the first on its column.")
+        end
+    else
+        # The parent node is the last one built on column - 1.
+        node_id[1] == 1 ? parent_column = 1 : parent_column = last_node_column[node_column-1]
+
+        if parent_column == 0
+            error(
+                "Can't find the parent of Node defined at line ",
+                line,
+                ". You may check the number of leading tabs."
+            )
+        end
+    end
+
+    building_nodes = (eachindex(node))[node.!="^"]
+
+    for k in building_nodes
+        node_element = parse_MTG_node(node[k])
+        # NB: if several nodes are declared on the same line, the attributes are defined
+        # for the last node only, unless "<.<" or "+.+" are used
+
+        # Return an error if the link is not a proper one:
+        if node_element[1] ∉ ("/", "<", "+")
+            error(
+                "Node `$(node[k])` defined at line ",
+                line[1],
+                " does not have a proper link (i.e. `/`, `<`, `+`), ",
+                "please define one."
+            )
+        end
+
+        # Handling special case of the scene node:
+        symbol = node_element[2] == "Scene" ? "\$" : node_element[2]
+
+        if k == length(node) || findfirst(x -> x == k, shared) !== nothing
+            node_k_attr = node_attr
+        else
+            node_k_attr = init_empty_attr(attr_type)
+        end
+
+        if k == minimum(building_nodes)
+            parent_node = parent_column
+        else
+            parent_node = node_id[1] - 1
+        end
+
+        symbol_in_classes = symbol .== classes.SYMBOL
+
+        if !any(symbol_in_classes)
+            error(
+                "The symbol of node `$(node[k])` defined at line ",
+                line[1],
+                " is not declared on the CLASSES section, ",
+                "please define it first."
+            )
+        end
+
+        scale = classes.SCALE[symbol_in_classes][1]
+
+        # Instantiating the current node MTG (immutable):
+        childMTG = mtg_type(
+            node_element[1],
+            symbol,
+            node_element[3],
+            scale
+        )
+
+        # Instantiating the current node (mutable):
+        if node_id[1] == 1
+            node_MTG = Node(
+                join(["node_", node_id[1]]),
+                node_id[1],
+                childMTG,
+                node_k_attr
+            )
+        else
+            node_MTG = Node(
+                join(["node_", node_id[1]]),
+                node_id[1],
+                tree_dict[parent_node],
+                childMTG,
+                node_k_attr
+            )
+        end
+        # Add the node to tree_dict to be able to access it by name:
+        push!(tree_dict, node_id[1] => node_MTG)
+
+        # Keeping track of the last node used in the current MTG column
+        last_node_column[node_column] = node_id[1]
+
+        # Increment node unique ID:
+        node_id[1] = node_id[1] + 1
+    end
 end
