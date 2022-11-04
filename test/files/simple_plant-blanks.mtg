@@ -1,0 +1,34 @@
+CODE:	FORM-A
+
+CLASSES:
+SYMBOL	SCALE	DECOMPOSITION	INDEXATION	DEFINITION
+$ 	0	FREE	FREE	IMPLICIT
+Individual	1	FREE	FREE	IMPLICIT
+Axis	2	FREE	FREE	IMPLICIT # you can add comments anywhere
+Internode	3	FREE	FREE	IMPLICIT
+Leaf	3	FREE	FREE	IMPLICIT
+
+DESCRIPTION:
+LEFT	RIGHT	RELTYPE	MAX
+Internode	Internode,Leaf	+	?
+Internode	Internode,Leaf	<	?
+
+FEATURES:
+NAME	TYPE
+Length	ALPHA
+Width	ALPHA
+XEuler	REAL
+isAlive	BOOLEAN
+dateDeath	DD/MM/YY
+
+MTG:
+
+
+ENTITY-CODE		Length	Width	XEuler	isAlive	dateDeath
+/Scene0
+^/Individual0
+^/Axis0
+^/Internode0		0.1	0.02	1
+	+Leaf0	0.2	0.1		0	24/08/2022
+^<Internode1		0.1	0.02	180.0	1
+	+Leaf0	0.2	0.1		1

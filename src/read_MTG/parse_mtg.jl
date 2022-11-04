@@ -66,13 +66,12 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
 
     tree_dict = Dict{Int,Node}()
 
-    l[1] = next_line!(f, line)
     # for i in Iterators.drop(eachindex(splitted_MTG), 1)
     # tree_dict[4].attributes
     try
         while !eof(f)
-            parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type)
             l[1] = next_line!(f, line; whitespace=false)
+            parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type)
         end
     catch e
         error(

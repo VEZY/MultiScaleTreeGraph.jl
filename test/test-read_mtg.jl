@@ -105,3 +105,34 @@ end
     @test (mtg.children = Dict(2 => node2)) == Dict(2 => node2)
     mtg.attributes = Dict(:a => 3, :b => "test")
 end
+
+
+@testset "test mtg with empty lines" begin
+    mtg = read_mtg("files/simple_plant.mtg")
+    mtg2 = read_mtg("files/simple_plant-blanks.mtg")
+
+    MTG1 = traverse(mtg) do x
+        (x.MTG, x.attributes)
+    end
+
+    MTG2 = traverse(mtg2) do x
+        (x.MTG, x.attributes)
+    end
+
+    @test MTG1 == MTG2
+end
+
+@testset "mtg with several nodes in the same line" begin
+    mtg = read_mtg("files/simple_plant.mtg")
+    mtg2 = read_mtg("files/simple_plant-P1U1.mtg")
+
+    MTG1 = traverse(mtg) do x
+        (x.MTG, x.attributes)
+    end
+
+    MTG2 = traverse(mtg2) do x
+        (x.MTG, x.attributes)
+    end
+
+    @test MTG1 == MTG2
+end
