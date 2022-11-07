@@ -34,9 +34,9 @@ Read a simple MTG file:
 ```julia
 using MultiScaleTreeGraph
 
-file = download("https://raw.githubusercontent.com/VEZY/XploRer/master/inst/extdata/simple_plant.mtg");
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 
-mtg = read_mtg(file);
+mtg = read_mtg(file)
 ```
 
 Then you can compute new variables in the MTG like so:
