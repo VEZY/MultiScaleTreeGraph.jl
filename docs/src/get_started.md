@@ -39,7 +39,7 @@ mtg = read_mtg(file)
 Then you can compute new variables in the MTG using [`transform!`](@ref):
 
 ```@example usepkg
-transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 100.) => :length_mm)
+transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 1000.) => :length_mm)
 ```
 
 The design of [`transform!`](@ref) is heavily inspired from the eponym function from [`DataFrame.jl`](https://dataframes.juliadata.org/stable/), with little tweaks for MTGs.

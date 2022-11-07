@@ -42,13 +42,13 @@ mtg = read_mtg(file)
 Then you can compute new variables in the MTG like so:
 
 ```julia
-@mutate_mtg!(mtg, length_mm = node.Length * 100.)
+@mutate_mtg!(mtg, length_mm = node.Length * 1000.)
 ```
 
 Or using the more Julian way inspired by `DataFrame.jl`:
 
 ```julia
-transform!(mtg, :Length => (x -> x * 100.) => :length_mm)
+transform!(mtg, :Length => (x -> x * 1000.) => :length_mm)
 ```
 
 And then write the MTG back to disk:
