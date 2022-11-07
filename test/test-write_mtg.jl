@@ -15,3 +15,19 @@ mtg[:description] = nothing
         @test get_node(mtg, i) == get_node(mtg2, i)
     end
 end
+
+
+mtg = read_mtg("files/simple_plant.mtg", NamedTuple, NodeMTG)
+
+@testset "test classes" begin
+    mtg2 = mktemp() do f, io
+        write_mtg(f, mtg)
+        mtg2 = read_mtg(f, NamedTuple, NodeMTG)
+        return mtg2
+    end
+
+    # Check that all nodes are the same (not testing node 1 as it has description that is not written):
+    for i in 2:length(mtg)
+        @test get_node(mtg, i) == get_node(mtg2, i)
+    end
+end

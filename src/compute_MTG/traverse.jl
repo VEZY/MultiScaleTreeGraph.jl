@@ -112,7 +112,8 @@ function traverse(
         f,
         val,
         args...;
-        scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
+        scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
+    )
     return val
 end
 

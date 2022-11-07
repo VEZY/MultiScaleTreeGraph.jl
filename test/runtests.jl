@@ -33,3 +33,7 @@ end
 @testset "conversion" begin
     include("test-conversion.jl")
 end
+
+@testset "writing" begin
+    include("test-write_mtg.jl")
+end

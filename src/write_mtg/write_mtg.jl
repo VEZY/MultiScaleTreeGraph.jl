@@ -88,7 +88,7 @@ function write_mtg(file, mtg, classes, description, features)
         writedlm(io, ["MTG:"])
         mtg_df, mtg_colnames = paste_node_mtg(mtg, features)
         writedlm(io, reshape(mtg_colnames, (1, :)), quotes=false)
-        for i in eachindex(mtg_df[cache_name("mtg_print")])
+        for i in eachindex(mtg_df["mtg_print"])
             writedlm(io, reshape([mtg_df[k][i] for k in keys(mtg_df)], (1, :)), quotes=false)
         end
     end
@@ -96,40 +96,39 @@ end
 
 function paste_node_mtg(mtg, features)
 
-    lead_name = cache_name("lead")
-    print_name = cache_name("mtg_print")
-    mtg_refer = cache_name("mtg_refer")
+    # Get the leading tabulations for each node (i.e. the column of the node)
+    lead = []
+    get_leading_tabs!(mtg, lead)
 
-    transform!(
-        mtg,
-        (x -> get_leading_tabs(x, lead_name)) => lead_name,
-        paste_mtg_node => print_name,
-        get_reference => mtg_refer
+    # Get the mtg string for each node:
+    print_node = []
+    parent_ref = []
+    traverse(mtg) do node
+        push!(print_node, paste_mtg_node(node))
+        push!(parent_ref, get_reference(node))
+    end
+
+    max_tabs = maximum(lead)
+
+    # Get the attributes for each node:
+    attributes = OrderedDict{String,Vector{Any}}()
+
+    attributes["mtg_print"] = string.(
+        # Add the leading tabulations:
+        repeat.("\t", lead),
+        # Add the "^" keyword before mtg print in case we refer to the column above:
+        parent_ref,
+        # Add the mtg printing (e.g. "/Axis0"):
+        print_node,
+        # Add the trailing tabulations:
+        repeat.("\t", max_tabs .- lead)
     )
 
-    attributes = Dict_attrs(mtg, [print_name, string.(features.NAME)..., lead_name, mtg_refer])
-
-    # Delete the newly created variables:
-    clean_cache!(mtg)
-
-    max_tabs = maximum(attributes[lead_name])
+    for var in string.(features.NAME)
+        push!(attributes, var => descendants(mtg, var, self=true))
+    end
 
     # Build the "ENTITY-CODE" column with necessary "^", leading and trailing tabs
-    attributes[print_name] = string.(
-        # Add the leading tabulations:
-        repeat.("\t", attributes[lead_name]),
-        # Add the "^" keyword before mtg print in case we refer to the column above:
-        attributes[mtg_refer],
-        # Add the mtg printing (e.g. "/Axis0"):
-        attributes[print_name],
-        # Add the trailing tabulations:
-        repeat.("\t", max_tabs .- attributes[lead_name])
-    )
-    # Remove the lead and mtg_refer columns now that we used it:
-    pop!(attributes, lead_name)
-    pop!(attributes, mtg_refer)
-
-
     for (key, val) in attributes
         # If the attribute is a date, write it in the day/month/year format:
         attr_feature = filter(x -> string(x.NAME) == key, features)
@@ -147,6 +146,8 @@ function paste_node_mtg(mtg, features)
     return attributes, mtg_colnames
 end
 
+
+
 """
     paste_mtg_node(node)
 
@@ -158,17 +159,34 @@ function paste_mtg_node(node)
 end
 
 """
-    get_leading_tabs(node)
+    get_leading_tabs!(node, lead, parent_lead=0)
 
 Get the number of tabulation the node should have when writting it to a file based on the
-topology of its parent.
+topology of its parent. The function modifies the lead vector in place.
+
+# Examples
+```julia
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
+mtg = read_mtg(file)
+lead = []
+get_leading_tabs!(mtg, lead)
+```
 """
-function get_leading_tabs(node, lead_name)
+function get_leading_tabs!(node, lead, parent_lead=0)
     if isroot(node)
-        return 0
+        node_lead = 0
     else
-        node.MTG.link == "+" ? node.parent[lead_name] + 1 : node.parent[lead_name]
+        node_lead = node.MTG.link == "+" ? parent_lead + 1 : parent_lead
     end
+
+    push!(lead, node_lead)
+
+    if !isleaf(node)
+        for chnode in ordered_children(node)
+            get_leading_tabs!(chnode, lead, node_lead)
+        end
+    end
+    return lead
 end
 
 
@@ -187,7 +205,6 @@ function get_reference(node)
 end
 
 function Dict_attrs(mtg, attrs)
-    df = OrderedDict{String,Vector{Any}}()
     for var in attrs
         push!(df, var => descendants(mtg, var, self=true))
     end
