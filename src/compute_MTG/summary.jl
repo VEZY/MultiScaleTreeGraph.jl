@@ -40,7 +40,12 @@ function get_features(mtg)
 
     # filter-out the attributes that have more than one value inside them (not compatible with
     # the mtg format yet):
-    filter!(x -> !(x.TYPE <: Vector) && !in(x.NAME, [:description, :symbols, :scales]), df)
+    filter!(
+        x -> !(x.TYPE <: Vector) &&
+                 !(x.TYPE <: Nothing) &&
+                 !in(x.NAME, [:description, :symbols, :scales]),
+        df
+    )
 
     # Remove repeated rows:
     unique!(df)
