@@ -71,6 +71,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     try
         while !eof(f)
             l[1] = next_line!(f, line; whitespace=false)
+            length(l[1]) == 0 && continue # ignore empty line
             parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type)
         end
     catch e
