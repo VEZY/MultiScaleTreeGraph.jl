@@ -1,4 +1,6 @@
 """
+    Node(MTG<:AbstractNodeMTG)
+    Node(parent::Node, MTG<:AbstractNodeMTG)
     Node(id::Int, MTG<:AbstractNodeMTG, attributes)
     Node(name::String, id::Int, MTG<:AbstractNodeMTG, attributes)
     Node(id::Int, parent::Node, MTG<:AbstractNodeMTG, attributes)
@@ -80,6 +82,13 @@ Node(id::Int, parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Nod
 # If the id is not given, it is the root node, so we use 1
 Node(parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(new_id(get_root(parent)), parent, MTG, attributes)
 
+# Only the MTG is given, by default we use Dict as attributes:
+Node(MTG::T) where {T<:AbstractNodeMTG} = Node(1, MTG, Dict{Symbol,Any}())
+
+# Only the MTG and parent are given, by default we use the parent attribute type:
+function Node(parent::Node, MTG::T) where {T<:AbstractNodeMTG}
+    Node(parent, MTG, typeof(parent.attributes)())
+end
 
 ## AbstractTrees compatibility:
 

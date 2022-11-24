@@ -1,3 +1,31 @@
+
+# Create a node:
+
+@testset "Create node" begin
+    mtg_code = MultiScaleTreeGraph.NodeMTG("/", "Plant", 1, 1)
+    mtg = MultiScaleTreeGraph.Node(mtg_code)
+    @test get_attributes(mtg) == []
+    @test mtg.attributes == Dict{Symbol,Any}()
+    @test mtg.id == 1
+    @test mtg.parent === nothing
+    @test mtg.MTG == mtg_code
+end
+
+@testset "Create node" begin
+    mtg_code = MultiScaleTreeGraph.NodeMTG("/", "Plant", 1, 1)
+    mtg = MultiScaleTreeGraph.Node(mtg_code)
+    internode = MultiScaleTreeGraph.Node(
+        mtg,
+        MultiScaleTreeGraph.NodeMTG("/", "Internode", 1, 2)
+    )
+    @test internode.parent == mtg
+    @test internode.id == 2
+    @test internode.MTG == MultiScaleTreeGraph.NodeMTG("/", "Internode", 1, 2)
+    @test internode.attributes == Dict{Symbol,Any}()
+    @test mtg.children == [internode]
+end
+
+# From a file:
 mtg = read_mtg("files/simple_plant.mtg")
 
 @testset "names" begin
