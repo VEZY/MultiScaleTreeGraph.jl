@@ -45,18 +45,59 @@ function lastchild(node::Node)
 end
 
 """
-Add a new child to a parent node, and add the parent node as the parent.
+    addchild!(parent::Node, id::Int, MTG<:AbstractNodeMTG, attributes)
+    addchild!(parent::Node, MTG<:AbstractNodeMTG, attributes)
+    addchild!(parent::Node, MTG<:AbstractNodeMTG)
+    addchild!(parent::Node, child::Node; force=false)
 
-See also [`insert_child!`](@ref) for a more user-friendly approach.
+Add a new child to a parent node, and add the parent node as the parent.
+Returns the child node.
+
+See also [`insert_child!`](@ref), or directly [`Node`](@ref) where we 
+can pass the parent, and it uses `addchild!` under the hood.
+
+# Examples
+```julia
+# Create a root node:
+mtg = MultiScaleTreeGraph.Node(
+    NodeMTG("/", "Plant", 1, 1),
+    Dict{Symbol,Any}()
+)
+
+roots = addchild!(
+    mtg, 
+    NodeMTG("+", "RootSystem", 1, 2)
+)
+
+stem = addchild!(
+    mtg, 
+    NodeMTG("+", "Stem", 1, 2)
+)
+
+phyto = addchild!(
+    stem, 
+    NodeMTG("/", "Phytomer", 1, 3)
+)
+
+mtg
+```
 """
 function addchild!(parent::Node, id::Int, MTG::M, attributes) where {M<:AbstractNodeMTG}
     child = Node(id, parent, MTG, attributes)
     addchild!(parent, child)
+    return child
 end
 
-function addchild!(parent::Node, id::Int, MTG::M) where {M<:AbstractNodeMTG}
-    child = Node(id, parent, MTG)
+function addchild!(parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    child = Node(parent, MTG, attributes)
     addchild!(parent, child)
+    return child
+end
+
+function addchild!(parent::Node, MTG::M) where {M<:AbstractNodeMTG}
+    child = Node(parent, MTG)
+    addchild!(parent, child)
+    return child
 end
 
 function addchild!(parent::Node, child::Node; force=false)
@@ -72,6 +113,8 @@ function addchild!(parent::Node, child::Node; force=false)
     else
         push!(parent.children, child.id => child)
     end
+
+    return child
 end
 
 

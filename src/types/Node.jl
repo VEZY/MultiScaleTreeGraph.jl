@@ -23,6 +23,17 @@ The node is an entry point to a Mutli-Scale Tree Graph, meaning we can move thro
 of its node. The root node is the node without parent. A leaf node is a node without any children.
 Root and leaf nodes are used with their computer science meaning throughout the package, not in the
 biological sense.
+
+# Examples
+
+```julia
+mtg = Node(NodeMTG("/", "Plant", 1, 1))
+internode = Node(
+    mtg,
+    NodeMTG("/", "Internode", 1, 2)
+)
+mtg
+```
 """
 mutable struct Node{T<:AbstractNodeMTG,A}
     "Name of the node. Should be unique in the MTG."
