@@ -284,7 +284,7 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             join(["node_", max_id[1]]),
             max_id[1],
             nothing,
-            Dict{Int,Node}(node.id => node),
+            Node[node],
             nothing,
             new_node_MTG(node, template),
             copy(attr_fun(node))
@@ -306,7 +306,7 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             join(["node_", max_id[1]]),
             max_id[1],
             node.parent,
-            Dict{Int,Node}(node.id => node),
+            Node[node],
             nothing,
             new_node_MTG(node, template),
             copy(attr_fun(node))
@@ -314,7 +314,7 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
 
         # Add the new node to the parent:
         pop!(node.parent.children, node.id)
-        push!(node.parent.children, new_node.id => new_node)
+        push!(node.parent.children, new_node)
 
         # Add the new node as the parent of the previous one:
         node.parent = new_node
@@ -349,7 +349,7 @@ function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes
     )
 
     # Add the new node to the children of the parent node:
-    push!(parent(node).children, new_node.id => new_node)
+    push!(parent(node).children, new_node)
 
     return node
 end
@@ -369,7 +369,7 @@ function insert_generation!(node, template, attr_fun=node -> typeof(node.attribu
     )
 
     # Add the new node as the only child of the node:
-    node.children = Dict{Int,Node}(new_node.id => new_node)
+    node.children = Node[new_node]
 
     return node
 end

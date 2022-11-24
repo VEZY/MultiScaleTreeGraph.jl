@@ -7,11 +7,7 @@ Base.getindex(node::Node, key::Symbol) = unsafe_getindex(node, key)
 """
 Indexing a Node using an integer will index in its children
 """
-Base.getindex(n::Node, i::Integer) = n.children[collect(keys(n.children))[i]]
-function Base.getindex(n::Node{T,MutableNamedTuple}, i::Integer) where {T<:AbstractNodeMTG}
-    n.children[collect(keys(n.children))[i]]
-end
-
+Base.getindex(n::Node, i::Integer) = n.children[i]
 Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
 
 """

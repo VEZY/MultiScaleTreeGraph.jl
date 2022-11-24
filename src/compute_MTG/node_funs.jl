@@ -19,7 +19,7 @@ Return the children as an array, ordered first by "+"
 """
 function ordered_children(node)
     links_chnodes = Array{Node,1}()
-    for (name, chnode) in node.children
+    for chnode in node.children
         if chnode.MTG.link == "+"
             pushfirst!(links_chnodes, chnode)
         else
@@ -109,9 +109,9 @@ function addchild!(parent::Node, child::Node; force=false)
     end
 
     if parent.children === nothing
-        parent.children = Dict{Int,Node}(child.id => child)
+        parent.children = Node[child]
     else
-        push!(parent.children, child.id => child)
+        push!(parent.children, child)
     end
 
     return child

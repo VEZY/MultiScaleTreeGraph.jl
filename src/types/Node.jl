@@ -43,9 +43,9 @@ mutable struct Node{T<:AbstractNodeMTG,A}
     "Parent node."
     parent::Union{Nothing,Node}
     "Dictionary of children nodes, or Nothing if no children."
-    children::Union{Nothing,Dict{Int,Node}}
+    children::Union{Nothing,Vector{Node}}
     "Dictionary of sibling(s) nodes if any, or else Nothing. Can be Nothing if not computed too."
-    siblings::Union{Nothing,Dict{Int,Node}}
+    siblings::Union{Nothing,Vector{Node}}
     "MTG encoding (see [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref))."
     MTG::T
     "Node attributes. Can be anything really."
