@@ -39,13 +39,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 ```
 
-Then you can compute new variables in the MTG like so:
-
-```julia
-@mutate_mtg!(mtg, length_mm = node.Length * 1000.)
-```
-
-Or using the more Julian way inspired by `DataFrame.jl`:
+Then you can compute new variables in the MTG using a `DataFrame.jl`'s alike syntax:
 
 ```julia
 transform!(mtg, :Length => (x -> x * 1000.) => :length_mm)
@@ -146,7 +140,7 @@ To do before v1:
 - [x] Add tests for insert_parent!, insert_generation!, insert_child!, insert_sibling!
 - [x] Add tests for insert_parents!, insert_generations!, insert_children!, insert_siblings!
 - [ ] Add conversion from DataFrame and from MetaGraph
-- [ ] Make the children field a vector of children by default instead of a Dict
+- [x] Make the children field a vector of children by default instead of a Dict
 - [x] Add OPF parser (moved to PlantGeom.jl)
 - [x] Add possibility to prune from a node: add it to the docs
 - [x] Add tests for delete_node! and delete_nodes!
@@ -167,7 +161,7 @@ To do before v1:
     - we could also add a function e.g. `cache_scale()` that would allow a user to cache a dictionary into the root node with keys being the node name and the values the nodes at that scale. So if users regularly visit a scale they can traverse the dictionary instead of the full MTG. It would work for non-connected scales too. But this idea is not concurrent to the previous one because it does not deal with `descendants` and `ancestors` alone (need to avoid visiting all nodes in the tree).
   - [ ] Update `ancestors` and `descendants` accordingly. See if we can re-use traverse or some functions for descendants to avoid a maintenance nightmare. For `ancestors`, we need a function that checks if we want the same scale (= parent) or a scale with a smaller value (= complex).
   - [ ] Add Tables.jl interface ? So we can iterate over the MTG as rows of a Table. 
-  - [ ] Add possibility to add a node "type" as a parametric type so we can dispatch on this ? E.g. Internode, Leaf... It would be a field of node with default value of e.g. `AnyNode`
+  - [x] Add possibility to add a node "type" as a parametric type so we can dispatch on this ? E.g. Internode, Leaf... It would be a field of node with default value of e.g. `AnyNode`
 
 ## 4. Acknowledgments
 
