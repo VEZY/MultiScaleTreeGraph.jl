@@ -221,10 +221,10 @@ function new_node_MTG(node, template::T) where {T<:Union{NodeMTG,MutableNodeMTG,
 end
 
 """
-    insert_parent!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
-    insert_generation!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
-    insert_child!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
-    insert_sibling!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
+    insert_parent!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)];type)
+    insert_generation!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)];type)
+    insert_child!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)];type)
+    insert_sibling!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)];type)
 
 Insert a node in an MTG as:
 
@@ -247,6 +247,7 @@ NamedTuple). If you just need to pass attributes values to a node use `x -> your
 - `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of length one.
 Used to compute the name of the inserted node. It is incremented in the function, and use by
 default the value from [`max_id`](@ref).
+- `type`: The type of the inserted node. Can be anything, by default the unexported `GenericNode()`
 
 # Examples
 
@@ -274,7 +275,7 @@ insert_parent!(
 """
 insert_parent!, insert_generation!, insert_child!, insert_sibling!
 
-function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
+function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)]; type=GenericNode())
 
     max_id[1] += 1
 
@@ -285,9 +286,9 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             max_id[1],
             nothing,
             Node[node],
-            nothing,
             new_node_MTG(node, template),
-            copy(attr_fun(node))
+            copy(attr_fun(node)),
+            type
         )
 
         # Add to the new root the mandatory root attributes:
@@ -307,9 +308,9 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             max_id[1],
             node.parent,
             Node[node],
-            nothing,
             new_node_MTG(node, template),
-            copy(attr_fun(node))
+            copy(attr_fun(node)),
+            type
         )
 
         # Add the new node to the parent:
@@ -327,17 +328,17 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
 end
 
 
-function insert_child!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
+function insert_child!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)]; type=GenericNode())
 
     max_id[1] += 1
 
-    addchild!(node, max_id[1], new_node_MTG(node, template), attr_fun(node))
+    addchild!(node, max_id[1], new_node_MTG(node, template), attr_fun(node), type=type)
 
     return node
 end
 
 
-function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
+function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)]; type=GenericNode())
 
     max_id[1] += 1
 
@@ -346,9 +347,9 @@ function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes
         max_id[1],
         parent(node),
         nothing,
-        parent(node).children,
         new_node_MTG(node, template),
-        copy(attr_fun(node))
+        copy(attr_fun(node)),
+        type
     )
 
     # Add the new node to the children of the parent node:
@@ -357,7 +358,7 @@ function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes
     return node
 end
 
-function insert_generation!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
+function insert_generation!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)], type=GenericNode())
 
     max_id[1] += 1
 
@@ -366,9 +367,9 @@ function insert_generation!(node, template, attr_fun=node -> typeof(node.attribu
         max_id[1],
         node,
         node.children,
-        nothing,
         new_node_MTG(node, template),
-        copy(attr_fun(node))
+        copy(attr_fun(node)),
+        type
     )
 
     # Add the new node as the only child of the node:

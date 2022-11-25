@@ -33,25 +33,25 @@ unsafe_getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
 # For a vector of keys:
 unsafe_getindex(node::Node, key::Union{Vector{Symbol},Vector{String}}) = [unsafe_getindex(node, i) for i in key]
 function unsafe_getindex(
-    node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,S} where {S}},
+    node::Node{M,T,D} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,S} where {S},D},
     key::Union{Vector{Symbol},Vector{String}}
 )
     [unsafe_getindex(node, i) for i in key]
 end
 
 function unsafe_getindex(
-    node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict},
+    node::Node{M,T,D} where {M<:AbstractNodeMTG,T<:AbstractDict,D},
     key::Symbol
 )
     get(node.attributes, key, nothing)
 end
 
-function unsafe_getindex(node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict}, key)
+function unsafe_getindex(node::Node{M,T,D} where {M<:AbstractNodeMTG,T<:AbstractDict,D}, key)
     unsafe_getindex(node, Symbol(key))
 end
 
-Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, x, key) = setindex!(node, x, Symbol(key))
-Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, x, key::Symbol) = node.attributes[key] = x
+Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict,D}, x, key) where {D} = setindex!(node, x, Symbol(key))
+Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict,D}, x, key::Symbol) where {D} = node.attributes[key] = x
 
 """
 Returns the length of the subtree below the node (including it)
