@@ -30,7 +30,6 @@ Here is a little description of each field:
 - `id`: The unique integer identifier of the node. It can be set by the user but is usually set automatically.
 - `parent`: The parent node of the curent node. If the curent node is the root node, it will return `nothing`. You can test whether a node is a root node sing the [`isroot`](@ref) function.
 - children: a dictionary of the children nodes with their `id` as key, or `nothing` if none;
-- siblings: a dictionary of siblings nodes if any, with their `id` as key. Can be `nothing` if none or not computed;
 - `MTG`: The MTG encoding of the node (see below, or [`NodeMTG`](@ref))
 - `attributes`: the node attributes. Usually a `NamedTuple`, a `MutableNamedTuple` or a `Dict` or similar (e.g. `OrderedDict`), but the type is optional. The choice of the data structure depends mainly on how much you plan to change the attributes and their values. Attributes include for example the length or diameter of a node, its colour, 3d position...
 

@@ -10,7 +10,6 @@
         id::Int,
         parent::Node,
         children::Union{Nothing,Dict{Int,Node}},
-        siblings::Union{Nothing,Dict{Int,Node}},
         MTG<:AbstractNodeMTG,
         attributes
     )
@@ -24,6 +23,9 @@ of its node. The root node is the node without parent. A leaf node is a node wit
 Root and leaf nodes are used with their computer science meaning throughout the package, not in the
 biological sense.
 
+Note that it is possible to create a whole MTG using only the `Node` type, because it has methods
+to create a node as a child of another node (see example below). 
+
 # Examples
 
 ```julia
@@ -32,23 +34,23 @@ internode = Node(
     mtg,
     NodeMTG("/", "Internode", 1, 2)
 )
+# Note that the node is created with a parent, so it is not necessary to add it as a child of the `mtg ` Node
+
 mtg
 ```
 """
-mutable struct Node{T<:AbstractNodeMTG,A}
-    "Name of the node. Should be unique in the MTG."
+mutable struct Node{N<:AbstractNodeMTG,A}
+    "Name of the node. Should be unique in the MTG"
     name::String
     "Node unique ID"
     id::Int
-    "Parent node."
+    "Parent node"
     parent::Union{Nothing,Node}
-    "Dictionary of children nodes, or Nothing if no children."
+    "Dictionary of children nodes, or Nothing if no children"
     children::Union{Nothing,Vector{Node}}
-    "Dictionary of sibling(s) nodes if any, or else Nothing. Can be Nothing if not computed too."
-    siblings::Union{Nothing,Vector{Node}}
-    "MTG encoding (see [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref))."
-    MTG::T
-    "Node attributes. Can be anything really."
+    "MTG encoding (see [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref))"
+    MTG::N
+    "Node attributes. Can be anything really"
     attributes::A
 end
 
@@ -114,12 +116,10 @@ AbstractTrees.childtype(node::Node{T,A}) where {T,A} = Node{T,A}
 # Set the traits for Node:
 # AbstractTrees.ParentLinks(::Type{<:Node{T,D}}) where {T,D} = AbstractTrees.StoredParents()
 AbstractTrees.ParentLinks(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = AbstractTrees.StoredParents()
-AbstractTrees.SiblingLinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredSiblings()
+AbstractTrees.SiblingLinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.ImplicitSiblings()
 AbstractTrees.ChildIndexing(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = IndexedChildren()
 AbstractTrees.NodeType(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = HasNodeType()
 AbstractTrees.nodetype(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = Node{T,A}
-# AbstractTrees.parentlinks(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = AbstractTrees.StoredParents()
-# AbstractTrees.siblinglinks(::Type{Node{T,D}}) where {T,D} = AbstractTrees.StoredSiblings()
 
 function AbstractTrees.nextsibling(node::Node)
     # If there is no parent, no siblings, return nothing:

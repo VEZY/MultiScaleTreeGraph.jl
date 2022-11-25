@@ -154,7 +154,7 @@ To do before v1:
 - [x] Add possibility to insert a sub_tree
 - [x] Export plotting to PlantGeom.jl so we remove one more dependency away.
 - [ ] Make transform! parallel. Look into <https://github.com/JuliaFolds/FLoops.jl>.
-- [ ] Delete siblings field from Node
+- [x] Delete siblings field from Node
 - [ ] Add option to visit only some scales without the need to visit all nodes in-between
   - [ ] Add complex + components in Node.
   - [ ] Update names: children are nodes of the same scale, components of a scale with higher number

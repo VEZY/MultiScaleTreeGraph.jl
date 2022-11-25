@@ -14,10 +14,6 @@ function Base.:(==)(a::T, b::T) where {T<:Node}
             a.children !== nothing ? keys(a.children) : nothing,
             a.children !== nothing ? keys(a.children) : nothing
         ) &&
-        isequal(
-            a.siblings !== nothing ? keys(a.siblings) : nothing,
-            a.siblings !== nothing ? keys(a.siblings) : nothing
-        ) &&
         isequal(a.MTG, b.MTG) &&
         isequal(a.attributes, b.attributes)
 end
