@@ -40,7 +40,7 @@ on which node the insertion will be based on.
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","A1B1.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 # Insert new Shoot nodes before all scale 2 nodes:
@@ -251,11 +251,11 @@ default the value from [`max_id`](@ref).
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","A1B1.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 template = MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1)
-mtg = insert_parent!(mtg[1][1], template)
+insert_parent!(mtg[1][1], template)
 mtg
 
 # The template can be a function that returns the template. For example a dummy example would

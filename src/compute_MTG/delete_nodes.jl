@@ -41,7 +41,7 @@ node -> node.MTG.link
 # Examples
 
 ```julia
-file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","A1B1.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
 delete_nodes!(mtg, scale = 2) # Will remove all nodes of scale 2
@@ -50,9 +50,6 @@ delete_nodes!(mtg, scale = 2) # Will remove all nodes of scale 2
 delete_nodes!(mtg, symbol = "Leaf")
 # Delete the leaves and internodes:
 delete_nodes!(mtg, symbol = ("Leaf","Internode"))
-
-# Make the mtg match field measurements made only at branching points for the scales 1 + 2:
-mtg = delete_nodes!(mtg, filter_fun = is_segment!, scale = 2)
 ```
 """
 function delete_nodes!(
