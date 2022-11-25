@@ -167,6 +167,7 @@ To do before v1:
     - we could also add a function e.g. `cache_scale()` that would allow a user to cache a dictionary into the root node with keys being the node name and the values the nodes at that scale. So if users regularly visit a scale they can traverse the dictionary instead of the full MTG. It would work for non-connected scales too. But this idea is not concurrent to the previous one because it does not deal with `descendants` and `ancestors` alone (need to avoid visiting all nodes in the tree).
   - [ ] Update `ancestors` and `descendants` accordingly. See if we can re-use traverse or some functions for descendants to avoid a maintenance nightmare. For `ancestors`, we need a function that checks if we want the same scale (= parent) or a scale with a smaller value (= complex).
   - [ ] Add Tables.jl interface ? So we can iterate over the MTG as rows of a Table. 
+  - [ ] Add possibility to add a node "type" as a parametric type so we can dispatch on this ? E.g. Internode, Leaf... It would be a field of node with default value of e.g. `AnyNode`
 
 ## 4. Acknowledgments
 

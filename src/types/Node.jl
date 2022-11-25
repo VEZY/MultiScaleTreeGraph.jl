@@ -104,7 +104,7 @@ end
 ## AbstractTrees compatibility:
 
 # Set the methods for Node:
-AbstractTrees.children(node::Node{T,A}) where {T,A} = isleaf(node) ? Vector{Node{T,A}}() : collect(values(node.children))
+AbstractTrees.children(node::Node{T,A}) where {T,A} = isleaf(node) ? Vector{Node{T,A}}() : collect(node.children)
 AbstractTrees.nodevalue(node::Node{T,A}) where {T,A} = node.attributes
 Base.parent(node::Node{T,A}) where {T,A} = isdefined(node, :parent) ? node.parent : nothing
 AbstractTrees.parent(node::Node{T,A}) where {T,A} = Base.parent(node)

@@ -84,19 +84,16 @@ mtg
 """
 function addchild!(parent::Node, id::Int, MTG::M, attributes) where {M<:AbstractNodeMTG}
     child = Node(id, parent, MTG, attributes)
-    addchild!(parent, child)
     return child
 end
 
 function addchild!(parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
     child = Node(parent, MTG, attributes)
-    addchild!(parent, child)
     return child
 end
 
 function addchild!(parent::Node, MTG::M) where {M<:AbstractNodeMTG}
     child = Node(parent, MTG)
-    addchild!(parent, child)
     return child
 end
 

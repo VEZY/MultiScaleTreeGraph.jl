@@ -1,7 +1,7 @@
 @testset "mutate_node!" begin
     mtg = read_mtg("files/simple_plant.mtg", Dict)
     # Using a leaf node from the mtg:
-    leaf_node = mtg.children[2].children[3].children[4].children[5]
+    leaf_node = mtg.children[1].children[1].children[1].children[1]
     # Add a new attributes, x based on node field, y based on x and z using a function:
     @mutate_node!(mtg, x = length(node.name), y = node.x + 2, z = sum(node.y))
     @test mtg[:x] == 6
@@ -28,7 +28,7 @@ end
 @testset "mutate_mtg!" begin
     mtg = read_mtg("files/simple_plant.mtg", Dict)
     # Using a leaf node from the mtg:
-    leaf_node = mtg.children[2].children[3].children[4].children[5]
+    leaf_node = mtg.children[1].children[1].children[1].children[1]
 
     # Add a new attribute based on the name:
     @mutate_mtg!(mtg, nametest = node.name * "_test")
@@ -47,7 +47,7 @@ end
 
     # On Dict attributes
     mtg = read_mtg("files/simple_plant.mtg", Dict)
-    append!(mtg, (test = 3,))
+    append!(mtg, (test=3,))
     haskey(mtg.attributes, :test)
 
     @test haskey(mtg.attributes, :test)
@@ -56,14 +56,14 @@ end
     # On MutableNamedTuple attributes
     mtg = read_mtg("files/simple_plant.mtg", MutableNamedTuple)
     # Using a leaf node from the mtg:
-    append!(mtg, (test = 3,))
+    append!(mtg, (test=3,))
     @test :test in keys(mtg.attributes)
     @test mtg[:test] == 3
 
     # On NamedTuple attributes
     mtg = read_mtg("files/simple_plant.mtg", NamedTuple)
     # Using a leaf node from the mtg:
-    append!(mtg, (test = 3,))
+    append!(mtg, (test=3,))
     @test :test in keys(mtg.attributes)
     @test mtg[:test] == 3
 end

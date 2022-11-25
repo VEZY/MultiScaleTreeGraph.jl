@@ -25,10 +25,10 @@
     insert_parent!(
         mtg_3[1][1],
         x -> (
-            link = x[1].MTG.link,
-            symbol = x[1].MTG.symbol,
-            index = x[1].MTG.index,
-            scale = x[1].MTG.scale
+            link=x[1].MTG.link,
+            symbol=x[1].MTG.symbol,
+            index=x[1].MTG.index,
+            scale=x[1].MTG.scale
         )
     ) # not providing max_id
 
@@ -53,7 +53,7 @@
     insert_parent!(
         get_root(mtg_5),
         template,
-        node -> Dict{Symbol,Any}(:Total_Length => sum(descendants(node, :Length, ignore_nothing = true)),)
+        node -> Dict{Symbol,Any}(:Total_Length => sum(descendants(node, :Length, ignore_nothing=true)),)
     )
 
     mtg_5 = get_root(mtg_5)
@@ -71,8 +71,8 @@ end
     insert_parents!(
         mtg,
         template,
-        node -> Dict{Symbol,Any}(:Total_Length => round(sum(descendants(node, :Length, ignore_nothing = true)), digits = 1),),
-        scale = 2
+        node -> Dict{Symbol,Any}(:Total_Length => round(sum(descendants(node, :Length, ignore_nothing=true)), digits=1),),
+        scale=2
     )
 
     @test length(mtg) == length_before + 1
@@ -102,7 +102,7 @@ end
     mtg = read_mtg("files/simple_plant.mtg")
     template = MutableNodeMTG("/", "Rachis", 0, 4)
     length_before = length(mtg)
-    insert_children!(mtg, template, symbol = "Leaf")
+    insert_children!(mtg, template, symbol="Leaf")
 
     @test length(mtg) == length_before + 2
 
@@ -130,7 +130,7 @@ end
     mtg = read_mtg("files/simple_plant.mtg")
     template = MutableNodeMTG("/", "Rachis", 0, 4)
     length_before = length(mtg)
-    insert_generations!(mtg, template, symbol = "Internode")
+    insert_generations!(mtg, template, symbol="Internode")
 
     @test length(mtg) == length_before + 2
 
@@ -159,7 +159,7 @@ end
     template = MutableNodeMTG("+", "Leaf", 0, 3)
     length_before = length(mtg)
     # Add a new leaf at each leaf node:
-    insert_siblings!(mtg, template, symbol = "Leaf")
+    insert_siblings!(mtg, template, symbol="Leaf")
 
     @test length(mtg) == length_before + 2
 

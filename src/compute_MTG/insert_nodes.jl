@@ -313,7 +313,10 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
         )
 
         # Add the new node to the parent:
-        pop!(node.parent.children, node.id)
+        deleteat!(node.parent.children, findfirst(x -> x.id == node.id, node.parent.children))
+        #? There is also popat! that is equivalent in computation time (I benchmarked it) but 
+        #? it requires julia >= v1.5
+
         push!(node.parent.children, new_node)
 
         # Add the new node as the parent of the previous one:

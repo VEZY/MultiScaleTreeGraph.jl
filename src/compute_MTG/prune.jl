@@ -24,7 +24,7 @@ function prune!(node)
         parent_node = parent(node)
 
         # Delete the node as child of his parent:
-        pop!(parent_node.children, node.id)
+        deleteat!(parent_node.children, findfirst(x -> x.id == node.id, parent_node.children))
     end
 
     # Delete the links to the parent:

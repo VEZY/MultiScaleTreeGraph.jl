@@ -41,7 +41,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 
 # Using a leaf node from the mtg:
-leaf_node = mtg.children[2].children[3].children[4].children[5]
+leaf_node = mtg.children[1].children[1].children[1].children[1]
 
 ancestors(leaf_node, :Length) # Short to write, but slower to execute
 
@@ -60,18 +60,18 @@ ancestors(leaf_node, :Length, symbol = ("Axis","Internode"))
 """
 function ancestors(
     node, key;
-    scale = nothing,
-    symbol = nothing,
-    link = nothing,
-    all::Bool = true, # like continue in the R package, but actually the opposite
-    self = false,
-    filter_fun = nothing,
-    recursivity_level = -1,
-    ignore_nothing = false,
-    type::Union{Union,DataType} = Any)
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true, # like continue in the R package, but actually the opposite
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=-1,
+    ignore_nothing=false,
+    type::Union{Union,DataType}=Any)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
-    check_filters(node, scale = scale, symbol = symbol, link = link)
+    check_filters(node, scale=scale, symbol=symbol, link=link)
 
     # Change the filtering function if we also want to remove nodes with nothing values.
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)

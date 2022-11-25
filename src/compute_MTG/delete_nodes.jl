@@ -57,16 +57,16 @@ mtg = delete_nodes!(mtg, filter_fun = is_segment!, scale = 2)
 """
 function delete_nodes!(
     node;
-    scale = nothing,
-    symbol = nothing,
-    link = nothing,
-    all::Bool = true, # like continue in the R package, but actually the opposite
-    filter_fun = nothing,
-    child_link_fun = new_child_link
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true, # like continue in the R package, but actually the opposite
+    filter_fun=nothing,
+    child_link_fun=new_child_link
 )
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
-    check_filters(node, scale = scale, symbol = symbol, link = link)
+    check_filters(node, scale=scale, symbol=symbol, link=link)
     filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
     if filtered
@@ -96,7 +96,7 @@ function delete_nodes!_(node, scale, symbol, link, all, filter_fun, child_link_f
     filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
     if filtered
-        node = delete_node!(node, child_link_fun = child_link_fun)
+        node = delete_node!(node, child_link_fun=child_link_fun)
         # Don't go further if all == false
         all ? nothing : return nothing
     end
@@ -121,7 +121,7 @@ node -> node.MTG.link
 
 The function returns the parent node (or the new root if the node is a root)
 """
-function delete_node!(node; child_link_fun = new_child_link)
+function delete_node!(node; child_link_fun=new_child_link)
     if isroot(node)
         if length(node.children) == 1
             # If it has only one child, make it the new root:
@@ -150,13 +150,12 @@ function delete_node!(node; child_link_fun = new_child_link)
             for chnode in ordered_children(node)
                 # Updating the link of the children:
                 chnode.MTG.link = child_link_fun(chnode)
-                addchild!(parent_node, chnode; force = true)
+                addchild!(parent_node, chnode; force=true)
             end
         end
 
         # Delete the node as child of his parent:
-        pop!(parent_node.children, node.id)
-
+        deleteat!(parent_node.children, findfirst(x -> x.id == node.id, parent_node.children))
         node_return = parent_node
     end
 
