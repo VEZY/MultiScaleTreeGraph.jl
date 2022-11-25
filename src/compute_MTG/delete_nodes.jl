@@ -84,7 +84,7 @@ end
 function delete_nodes!_(node, scale, symbol, link, all, filter_fun, child_link_fun)
     if !isleaf(node)
         # First we apply the algorithm recursively on the children:
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             delete_nodes!_(chnode, scale, symbol, link, all, filter_fun, child_link_fun)
         end
     end
@@ -96,9 +96,7 @@ function delete_nodes!_(node, scale, symbol, link, all, filter_fun, child_link_f
     filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
     if filtered
-        node = delete_node!(node, child_link_fun=child_link_fun)
-        # Don't go further if all == false
-        all ? nothing : return nothing
+        delete_node!(node, child_link_fun=child_link_fun)
     end
 end
 
@@ -147,7 +145,7 @@ function delete_node!(node; child_link_fun=new_child_link)
 
         if !isleaf(node)
             # We re-parent the children to the parent of the node.
-            for chnode in ordered_children(node)
+            for chnode in children(node)
                 # Updating the link of the children:
                 chnode.MTG.link = child_link_fun(chnode)
                 addchild!(parent_node, chnode; force=true)

@@ -182,7 +182,7 @@ function get_leading_tabs!(node, lead, parent_lead=0)
     push!(lead, node_lead)
 
     if !isleaf(node)
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             get_leading_tabs!(chnode, lead, node_lead)
         end
     end

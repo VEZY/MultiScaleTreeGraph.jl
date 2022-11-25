@@ -48,7 +48,6 @@ end
     # On Dict attributes
     mtg = read_mtg("files/simple_plant.mtg", Dict)
     append!(mtg, (test=3,))
-    haskey(mtg.attributes, :test)
 
     @test haskey(mtg.attributes, :test)
     @test mtg[:test] == 3

@@ -165,7 +165,7 @@ function insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol
     # Only go to the children if we keep the current node and don't want all values:
     if !isleaf(node) && (all || !keep)
         # First we apply the algorithm recursively on the children:
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             insert_nodes!_(chnode, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
         end
     end

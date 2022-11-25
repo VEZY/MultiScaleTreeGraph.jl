@@ -21,7 +21,7 @@ function get_node(node::Node, name::String)
         return node
     else
         if !isleaf(node)
-            for chnode in ordered_children(node)
+            for chnode in children(node)
                 rnode = get_node(chnode, name)
                 if rnode !== nothing
                     return rnode
@@ -36,7 +36,7 @@ function get_node(node::Node, id::Int)
         return node
     else
         if !isleaf(node)
-            for chnode in ordered_children(node)
+            for chnode in children(node)
                 rnode = get_node(chnode, id)
                 if rnode !== nothing
                     return rnode

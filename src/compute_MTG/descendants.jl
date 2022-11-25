@@ -38,7 +38,7 @@ end
 function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
 
     if !isleaf(node) && recursivity_level != 0
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             # Is there any filter happening for the current node? (FALSE if filtered out):
             keep = is_filtered(chnode, scale, symbol, link, filter_fun)
 
@@ -112,7 +112,7 @@ function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, rec
     val_i = Array{eltype(val),1}()
     if !isleaf(node) && recursivity_level != 0
         if node[key_cache] === nothing # Is there any cached value? If so, do not recompute
-            for chnode in ordered_children(node)
+            for chnode in children(node)
                 # Is there any filter happening for the current node? (FALSE if filtered out):
                 keep = is_filtered(chnode, scale, symbol, link, filter_fun)
 

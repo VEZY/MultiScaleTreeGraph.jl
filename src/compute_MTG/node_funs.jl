@@ -11,24 +11,6 @@ Return `true` if `node` is the root node (meaning, it has no parent).
 """
 isroot(node::Node) = node.parent === nothing
 
-
-"""
-    ordered_children(node)
-
-Return the children as an array, ordered first by "+"
-"""
-function ordered_children(node)
-    links_chnodes = Array{Node,1}()
-    for chnode in node.children
-        if chnode.MTG.link == "+"
-            pushfirst!(links_chnodes, chnode)
-        else
-            push!(links_chnodes, chnode)
-        end
-    end
-    return links_chnodes
-end
-
 """
     lastchild(node::Node)
 

@@ -158,7 +158,7 @@ To do before v1:
 - [ ] Add option to visit only some scales without the need to visit all nodes in-between
   - [ ] Add complex + components in Node.
   - [ ] Update names: children are nodes of the same scale, components of a scale with higher number
-  - [ ] Update `traverse` and `traverse!` to visit children (same scale) if e.g. only the first or second scale is needed, avoid visiting scale 3. For that we need to visit only the components of the first node of scale 1, and then it will visit scale 1 + scale 2 and never scale 3 that is a component of scale 2. To implement this, we can remove the scale arg from the filter, and pass it to an equivalent to `ordered_children` that would test if:
+  - [ ] Update `traverse` and `traverse!` to visit children (same scale) if e.g. only the first or second scale is needed, avoid visiting scale 3. For that we need to visit only the components of the first node of scale 1, and then it will visit scale 1 + scale 2 and never scale 3 that is a component of scale 2. To implement this, we can remove the scale arg from the filter, and pass it to an equivalent to `children` that would test if:
     - the scale we want include a scale that is above the scale of the node, return the component,
     - the scale we want is equal, it would return the children
     - the scale is below, return an error because we shouldn't visit this node

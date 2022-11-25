@@ -61,7 +61,7 @@ function traverse!(
     end
 
     if !isleaf(node)
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             traverse!(
                 chnode,
                 f,
@@ -83,7 +83,7 @@ function traverse!(node::Node, f::Function;
     end
 
     if !isleaf(node)
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             traverse!(
                 chnode,
                 f;
@@ -131,7 +131,7 @@ function traverse_(
     end
 
     if !isleaf(node)
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             traverse_(
                 chnode,
                 f,
@@ -173,7 +173,7 @@ function traverse_(
     end
 
     if !isleaf(node)
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             traverse_(chnode, f, val, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
         end
     end

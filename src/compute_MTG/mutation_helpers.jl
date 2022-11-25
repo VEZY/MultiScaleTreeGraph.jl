@@ -48,7 +48,7 @@ DataFrame(mtg, :branching_order)
 #    7 │             └─ + 7: Leaf                    1
 ```
 """
-function branching_order!(mtg; ascend = true)
+function branching_order!(mtg; ascend=true)
 
     if ascend
         @mutate_mtg!(mtg, branching_order = branching_order_ascend!(node))
@@ -58,7 +58,7 @@ function branching_order!(mtg; ascend = true)
 end
 
 function branching_order_ascend!(node)
-        if isroot(node)
+    if isroot(node)
         return 1
     else
         if node.MTG.link == "+"
@@ -76,7 +76,7 @@ function branching_order_descend!(node)
         val = 1
     else
         val_child = Int[]
-        for chnode in ordered_children(node)
+        for chnode in children(node)
             push!(val_child, branching_order_descend!(chnode))
         end
         val = maximum(val_child)
