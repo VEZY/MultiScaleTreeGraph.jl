@@ -141,13 +141,9 @@ end
 @testset "mtg with no attributes" begin
     mtg = read_mtg("files/palm.mtg")
 
-    MTG1 = traverse(mtg) do x
-        (x.MTG, x.attributes)
-    end
+    @test names(mtg) == [:scales, :description, :symbols]
 
-    MTG2 = traverse(mtg2) do x
-        (x.MTG, x.attributes)
+    traverse(mtg) do x
+        !MultiScaleTreeGraph.isroot(x) && @test x.attributes == Dict{Symbol,Any}()
     end
-
-    @test MTG1 == MTG2
 end
