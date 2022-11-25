@@ -136,3 +136,18 @@ end
 
     @test MTG1 == MTG2
 end
+
+
+@testset "mtg with no attributes" begin
+    mtg = read_mtg("files/palm.mtg")
+
+    MTG1 = traverse(mtg) do x
+        (x.MTG, x.attributes)
+    end
+
+    MTG2 = traverse(mtg2) do x
+        (x.MTG, x.attributes)
+    end
+
+    @test MTG1 == MTG2
+end

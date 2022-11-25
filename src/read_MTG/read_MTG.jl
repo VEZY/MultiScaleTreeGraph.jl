@@ -126,7 +126,7 @@ function parse_mtg_file(f, attr_type, mtg_type)
 
         # Parse the mtg FEATURES section:
         if issection(l[1], "FEATURES")
-            global features = parse_section!(f, ["NAME", "TYPE"], "FEATURES", line, l)
+            global features = parse_section!(f, ["NAME", "TYPE"], "FEATURES", line, l, allow_empty=true)
             continue
         end
 

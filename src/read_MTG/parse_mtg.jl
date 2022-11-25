@@ -37,25 +37,31 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
 
     columns = strip.(l_header[l_header.!=""][2:end]) # Remove leading and trailing whitespaces
 
-    if length(columns) != length(features.NAME)
-        error(
-            "Number of attributes in the ENTITY-CODE ($(length(columns))) is different than",
-            " declared in the FEATURES section ($(length(features.NAME))).",
-            " Please check that all columns names are declared in the ENTITY-CODE line (l.$(line[1]))"
-        )
+    if features !== nothing
+        if length(columns) != length(features.NAME)
+            error(
+                "Number of attributes in the ENTITY-CODE ($(length(columns))) is different than",
+                " declared in the FEATURES section ($(length(features.NAME))).",
+                " Please check that all columns names are declared in the ENTITY-CODE line (l.$(line[1]))"
+            )
+        end
+
+        common_features = [i in features.NAME for i in columns]
+
+        if !all(common_features)
+            error("Unknown column in the ENTITY-CODE (column names) in MTG: ", join(columns[.!common_features], ", "))
+        end
+
+        if features.NAME != columns
+            error("FEATURES names should be in the same order as column names in the ENTITY-CODE.")
+        end
     end
 
-    common_features = [i in features.NAME for i in columns]
-
-    if !all(common_features)
-        error("Unknown column in the ENTITY-CODE (column names) in MTG: ", join(columns[.!common_features], ", "))
+    if length(columns) > 0
+        attr_column_start = findfirst(x -> x == columns[1], l_header)
+    else
+        attr_column_start = 50
     end
-
-    if features.NAME != columns
-        error("FEATURES names should be in the same order as column names in the ENTITY-CODE.")
-    end
-
-    attr_column_start = findfirst(x -> x == columns[1], l_header)
 
     # Initializing the last column to which MTG was attached to keep track of which column
     # to attach the new MTG line
@@ -274,7 +280,12 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
     node, shared = expand_node!(node, 1)
 
     # Get node attributes:
-    node_attr = parse_MTG_node_attr(node_data, attr_type, features, node_attr_column_start, line)
+    if features !== nothing
+        node_attr = parse_MTG_node_attr(node_data, attr_type, features, node_attr_column_start, line)
+    else
+        # if there are no attribute in the MTG, we create an empty attribute:
+        node_attr = init_empty_attr(attr_type)
+    end
 
     if node[1] == "^"
         # The parent node is the last one built on the same column
