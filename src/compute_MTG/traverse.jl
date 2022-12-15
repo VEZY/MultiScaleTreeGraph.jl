@@ -53,10 +53,14 @@ function traverse!(
 )
 
     if is_filtered(node, scale, symbol, link, filter_fun)
-        if !isempty(args)
-            f(node, args...)
-        else
-            f(node)
+        try
+            if !isempty(args)
+                f(node, args...)
+            else
+                f(node)
+            end
+        catch e
+            error("Issue in function $f for node #$(node.id).")
         end
     end
 
@@ -79,7 +83,11 @@ function traverse!(node::Node, f::Function;
     filter_fun=nothing)
 
     if is_filtered(node, scale, symbol, link, filter_fun)
-        f(node)
+        try
+            f(node)
+        catch e
+            error("Issue in function $f for node #$(node.id).")
+        end
     end
 
     if !isleaf(node)
@@ -127,7 +135,13 @@ function traverse_(
 )
 
     if is_filtered(node, scale, symbol, link, filter_fun)
-        push!(val, f(node, args...))
+        try
+            val_ = f(node, args...)
+        catch e
+            error("Issue in function $f for node $(node.id).")
+        end
+
+        push!(val,)
     end
 
     if !isleaf(node)
