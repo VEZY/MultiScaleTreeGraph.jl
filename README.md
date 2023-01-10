@@ -168,3 +168,8 @@ To do before v1:
 Several tree-related functions in use are adapted from [DataTrees.jl](https://github.com/vh-d/DataTrees.jl/).
 
 This package is heavily inspired by [OpenAlea's MTG](https://github.com/openalea/mtg) implementation in Python.
+
+## 5. Similar packages
+
+- [MultiScaleArrays.jl](https://github.com/SciML/MultiScaleArrays.jl)
+- [MultilayerGraphs.jl](https://github.com/JuliaGraphs/MultilayerGraphs.jl)
