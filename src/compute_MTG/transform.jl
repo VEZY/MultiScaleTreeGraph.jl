@@ -167,11 +167,14 @@ function transform!(
         elseif (first(nc) isa Symbol || first(nc) isa String) && (last(nc) isa Symbol || last(nc) isa String)
             # `Name => new name` form, i.e. :x => :y.
             # ?NOTE: Here we just rename an attribute
-            fun_ = x -> rename!(x, nc)
+            fun_ = x -> rename!(x, Symbol(first(nc)) => Symbol(last(nc)))
+            # Note: we force the conversion to Symbol because we want to be able to use strings too,
+            # for example when we have weird characters in the name, e.g. `:x => "x (cm)"`
         elseif first(nc) isa Base.Callable && (last(nc) isa Symbol || last(nc) isa String)
             # `function => new name` form, i.e. `node -> sum(descendants(node, :var)) => :newvar`.
             # ?NOTE: Here the function takes a node as input
             fun, newname = nc
+            @assert isa(newname, Symbol) "The new name must be a Symbol, you passed a ", typeof(newname), " :", newname
             fun_ = x -> x[newname] = fun(x)
         elseif last(nc) isa Pair
             # `Name => function => new name` form, i.e. :x => sqrt => :x_sq
