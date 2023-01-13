@@ -70,6 +70,9 @@ function get_features(mtg)
 
     df.TYPE = new_type
 
+    # Remove repeated rows again after having changed the type (can have String and SubString for the same variable before): 
+    unique!(df)
+
     return df
 end
 
