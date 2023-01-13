@@ -90,7 +90,14 @@ function addchild!(parent::Node, child::Node; force=false)
     if parent.children === nothing
         parent.children = Node[child]
     else
-        push!(parent.children, child)
+        # If the new node is branching, we at it before the other children,
+        # this is because branching children should be printed and written first
+        # in the MTG file, else it would lead to errors in the links:
+        if child.MTG.link == "+"
+            pushfirst!(parent.children, child)
+        else
+            push!(parent.children, child)
+        end
     end
 
     return child
