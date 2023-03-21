@@ -54,7 +54,7 @@ function get_features(mtg)
     for (index, value) in enumerate(df.TYPE)
         if value <: AbstractFloat
             new_type[index] = "REAL"
-        elseif value <: Int
+        elseif value <: Integer
             new_type[index] = "INT"
             # elseif df.NAME[i] in () # Put reserved keywords here if needed in the future
             # new_type[index] = "ALPHA"
