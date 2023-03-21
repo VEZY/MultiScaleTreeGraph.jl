@@ -54,12 +54,13 @@ function get_features(mtg)
     for (index, value) in enumerate(df.TYPE)
         if value <: AbstractFloat
             new_type[index] = "REAL"
+        elseif value <: Bool
+            # we test booleans before integers because Bool <: Integer
+            new_type[index] = "BOOLEAN"
         elseif value <: Integer
             new_type[index] = "INT"
             # elseif df.NAME[i] in () # Put reserved keywords here if needed in the future
             # new_type[index] = "ALPHA"
-        elseif value <: Bool
-            new_type[index] = "BOOLEAN"
         elseif value <: Date
             new_type[index] = "DD/MM/YY"
         else
