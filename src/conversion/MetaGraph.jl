@@ -17,12 +17,13 @@ function MetaGraph(g::Node)
     meta_mtg =
         MetaGraph(
             DiGraph(),
-            Label=Int,
-            VertexData=typeof(g.attributes),
-            EdgeData=String,
-            graph_data="MTG"
+            label_type=Dict{Int64,Int64}(),
+            vertex_data_type=Dict{Int64,Tuple{Int64,typeof(g.attributes)}}(),
+            edge_data_type=Dict{Tuple{Int64,Int64},String}(),
+            graph_data="MTG",
+            weight_function=edata -> 1.0,
+            default_weight=1.0,
         )
-
     traverse!(g, to_MetaGraph, meta_mtg)
     return meta_mtg
 end
