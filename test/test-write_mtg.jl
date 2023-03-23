@@ -3,7 +3,7 @@ mtg = read_mtg("files/simple_plant.mtg")
 # Removing the description because we don't write it anyway:
 mtg[:description] = nothing
 
-@testset "test classes" begin
+@testset "Test write / read again: simple plant" begin
     mtg2 = mktemp() do f, io
         write_mtg(f, mtg)
         mtg2 = read_mtg(f)
@@ -19,7 +19,7 @@ end
 
 mtg = read_mtg("files/simple_plant.mtg", NamedTuple, NodeMTG)
 
-@testset "test classes" begin
+@testset "Test write / read again: simple plant + NamedTuple" begin
     mtg2 = mktemp() do f, io
         write_mtg(f, mtg)
         mtg2 = read_mtg(f, NamedTuple, NodeMTG)
@@ -28,6 +28,38 @@ mtg = read_mtg("files/simple_plant.mtg", NamedTuple, NodeMTG)
 
     # Check that all nodes are the same (not testing node 1 as it has description that is not written):
     for i in 2:length(mtg)
+        @test get_node(mtg, i) == get_node(mtg2, i)
+    end
+end
+
+@testset "Test write / read again: simple plant P1U1" begin
+    mtg = read_mtg("files/simple_plant-P1U1.mtg")
+    mtg[:description] = nothing
+
+    mtg2 = mktemp() do f, io
+        write_mtg(f, mtg)
+        mtg2 = read_mtg(f)
+        return mtg2
+    end
+
+    # Check that all nodes are the same:
+    for i in 1:length(mtg)
+        @test get_node(mtg, i) == get_node(mtg2, i)
+    end
+end
+
+@testset "Test write / read again: palm" begin
+    mtg = read_mtg("files/palm.mtg")
+    mtg[:description] = nothing
+
+    mtg2 = mktemp() do f, io
+        write_mtg(f, mtg)
+        mtg2 = read_mtg(f)
+        return mtg2
+    end
+
+    # Check that all nodes are the same:
+    for i in 1:length(mtg)
         @test get_node(mtg, i) == get_node(mtg2, i)
     end
 end
