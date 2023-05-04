@@ -37,3 +37,8 @@ end
 @testset "writing" begin
     include("test-write_mtg.jl")
 end
+
+
+@testset "Caching" begin
+    include("test-caching.jl")
+end

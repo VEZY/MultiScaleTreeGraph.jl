@@ -90,7 +90,7 @@ export names, scales, symbols, components
 export list_nodes
 export get_classes
 export get_description
-export clean_cache!
+export cache_nodes!, clean_cache!
 export branching_order!
 export nleaves!, nleaves, nleaves_siblings!
 export pipe_model!

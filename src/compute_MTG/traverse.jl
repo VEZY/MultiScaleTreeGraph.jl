@@ -52,6 +52,15 @@ function traverse!(
     filter_fun=nothing
 )
 
+    # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
+    if haskey(node.traversal_cache, cache_name(scale, symbol, link, filter_fun))
+        for i in node.traversal_cache[cache_name(scale, symbol, link, filter_fun)]
+            # NB: node.traversal_cache[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
+            f(i, args...)
+        end
+        return
+    end
+
     if is_filtered(node, scale, symbol, link, filter_fun)
         try
             if !isempty(args)
@@ -70,31 +79,6 @@ function traverse!(
                 chnode,
                 f,
                 args...;
-                scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
-            )
-        end
-    end
-end
-
-function traverse!(node::Node, f::Function;
-    scale=nothing,
-    symbol=nothing,
-    link=nothing,
-    filter_fun=nothing)
-
-    if is_filtered(node, scale, symbol, link, filter_fun)
-        try
-            f(node)
-        catch e
-            error("Issue in function $f for node #$(node.id).")
-        end
-    end
-
-    if !isleaf(node)
-        for chnode in children(node)
-            traverse!(
-                chnode,
-                f;
                 scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
             )
         end
@@ -134,14 +118,29 @@ function traverse_(
     scale, symbol, link, filter_fun
 )
 
+    # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
+    if haskey(node.traversal_cache, cache_name(scale, symbol, link, filter_fun))
+        for i in node.traversal_cache[cache_name(scale, symbol, link, filter_fun)]
+            # NB: node.traversal_cache[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
+            val_ = try
+                f(i, args...)
+            catch e
+                error("Issue in function $f for node $(node.id).")
+            end
+            push!(val, val_)
+        end
+        return
+    end
+
+    # Else we traverse the mtg:
     if is_filtered(node, scale, symbol, link, filter_fun)
-        try
-            val_ = f(node, args...)
+        val_ = try
+            f(node, args...)
         catch e
             error("Issue in function $f for node $(node.id).")
         end
 
-        push!(val,)
+        push!(val, val_)
     end
 
     if !isleaf(node)
@@ -157,43 +156,6 @@ function traverse_(
     end
 end
 
-# Same but with no arguments passed to the function:
-function traverse(
-    node::Node,
-    f::Function;
-    scale=nothing,
-    symbol=nothing,
-    link=nothing,
-    filter_fun=nothing
-)
-    val = []
-    # NB: f has to return someting here, if its a mutating function, use traverse!
-    traverse_(node, f, val, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
-    return val
-end
-
-function traverse_(
-    node::Node,
-    f::Function,
-    val;
-    scale=nothing,
-    symbol=nothing,
-    link=nothing,
-    filter_fun=nothing
-)
-
-    if is_filtered(node, scale, symbol, link, filter_fun)
-        push!(val, f(node))
-    end
-
-    if !isleaf(node)
-        for chnode in children(node)
-            traverse_(chnode, f, val, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
-        end
-    end
-end
-
-
 # Used for the do...end block notation
 function traverse!(
     f::Function,
@@ -205,17 +167,6 @@ function traverse!(
     filter_fun=nothing
 )
     traverse!(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
-end
-# Same here but without arguments
-function traverse!(
-    f::Function,
-    node::Node;
-    scale=nothing,
-    symbol=nothing,
-    link=nothing,
-    filter_fun=nothing
-)
-    traverse!(node, f; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
 end
 
 # And with the non-mutating version:
@@ -230,6 +181,7 @@ function traverse(
 )
     traverse(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
 end
+
 # Same here but without arguments
 function traverse(
     f::Function,

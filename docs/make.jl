@@ -29,6 +29,7 @@ makedocs(;
             "tutorials/4.convert_mtg.md",
             "tutorials/5.plotting.md",
             "tutorials/6.add_remove_nodes.md",
+            "tutorials/7.performance_considerations.md",
         ],
         "API" => "api.md",
     ]

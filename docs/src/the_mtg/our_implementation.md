@@ -32,6 +32,8 @@ Here is a little description of each field:
 - children: a dictionary of the children nodes with their `id` as key, or `nothing` if none;
 - `MTG`: The MTG encoding of the node (see below, or [`NodeMTG`](@ref))
 - `attributes`: the node attributes. Usually a `NamedTuple`, a `MutableNamedTuple` or a `Dict` or similar (e.g. `OrderedDict`), but the type is optional. The choice of the data structure depends mainly on how much you plan to change the attributes and their values. Attributes include for example the length or diameter of a node, its colour, 3d position...
+- `type`: the type of the node, by default a `GenericNode` (un-exported), but that can be any type. Usually used to dispatch computations on node type.
+- `traversal_cache`: a cache for the traversal, used by *e.g.* [`traverse`](@ref) to traverse more efficiently particular nodes in the MTG
 
 The MTG field of a node describes the topology encoding of the node: its type of link with its parent (decompose: `/`, follow: `<`, and branch: `+`), its symbol, index, and scale (see [Node MTG and attributes](@ref) and [The MTG section](@ref) for more details). The MTG field must be encoded in a data structure called [`NodeMTG`](@ref) or in a [`MutableNodeMTG`](@ref). They have four fields corresponding to the topology encoding:
 

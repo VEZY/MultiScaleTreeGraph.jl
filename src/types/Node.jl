@@ -21,6 +21,17 @@ struct GenericNode end
         attributes; 
         type
     )
+    Node(
+        name::String,
+        id::Int,
+        parent::Node,
+        children::Union{Nothing,Dict{Int,Node}},
+        MTG<:AbstractNodeMTG,
+        attributes;,
+        type,
+        traversal_cache
+    )
+    
 
 Type that defines an MTG node (*i.e.* an element) with:
 
@@ -34,6 +45,7 @@ Type that defines an MTG node (*i.e.* an element) with:
 usually a `Dict{String,Any}`
 - `type`: the type of the node, by default a `GenericNode` (unexported), but that can be anything. Usually 
 used to dispatch computations on node type.
+- `traversal_cache`: a cache for the traversal, used by *e.g.* [`traverse`](@ref) to traverse more efficiently particular nodes in the MTG
 
 The node is an entry point to a Mutli-Scale Tree Graph, meaning we can move through the MTG from any
 of its node. The root node is the node without parent. A leaf node is a node without any children.
@@ -71,13 +83,15 @@ mutable struct Node{N<:AbstractNodeMTG,A,T}
     attributes::A
     "Type"
     type::T
+    "Cache for mtg nodes traversal"
+    traversal_cache::Dict{String,Vector{Node}}
 end
 
 # Shorter way of instantiating a Node:
 
 # - for the root:
 function Node(name::String, id::Int, MTG::T, attributes; type::D=GenericNode()) where {T<:AbstractNodeMTG,D}
-    Node(name, id, nothing, nothing, MTG, attributes, type)
+    Node(name, id, nothing, nothing, MTG, attributes, type, Dict{String,Vector{Node}}())
 end
 
 # If the name is not given, we compute one from the id:
@@ -92,23 +106,23 @@ Node(MTG::T, attributes; type::D=GenericNode()) where {T<:AbstractNodeMTG,D} = N
 # Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
 # Node{NodeMTG,MutableNamedTuple}
 function Node(name::String, id::Int, MTG::M, attributes::T; type::D=GenericNode()) where {M<:AbstractNodeMTG,T<:MutableNamedTuple,D}
-    Node{typeof(MTG),MutableNamedTuple,D}(name, id, nothing, nothing, MTG, attributes, type)
+    Node{typeof(MTG),MutableNamedTuple,D}(name, id, nothing, nothing, MTG, attributes, type, Dict{String,Vector{Node}}())
 end
 
 function Node(name::String, id::Int, MTG::M, attributes::T; type::D=GenericNode()) where {M<:AbstractNodeMTG,T<:NamedTuple,D}
-    Node{typeof(MTG),NamedTuple,D}(name, id, nothing, nothing, MTG, attributes, type)
+    Node{typeof(MTG),NamedTuple,D}(name, id, nothing, nothing, MTG, attributes, type, Dict{String,Vector{Node}}())
 end
 
 # - for all others:
 function Node(name::String, id::Int, parent::Node, MTG::M, attributes; type::D=GenericNode()) where {M<:AbstractNodeMTG,D}
-    node = Node(name, id, parent, nothing, MTG, attributes, type)
+    node = Node(name, id, parent, nothing, MTG, attributes, type, Dict{String,Vector{Node}}())
     addchild!(parent, node)
     return node
 end
 
 # Idem for MutableNamedTuple here:
 function Node(name::String, id::Int, parent::Node, MTG::M, attributes::T; type::D=GenericNode()) where {M<:AbstractNodeMTG,T<:MutableNamedTuple,D}
-    node = Node{typeof(MTG),MutableNamedTuple,D}(name, id, parent, nothing, MTG, attributes, type)
+    node = Node{typeof(MTG),MutableNamedTuple,D}(name, id, parent, nothing, MTG, attributes, type, Dict{String,Vector{Node}}())
     addchild!(parent, node)
     return node
 end

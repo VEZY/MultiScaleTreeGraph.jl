@@ -288,7 +288,8 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             Node[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
-            type
+            type,
+            Dict{String,Vector{Node}}()
         )
 
         # Add to the new root the mandatory root attributes:
@@ -310,7 +311,8 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             Node[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
-            type
+            type,
+            Dict{String,Vector{Node}}()
         )
 
         # Add the new node to the parent:
@@ -349,7 +351,8 @@ function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes
         nothing,
         new_node_MTG(node, template),
         copy(attr_fun(node)),
-        type
+        type,
+        Dict{String,Vector{Node}}()
     )
 
     # Add the new node to the children of the parent node:
@@ -369,7 +372,8 @@ function insert_generation!(node, template, attr_fun=node -> typeof(node.attribu
         node.children,
         new_node_MTG(node, template),
         copy(attr_fun(node)),
-        type
+        type,
+        Dict{String,Vector{Node}}()
     )
 
     # Add the new node as the only child of the node:
