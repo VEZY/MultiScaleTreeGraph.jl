@@ -324,8 +324,7 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
             )
         end
 
-        # Handling special case of the scene node:
-        symbol = node_element[2] == "Scene" ? "\$" : node_element[2]
+        symbol = node_element[2]
 
         if k == length(node) || findfirst(x -> x == k, shared) !== nothing
             node_k_attr = node_attr

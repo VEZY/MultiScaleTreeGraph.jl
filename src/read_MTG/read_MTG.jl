@@ -52,7 +52,6 @@ mtg = read_mtg(file)
 ```
 """
 function read_mtg(file, attr_type=Dict, mtg_type=MutableNodeMTG; sheet_name=nothing)
-
     file_extension = splitext(basename(file))[2]
 
     if file_extension == ".xlsx" || file_extension == ".xlsm"
@@ -108,6 +107,7 @@ function parse_mtg_file(f, attr_type, mtg_type)
         if issection(l[1], "CLASSES")
             global classes = parse_section!(f, ["SYMBOL", "SCALE", "DECOMPOSITION", "INDEXATION", "DEFINITION"], "CLASSES", line, l)
             classes.SCALE = parse.(Int, classes.SCALE)
+            replace!(classes.SYMBOL, "\$" => "Scene")
             continue
         end
 

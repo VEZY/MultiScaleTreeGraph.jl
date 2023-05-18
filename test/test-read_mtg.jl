@@ -5,7 +5,7 @@ features = get_features(mtg)
 @testset "test classes" begin
     @test typeof(classes) == DataFrame
     @test size(classes) == (5, 5)
-    @test String.(classes.SYMBOL) == ["\$", "Individual", "Axis", "Internode", "Leaf"]
+    @test String.(classes.SYMBOL) == ["Scene", "Individual", "Axis", "Internode", "Leaf"]
     @test classes.SCALE == [0, 1, 2, 3, 3]
     @test classes.DECOMPOSITION == ["FREE" for i = 1:5]
     @test classes.INDEXATION == ["FREE" for i = 1:5]
@@ -32,8 +32,8 @@ end
     @test typeof(mtg) == Node{NodeMTG,MutableNamedTuple,MultiScaleTreeGraph.GenericNode}
     @test mtg.name == "node_1"
     @test mtg.attributes[:scales] == [0, 1, 2, 3, 3]
-    @test mtg.attributes[:symbols] == ["\$", "Individual", "Axis", "Internode", "Leaf"]
-    @test mtg.MTG == NodeMTG("/", "\$", 0, 0)
+    @test mtg.attributes[:symbols] == ["Scene", "Individual", "Axis", "Internode", "Leaf"]
+    @test mtg.MTG == NodeMTG("/", "Scene", 0, 0)
     @test typeof(mtg.children) == Vector{Node}
     @test typeof(mtg[1]) == Node{NodeMTG,MutableNamedTuple,MultiScaleTreeGraph.GenericNode}
     @test mtg[1].name == "node_2"
@@ -73,7 +73,7 @@ end
     @test length(mtg) == 7
     @test typeof(mtg) == Node{NodeMTG,NamedTuple,MultiScaleTreeGraph.GenericNode}
     @test mtg.name == "node_1"
-    @test mtg.MTG == MultiScaleTreeGraph.NodeMTG("/", "\$", 0, 0)
+    @test mtg.MTG == MultiScaleTreeGraph.NodeMTG("/", "Scene", 0, 0)
     @test typeof(mtg.children) == Vector{Node}
     @test mtg[1].name == "node_2"
     @test mtg[1].parent === mtg
@@ -85,9 +85,9 @@ end
     @test length(mtg) == 7
     @test typeof(mtg) == Node{MultiScaleTreeGraph.NodeMTG,Dict{Symbol,Any},MultiScaleTreeGraph.GenericNode}
     @test mtg.name == "node_1"
-    @test mtg.attributes == Dict(:symbols => ["\$", "Individual", "Axis", "Internode", "Leaf"],
+    @test mtg.attributes == Dict(:symbols => ["Scene", "Individual", "Axis", "Internode", "Leaf"],
         :scales => [0, 1, 2, 3, 3], :description => mtg[:description])
-    @test mtg.MTG == MultiScaleTreeGraph.NodeMTG("/", "\$", 0, 0)
+    @test mtg.MTG == MultiScaleTreeGraph.NodeMTG("/", "Scene", 0, 0)
     @test typeof(mtg.children) == Vector{Node}
     @test mtg[1].name == "node_2"
     @test mtg[1].parent === mtg

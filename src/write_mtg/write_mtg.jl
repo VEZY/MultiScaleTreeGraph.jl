@@ -54,7 +54,10 @@ function write_mtg(file, mtg, classes, description, features)
         writedlm(io, [""])
         writedlm(io, ["CLASSES:"])
         writedlm(io, reshape(names(classes), (1, :)))
-        writedlm(io, eachrow(classes))
+        # Handle special case of Scene class, which is written as "$" in the mtg file:
+        classes_scene = copy(classes)
+        replace!(classes_scene.SYMBOL, "Scene" => "\$")
+        writedlm(io, eachrow(classes_scene))
 
         # Description section:
         writedlm(io, [""])

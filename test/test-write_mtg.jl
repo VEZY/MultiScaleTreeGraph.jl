@@ -1,4 +1,5 @@
-mtg = read_mtg("files/simple_plant.mtg")
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", "simple_plant.mtg")
+mtg = read_mtg(file)
 
 # Removing the description because we don't write it anyway:
 mtg[:description] = nothing
