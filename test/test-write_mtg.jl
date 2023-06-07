@@ -64,3 +64,28 @@ end
         @test get_node(mtg, i) == get_node(mtg2, i)
     end
 end
+
+
+file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", "simple_plant-follow.mtg")
+mtg = read_mtg(file)
+
+@testset "Test write / read again: simple plant with GU follow" begin
+
+    @test length(mtg) == 35
+    @test length(children(mtg[1][1])) == 2
+    @test children(mtg[1][1])[1].MTG.symbol == "N"
+    @test children(mtg[1][1])[2].MTG.symbol == "GU"
+
+    mtg2 = mktemp() do f, io
+        write_mtg(f, mtg)
+        mtg2 = read_mtg(f)
+        return mtg2
+    end
+
+    @test length(mtg2) == length(mtg)
+    @test descendants(mtg, :diameter_mm) == descendants(mtg2, :diameter_mm)
+    @test descendants(mtg, :length_cm) == descendants(mtg2, :length_cm)
+    @test descendants(mtg, :azimuth) == descendants(mtg2, :azimuth)
+    @test traverse(mtg, node -> node.MTG.symbol) == traverse(mtg2, node -> node.MTG.symbol)
+    @test traverse(mtg, node -> node.MTG.index) == traverse(mtg2, node -> node.MTG.index)
+end

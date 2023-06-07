@@ -1,0 +1,64 @@
+CODE:	FORM-A								
+									
+CLASSES :									
+SYMBOL	SCALE	DECOMPOSITION	INDEXATION	DEFINITION					
+$	0	FREE		IMPLICIT					
+P	1	FREE		EXPLICIT					
+A	2	FREE		EXPLICIT					
+GU	3	FREE		EXPLICIT					
+N	4	FREE		EXPLICIT					
+									
+DESCRIPTION :									
+LEFT	RIGHT	RELTYPE	MAX						
+N	N	<	?						
+N	A	+	?						
+A	N	/	?						
+A	GU	/	?						
+GU	N	/	?						
+GU	GU	<	?						
+P	A	/	?						
+									
+FEATURES :									
+NAME	TYPE								
+azimuth	REAL								
+zenith	REAL								
+length_cm	REAL								
+diameter_mm	REAL								
+									
+MTG :									
+ENTITY-CODE						azimuth	zenith	length_cm	diameter_mm
+/P									
+^/A1									
+^/GU1						1	-39	15	22
+	/N1								
+	^<N2								
+	^<N3								
+		+A2							
+		^/GU1				32	-22	13.8	16.6
+			/N1						
+			^<N2						
+			^<N3						
+			^<N4						
+			^<N5						
+			^<N6						
+		^<GU2				42	-34	26.5	13.7
+			/N7						
+			^<N8						
+	^<N4								
+		+A2							
+		^/GU1				247	-38	14	9.15
+			/N1						
+			^<N2						
+			^<N3						
+			^<N4						
+			^<N5						
+			^<N6						
+		^<GU2				244	-9	15.5	6.4
+			/N7						
+	^<N5								
+	^<N6								
+	^<N7								
+^<GU2						27	-56	25.8	12.6
+	/N8								
+	^<N9								
+	^<N10								

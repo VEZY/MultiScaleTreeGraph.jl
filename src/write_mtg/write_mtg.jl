@@ -100,16 +100,10 @@ end
 function paste_node_mtg(mtg, features)
 
     # Get the leading tabulations for each node (i.e. the column of the node)
-    lead = []
-    get_leading_tabs!(mtg, lead)
-
-    # Get the mtg string for each node:
-    print_node = []
-    parent_ref = []
-    traverse(mtg) do node
-        push!(print_node, paste_mtg_node(node))
-        push!(parent_ref, get_reference(node))
-    end
+    lead = Int[]
+    parent_ref = String[]
+    print_node = String[]
+    get_node_printing!(mtg, lead, parent_ref, print_node)
 
     max_tabs = maximum(lead)
 
@@ -149,67 +143,48 @@ function paste_node_mtg(mtg, features)
     return attributes, mtg_colnames
 end
 
-
-
 """
-    paste_mtg_node(node)
+    get_node_printing!(node, lead, ref, print_node, node_lead=0, node_ref="")
 
-Parse the mtg node as it should appear in the mtg file.
-"""
-function paste_mtg_node(node)
-    index = node.MTG.index === nothing ? "" : string(node.MTG.index)
-    node.MTG.link * node.MTG.symbol * index
-end
+Get the number of tabulation (in `lead`) and the "^" (in `ref`) used as a prefix for the node when writting it to a file, based on the
+topology of its parent. Also get the node printing (*e.g.* "/Axis0") in `print_node`.
 
-"""
-    get_leading_tabs!(node, lead, parent_lead=0)
-
-Get the number of tabulation the node should have when writting it to a file based on the
-topology of its parent. The function modifies the lead vector in place.
+The function modifies the `lead`, `ref` and `print_node` vectors in place.
 
 # Examples
+
 ```julia
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
-lead = []
-get_leading_tabs!(mtg, lead)
+lead = Int[]
+ref = String[]
+get_node_printing!(mtg, lead, ref)
+
+lead
+ref
 ```
 """
-function get_leading_tabs!(node, lead, parent_lead=0)
-    if isroot(node)
-        node_lead = 0
-    else
-        node_lead = node.MTG.link == "+" ? parent_lead + 1 : parent_lead
-    end
-
+function get_node_printing!(node, lead, ref, print_node, node_lead=0, node_ref="")
     push!(lead, node_lead)
+    push!(ref, node_ref)
+
+    index = node.MTG.index === nothing ? "" : string(node.MTG.index)
+    push!(print_node, node.MTG.link * node.MTG.symbol * index)
 
     if !isleaf(node)
-        for chnode in children(node)
-            get_leading_tabs!(chnode, lead, node_lead)
+        chnodes = children(node)
+        n_children = length(chnodes)
+        for (i, chnode) in enumerate(chnodes)
+            # If the node has several children, the lead of the children is automatically increased by 1 for all nodes except the last one:
+            if length(chnodes) > 1 && i != n_children
+                chnode_lead = node_lead + 1
+                node_ref = "" # We refer to the parent node in the column on the left in this case
+            else
+                chnode_lead = node_lead
+                node_ref = "^" # We refer to the parent node in the same column in this case
+            end
+
+            get_node_printing!(chnode, lead, ref, print_node, chnode_lead, node_ref)
         end
     end
-    return lead
-end
-
-
-"""
-    get_reference(node)
-
-Get the preceding "^" keyword if needed, *i.e.* in case we refer to the parent node in the
-same mtg file column.
-"""
-function get_reference(node)
-    if isroot(node)
-        return ""
-    else
-        node.MTG.link == "+" ? "" : "^"
-    end
-end
-
-function Dict_attrs(mtg, attrs)
-    for var in attrs
-        push!(df, var => descendants(mtg, var, self=true))
-    end
-    df
 end
