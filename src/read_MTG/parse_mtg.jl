@@ -351,7 +351,7 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
 
         scale = classes.SCALE[symbol_in_classes][1]
 
-        # Instantiating the current node MTG (immutable):
+        # Instantiating the current node MTG:
         childMTG = mtg_type(
             node_element[1],
             symbol,
