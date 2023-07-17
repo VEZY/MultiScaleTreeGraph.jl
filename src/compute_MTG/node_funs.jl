@@ -2,8 +2,7 @@
     isleaf(node::Node)
 Test whether a node is a leaf or not.
 """
-isleaf(node::Node) = node.children === nothing
-
+isleaf(node::Node) = length(node.children) == 0
 
 """
     isroot(node::Node)
