@@ -57,8 +57,8 @@ Is a node filtered in ? Returns `true` if the node is kept, `false` if it is fil
 @inline function is_filtered(node, scale, symbol, link, filter_fun)
 
     link_keep = isnothing(link) || is_filtered(link, node.MTG.link)
-    symbol_keep = isnothing(link) || is_filtered(symbol, node.MTG.symbol)
-    scale_keep = isnothing(link) || is_filtered(scale, node.MTG.scale)
+    symbol_keep = isnothing(symbol) || is_filtered(symbol, node.MTG.symbol)
+    scale_keep = isnothing(scale) || is_filtered(scale, node.MTG.scale)
     filter_fun_keep = isnothing(filter_fun) || filter_fun(node)
 
     scale_keep && symbol_keep && link_keep && filter_fun_keep
