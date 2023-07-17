@@ -143,7 +143,8 @@ AbstractTrees.nodevalue(node::Node{T,A}) where {T,A} = node.attributes
 Base.parent(node::Node{T,A}) where {T,A} = isdefined(node, :parent) ? node.parent : nothing
 AbstractTrees.parent(node::Node{T,A}) where {T,A} = Base.parent(node)
 AbstractTrees.childrentype(node::Node{T,A}) where {T,A} = Vector{Node{T,A}}
-AbstractTrees.childtype(node::Node{T,A}) where {T,A} = Node{T,A}
+AbstractTrees.childtype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
+# AbstractTrees.childstatetype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
 
 # Set the traits for Node:
 # AbstractTrees.ParentLinks(::Type{<:Node{T}}) where {T} = AbstractTrees.StoredParents()
@@ -182,7 +183,6 @@ function AbstractTrees.prevsibling(node::Node)
 end
 
 # Iterations
-
 Base.IteratorEltype(::Type{<:TreeIterator{Node{T,A}}}) where {T<:AbstractNodeMTG,A} = Base.HasEltype()
 Base.eltype(::Type{<:TreeIterator{Node{T,A}}}) where {T<:AbstractNodeMTG,A} = Node{T,A}
 
