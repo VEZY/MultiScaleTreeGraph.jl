@@ -81,8 +81,8 @@ function Node(name::String, id::Int, parent::Union{Nothing,Node}, children::Noth
 end
 
 # - for the root:
-function Node(name::String, id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG}
-    Node(name, id, nothing, nothing, MTG, attributes, Dict{String,Vector{Node}}())
+function Node(name::String, id::Int, MTG::T, attributes::A) where {T<:AbstractNodeMTG,A}
+    Node(name, id, nothing, Vector{Node{T,A}}(), MTG, attributes, Dict{String,Vector{Node{T,A}}}())
 end
 
 # If the name is not given, we compute one from the id:
@@ -97,23 +97,30 @@ Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
 # Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
 # Node{NodeMTG,MutableNamedTuple}
 function Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    Node{typeof(MTG),MutableNamedTuple}(name, id, nothing, nothing, MTG, attributes, Dict{String,Vector{Node}}())
+    Node{M,MutableNamedTuple}(name, id, nothing, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
 end
 
 function Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    Node{typeof(MTG),NamedTuple}(name, id, nothing, nothing, MTG, attributes, Dict{String,Vector{Node}}())
+    Node{M,NamedTuple}(name, id, nothing, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
 end
 
-# - for all others:
-function Node(name::String, id::Int, parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
-    node = Node(name, id, parent, nothing, MTG, attributes, Dict{String,Vector{Node}}())
+# Add a node as a child of another node:
+function Node(name::String, id::Int, parent::Node, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A}
+    node = Node(name, id, parent, Vector{Node{M,A}}(), MTG, attributes, Dict{String,Vector{Node{M,A}}}())
+    addchild!(parent, node)
+    return node
+end
+
+# Special case for NamedTuple here:
+function Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
+    node = Node{M,NamedTuple}(name, id, parent, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,NamedTuple}}}())
     addchild!(parent, node)
     return node
 end
 
 # Idem for MutableNamedTuple here:
 function Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    node = Node{M,MutableNamedTuple}(name, id, parent, nothing, MTG, attributes, Dict{String,Vector{Node}}())
+    node = Node{M,MutableNamedTuple}(name, id, parent, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
     addchild!(parent, node)
     return node
 end
