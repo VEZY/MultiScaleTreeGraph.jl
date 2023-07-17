@@ -40,20 +40,20 @@ end
     @test mtg[1].parent === mtg
 
     leaf_1 = get_node(mtg, 5)
-    @test leaf_1[:Length] === 0.2
-    @test leaf_1[:Width] === 0.1
-    @test leaf_1[:isAlive] === false
-    @test leaf_1[:dateDeath] === Date("2022-08-24")
+    @test leaf_1[:Length] == 0.2
+    @test leaf_1[:Width] == 0.1
+    @test leaf_1[:isAlive] == false
+    @test leaf_1[:dateDeath] == Date("2022-08-24")
 
     leaf_2 = get_node(mtg, 7)
-    @test leaf_2[:Length] === 0.2
-    @test leaf_2[:Width] === 0.1
-    @test leaf_2[:isAlive] === true
+    @test leaf_2[:Length] == 0.2
+    @test leaf_2[:Width] == 0.1
+    @test leaf_2[:isAlive] == true
 
     Internode_2 = get_node(mtg, 6)
-    @test Internode_2[:Length] === 0.1
-    @test Internode_2[:Width] === 0.02
-    @test Internode_2[:isAlive] === true
+    @test Internode_2[:Length] == 0.1
+    @test Internode_2[:Width] == 0.02
+    @test Internode_2[:isAlive] == true
 end
 
 @testset "test mtg mutation" begin
