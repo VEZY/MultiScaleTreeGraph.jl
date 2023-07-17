@@ -115,8 +115,8 @@ function parse_MTG_node(l)
     # Match the index at the end of the string:
     stringmatch = match(r"[0-9]+$", l[2:end])
     if stringmatch === nothing
-        symbol = l[2:end]
-        index = nothing
+        symbol = string(l[2:end])
+        index = -9999
     else
         symbol = l[2:stringmatch.offset]
         index = parse(Int, stringmatch.match)

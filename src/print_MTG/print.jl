@@ -1,5 +1,5 @@
 function AbstractTrees.printnode(io::IO, node::Node)
-    print(io, join(["Node -> ID:", node.id, "Name: ", node.name, ", Link: ", node.MTG.link, "Index: ", node.MTG.index]))
+    print(io, join(["Node -> ID:", node.id, "Name: ", node.name, ", Link: ", node.MTG.link, "Index: ", node.MTG.index == -9999 ? "" : node.MTG.index]))
 end
 
 """
