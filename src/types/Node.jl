@@ -9,7 +9,7 @@
         name::String,
         id::Int,
         parent::Node,
-        children::Union{Nothing,Dict{Int,Node}},
+        children::Vector{Node},
         MTG<:AbstractNodeMTG,
         attributes
     )
@@ -17,7 +17,7 @@
         name::String,
         id::Int,
         parent::Node,
-        children::Union{Nothing,Dict{Int,Node}},
+        children::Vector{Node},
         MTG<:AbstractNodeMTG,
         attributes;
         traversal_cache
@@ -65,16 +65,20 @@ mutable struct Node{N<:AbstractNodeMTG,A}
     "Parent node"
     parent::Union{Nothing,Node}
     "Dictionary of children nodes, or Nothing if no children"
-    children::Union{Nothing,Vector{Node}}
+    children::Vector{Node{N,A}}
     "MTG encoding (see [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref))"
     MTG::N
     "Node attributes. Can be anything really"
     attributes::A
     "Cache for mtg nodes traversal"
-    traversal_cache::Dict{String,Vector{Node}}
+    traversal_cache::Dict{String,Vector{Node{N,A}}}
 end
 
 # Shorter way of instantiating a Node:
+
+function Node(name::String, id::Int, parent::Union{Nothing,Node}, children::Nothing, MTG::N, attributes::A, traversal_cache::Dict{String,Vector{Node}}) where {N<:AbstractNodeMTG,A}
+    Node{N,A}(name, id, parent, Vector{Node{N,A}}(), MTG, attributes, traversal_cache)
+end
 
 # - for the root:
 function Node(name::String, id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG}
@@ -134,7 +138,7 @@ end
 ## AbstractTrees compatibility:
 
 # Set the methods for Node:
-AbstractTrees.children(node::Node{T,A}) where {T,A} = isleaf(node) ? Vector{Node{T,A}}() : node.children
+AbstractTrees.children(node::Node{T,A}) where {T,A} = node.children
 AbstractTrees.nodevalue(node::Node{T,A}) where {T,A} = node.attributes
 Base.parent(node::Node{T,A}) where {T,A} = isdefined(node, :parent) ? node.parent : nothing
 AbstractTrees.parent(node::Node{T,A}) where {T,A} = Base.parent(node)
