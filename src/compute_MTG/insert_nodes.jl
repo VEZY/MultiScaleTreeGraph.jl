@@ -221,10 +221,10 @@ function new_node_MTG(node, template::T) where {T<:Union{NodeMTG,MutableNodeMTG,
 end
 
 """
-    insert_parent!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)];type)
-    insert_generation!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)];type)
-    insert_child!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)];type)
-    insert_sibling!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)];type)
+    insert_parent!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
+    insert_generation!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
+    insert_child!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
+    insert_sibling!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
 
 Insert a node in an MTG as:
 
@@ -247,7 +247,6 @@ NamedTuple). If you just need to pass attributes values to a node use `x -> your
 - `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of length one.
 Used to compute the name of the inserted node. It is incremented in the function, and use by
 default the value from [`max_id`](@ref).
-- `type`: The type of the inserted node. Can be anything, by default the unexported `GenericNode()`
 
 # Examples
 
@@ -275,7 +274,7 @@ insert_parent!(
 """
 insert_parent!, insert_generation!, insert_child!, insert_sibling!
 
-function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)]; type=GenericNode())
+function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
 
     max_id[1] += 1
 
@@ -288,7 +287,6 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             Node[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
-            type,
             Dict{String,Vector{Node}}()
         )
 
@@ -311,7 +309,6 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             Node[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
-            type,
             Dict{String,Vector{Node}}()
         )
 
@@ -330,17 +327,17 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
 end
 
 
-function insert_child!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)]; type=GenericNode())
+function insert_child!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
 
     max_id[1] += 1
 
-    addchild!(node, max_id[1], new_node_MTG(node, template), attr_fun(node), type=type)
+    addchild!(node, max_id[1], new_node_MTG(node, template), attr_fun(node))
 
     return node
 end
 
 
-function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)]; type=GenericNode())
+function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
 
     max_id[1] += 1
 
@@ -351,7 +348,6 @@ function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes
         nothing,
         new_node_MTG(node, template),
         copy(attr_fun(node)),
-        type,
         Dict{String,Vector{Node}}()
     )
 
@@ -361,7 +357,7 @@ function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes
     return node
 end
 
-function insert_generation!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)], type=GenericNode())
+function insert_generation!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
 
     max_id[1] += 1
 
@@ -372,7 +368,6 @@ function insert_generation!(node, template, attr_fun=node -> typeof(node.attribu
         node.children,
         new_node_MTG(node, template),
         copy(attr_fun(node)),
-        type,
         Dict{String,Vector{Node}}()
     )
 
