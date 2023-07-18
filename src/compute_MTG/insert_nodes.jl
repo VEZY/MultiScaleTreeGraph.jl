@@ -268,7 +268,7 @@ insert_parent!(
 """
 insert_parent!, insert_generation!, insert_child!, insert_sibling!
 
-function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)(), maxid=[max_id(node)])
+function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
 
     maxid[1] += 1
 
@@ -278,10 +278,10 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             join(["node_", maxid[1]]),
             maxid[1],
             nothing,
-            typeof(node)[node],
+            Node{N,A}[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
-            Dict{String,Vector{typeof(node)}}()
+            Dict{String,Vector{Node{N,A}}}()
         )
 
         # Add to the new root the mandatory root attributes:
@@ -300,10 +300,10 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
             join(["node_", maxid[1]]),
             maxid[1],
             node.parent,
-            typeof(node)[node],
+            Node{N,A}[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
-            Dict{String,Vector{typeof(node)}}()
+            Dict{String,Vector{Node{N,A}}}()
         )
 
         # Add the new node to the parent:
@@ -321,7 +321,7 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
 end
 
 
-function insert_child!(node, template, attr_fun=node -> typeof(node.attributes)(), maxid=[max_id(node)])
+function insert_child!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
 
     maxid[1] += 1
 
@@ -342,7 +342,7 @@ function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=
         Vector{Node{N,A}}(),
         new_node_MTG(node, template),
         copy(attr_fun(node)),
-        Dict{String,Vector{typeof(node)}}()
+        Dict{String,Vector{Node{N,A}}}()
     )
 
     # Add the new node to the children of the parent node:
@@ -351,7 +351,7 @@ function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=
     return node
 end
 
-function insert_generation!(node, template, attr_fun=node -> typeof(node.attributes)(), maxid=[max_id(node)])
+function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
 
     maxid[1] += 1
 
@@ -362,7 +362,7 @@ function insert_generation!(node, template, attr_fun=node -> typeof(node.attribu
         node.children,
         new_node_MTG(node, template),
         copy(attr_fun(node)),
-        Dict{String,Vector{typeof(node)}}()
+        Dict{String,Vector{Node{N,A}}}()
     )
 
     # Add the new node as the only child of the node:

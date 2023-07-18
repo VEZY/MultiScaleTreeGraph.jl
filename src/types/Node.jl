@@ -137,8 +137,8 @@ end
 Node(MTG::T) where {T<:AbstractNodeMTG} = Node(1, MTG, Dict{Symbol,Any}())
 
 # Only the MTG and parent are given, by default we use the parent attribute type:
-function Node(parent::Node, MTG::T) where {T<:AbstractNodeMTG}
-    Node(parent, MTG, typeof(parent.attributes)())
+function Node(parent::Node{N,A}, MTG::T) where {N<:AbstractNodeMTG,A,T<:AbstractNodeMTG}
+    Node(parent, MTG, A())
 end
 
 ## AbstractTrees compatibility:

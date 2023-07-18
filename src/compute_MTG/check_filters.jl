@@ -11,21 +11,20 @@ check_filters(mtg, scale = (1,2))
 check_filters(mtg, scale = (1,2), symbol = "Leaf", link = "<")
 ```
 """
-function check_filters(node; scale=nothing, symbol=nothing, link=nothing)
+function check_filters(node::Node{N,A}; scale=nothing, symbol=nothing, link=nothing) where {N<:AbstractNodeMTG,A}
 
     root_node = get_root(node)
 
-    nodeMTG_type = typeof(node.MTG)
     if root_node[:scales] !== nothing
-        check_filter(nodeMTG_type, :scale, scale, unique(root_node.attributes[:scales]))
+        check_filter(N, :scale, scale, unique(root_node.attributes[:scales]))
     end
 
     if root_node[:symbols] !== nothing
-        check_filter(nodeMTG_type, :symbol, symbol, unique(root_node.attributes[:symbols]))
+        check_filter(N, :symbol, symbol, unique(root_node.attributes[:symbols]))
     end
 
     if root_node[:link] !== nothing
-        check_filter(nodeMTG_type, :link, link, ("/", "<", "+"))
+        check_filter(N, :link, link, ("/", "<", "+"))
     end
 
     return nothing
