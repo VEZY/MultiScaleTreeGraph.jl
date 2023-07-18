@@ -146,7 +146,7 @@ end
 # Set the methods for Node:
 AbstractTrees.children(node::Node{T,A}) where {T,A} = node.children
 AbstractTrees.nodevalue(node::Node{T,A}) where {T,A} = node.attributes
-Base.parent(node::Node{T,A}) where {T,A} = isdefined(node, :parent) ? node.parent : nothing
+Base.parent(node::Node{T,A}) where {T,A} = node.parent
 AbstractTrees.parent(node::Node{T,A}) where {T,A} = Base.parent(node)
 AbstractTrees.childrentype(node::Node{T,A}) where {T,A} = Vector{Node{T,A}}
 AbstractTrees.childtype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
