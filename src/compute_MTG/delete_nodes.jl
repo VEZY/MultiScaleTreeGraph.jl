@@ -69,7 +69,7 @@ function delete_nodes!(
     if filtered
         node = delete_node!(node)
         # Don't go further if all == false
-        all ? nothing : return nothing
+        !all && return
     end
 
     delete_nodes!_(node, scale, symbol, link, all, filter_fun, child_link_fun)
@@ -81,7 +81,10 @@ end
 function delete_nodes!_(node, scale, symbol, link, all, filter_fun, child_link_fun)
     if !isleaf(node)
         # First we apply the algorithm recursively on the children:
-        for chnode in children(node)
+        chnodes = children(node)
+        nchildren = length(chnodes)
+        #? Note: we don't use `for chnode in chnodes` because it may delete dynamically during traversal, so we forget to traverse some nodes
+        for chnode in chnodes[1:nchildren]
             delete_nodes!_(chnode, scale, symbol, link, all, filter_fun, child_link_fun)
         end
     end
@@ -116,7 +119,7 @@ node -> node.MTG.link
 
 The function returns the parent node (or the new root if the node is a root)
 """
-function delete_node!(node; child_link_fun=new_child_link)
+function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:AbstractNodeMTG,A}
     if isroot(node)
         if length(node.children) == 1
             # If it has only one child, make it the new root:
@@ -154,8 +157,6 @@ function delete_node!(node; child_link_fun=new_child_link)
         node_return = parent_node
     end
 
-    node.parent = nothing
-    node.children = nothing
     node = nothing
 
     return node_return

@@ -52,15 +52,15 @@ mtg
 insert_parents!, insert_generations!, insert_children!, insert_siblings!
 
 function insert_parents!(
-    node,
+    node::Node{N,A},
     template,
-    attr=typeof(node.attributes)();
+    attr=A();
     scale=nothing,
     symbol=nothing,
     link=nothing,
     all::Bool=true,
     filter_fun=nothing
-)
+) where {N<:AbstractNodeMTG,A}
 
     insert_nodes!(
         node, template, insert_parent!, attr;
@@ -69,15 +69,16 @@ function insert_parents!(
 end
 
 function insert_generations!(
-    node,
+    node::Node{N,A},
     template,
-    attr=typeof(node.attributes)();
+    attr=A();
     scale=nothing,
     symbol=nothing,
     link=nothing,
     all::Bool=true,
     filter_fun=nothing
-)
+) where {N<:AbstractNodeMTG,A}
+
     insert_nodes!(
         node, template, insert_generation!, attr;
         scale=scale, symbol=symbol, link=link, all=all, filter_fun=filter_fun
@@ -85,15 +86,15 @@ function insert_generations!(
 end
 
 function insert_children!(
-    node,
+    node::Node{N,A},
     template,
-    attr=typeof(node.attributes)();
+    attr=A();
     scale=nothing,
     symbol=nothing,
     link=nothing,
     all::Bool=true,
     filter_fun=nothing
-)
+) where {N<:AbstractNodeMTG,A}
     insert_nodes!(
         node, template, insert_child!, attr;
         scale=scale, symbol=symbol, link=link, all=all, filter_fun=filter_fun
@@ -101,15 +102,15 @@ function insert_children!(
 end
 
 function insert_siblings!(
-    node,
+    node::Node{N,A},
     template,
-    attr=typeof(node.attributes)();
+    attr=A();
     scale=nothing,
     symbol=nothing,
     link=nothing,
     all::Bool=true,
     filter_fun=nothing
-)
+) where {N<:AbstractNodeMTG,A}
     insert_nodes!(
         node, template, insert_sibling!, attr;
         scale=scale, symbol=symbol, link=link, all=all, filter_fun=filter_fun
@@ -120,21 +121,20 @@ end
 Actual workhorse of insert_parents!, insert_generations!, insert_children!, insert_siblings!
 """
 function insert_nodes!(
-    node,
+    node::Node{N,A},
     template,
     fn,
-    attr=typeof(node.attributes)();
+    attr=A();
     scale=nothing,
     symbol=nothing,
     link=nothing,
     all::Bool=true, # like continue in the R package, but actually the opposite
     filter_fun=nothing
-)
+) where {N<:AbstractNodeMTG,A}
 
     max_node_id = [max_id(node)]
     # # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
-    keep = is_filtered(node, scale, symbol, link, filter_fun) # true is inserted
 
     if isempty(methods(attr)) && !isa(attr, Function)
         # Attr is not given as a function, making it a function
@@ -143,15 +143,7 @@ function insert_nodes!(
         attr_fun = attr
     end
 
-    # Only go to the children if we keep the current node and don't want all values:
-    if all || !keep
-        insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
-    end
-
-    # We apply the function *after* visiting the children to be sure we don't add nodes indefinitely:
-    if keep
-        node = fn(node, template, attr_fun, max_node_id)
-    end
+    insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
 
     # Always return the root, whether it is the same one or a new one
     return get_root(node)
@@ -165,7 +157,10 @@ function insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol
     # Only go to the children if we keep the current node and don't want all values:
     if !isleaf(node) && (all || !keep)
         # First we apply the algorithm recursively on the children:
-        for chnode in children(node)
+        chnodes = children(node)
+        nchildren = length(chnodes)
+        #? Note: we don't use `for chnode in chnodes` because it may grow dynamically during traversal, *e.g.* when inserting siblings
+        for chnode in chnodes[1:nchildren]
             insert_nodes!_(chnode, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
         end
     end
@@ -211,13 +206,12 @@ MultiScaleTreeGraph.new_node_MTG(
 ```
 """
 function new_node_MTG(node, fn)
-    template = fn(node)
-    new_node_MTG(node, template)
+    new_node_MTG(node, fn(node))
 end
 
-function new_node_MTG(node, template::T) where {T<:Union{NodeMTG,MutableNodeMTG,NamedTuple,MutableNamedTuple}}
+function new_node_MTG(node::Node{N,A}, template::T) where {N<:AbstractNodeMTG,A,T<:Union{NodeMTG,MutableNodeMTG,NamedTuple,MutableNamedTuple}}
     t = deepcopy(template)
-    typeof(node.MTG)(t.link, t.symbol, t.index, t.scale)
+    N(t.link, t.symbol, t.index, t.scale)
 end
 
 """
@@ -274,20 +268,20 @@ insert_parent!(
 """
 insert_parent!, insert_generation!, insert_child!, insert_sibling!
 
-function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
+function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)(), maxid=[max_id(node)])
 
-    max_id[1] += 1
+    maxid[1] += 1
 
     if isroot(node)
 
         new_node = Node(
-            join(["node_", max_id[1]]),
-            max_id[1],
+            join(["node_", maxid[1]]),
+            maxid[1],
             nothing,
-            Node[node],
+            typeof(node)[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
-            Dict{String,Vector{Node}}()
+            Dict{String,Vector{typeof(node)}}()
         )
 
         # Add to the new root the mandatory root attributes:
@@ -303,13 +297,13 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
         node.parent = new_node
     else
         new_node = Node(
-            join(["node_", max_id[1]]),
-            max_id[1],
+            join(["node_", maxid[1]]),
+            maxid[1],
             node.parent,
-            Node[node],
+            typeof(node)[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
-            Dict{String,Vector{Node}}()
+            Dict{String,Vector{typeof(node)}}()
         )
 
         # Add the new node to the parent:
@@ -327,28 +321,28 @@ function insert_parent!(node, template, attr_fun=node -> typeof(node.attributes)
 end
 
 
-function insert_child!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
+function insert_child!(node, template, attr_fun=node -> typeof(node.attributes)(), maxid=[max_id(node)])
 
-    max_id[1] += 1
+    maxid[1] += 1
 
-    addchild!(node, max_id[1], new_node_MTG(node, template), attr_fun(node))
+    addchild!(node, maxid[1], new_node_MTG(node, template), attr_fun(node))
 
     return node
 end
 
 
-function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
+function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
 
-    max_id[1] += 1
+    maxid[1] += 1
 
     new_node = Node(
-        join(["node_", max_id[1]]),
-        max_id[1],
+        join(["node_", maxid[1]]),
+        maxid[1],
         parent(node),
-        nothing,
+        Vector{Node{N,A}}(),
         new_node_MTG(node, template),
         copy(attr_fun(node)),
-        Dict{String,Vector{Node}}()
+        Dict{String,Vector{typeof(node)}}()
     )
 
     # Add the new node to the children of the parent node:
@@ -357,18 +351,18 @@ function insert_sibling!(node, template, attr_fun=node -> typeof(node.attributes
     return node
 end
 
-function insert_generation!(node, template, attr_fun=node -> typeof(node.attributes)(), max_id=[max_id(node)])
+function insert_generation!(node, template, attr_fun=node -> typeof(node.attributes)(), maxid=[max_id(node)])
 
-    max_id[1] += 1
+    maxid[1] += 1
 
     new_node = Node(
-        join(["node_", max_id[1]]),
-        max_id[1],
+        join(["node_", maxid[1]]),
+        maxid[1],
         node,
         node.children,
         new_node_MTG(node, template),
         copy(attr_fun(node)),
-        Dict{String,Vector{Node}}()
+        Dict{String,Vector{typeof(node)}}()
     )
 
     # Add the new node as the only child of the node:
@@ -377,4 +371,4 @@ function insert_generation!(node, template, attr_fun=node -> typeof(node.attribu
     return node
 end
 
-@deprecate insert_node!(node, template, max_id) insert_parent!(node, template, max_id)
+@deprecate insert_node!(node, template, maxid) insert_parent!(node, template, maxid)

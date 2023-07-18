@@ -63,7 +63,7 @@ mutable struct Node{N<:AbstractNodeMTG,A}
     "Node unique ID"
     id::Int
     "Parent node"
-    parent::Union{Nothing,Node}
+    parent::Union{Nothing,Node{N,A}}
     "Dictionary of children nodes, or Nothing if no children"
     children::Vector{Node{N,A}}
     "MTG encoding (see [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref))"
@@ -75,8 +75,7 @@ mutable struct Node{N<:AbstractNodeMTG,A}
 end
 
 # Shorter way of instantiating a Node:
-
-function Node(name::String, id::Int, parent::Union{Nothing,Node}, children::Nothing, MTG::N, attributes::A, traversal_cache::Dict{String,Vector{Node}}) where {N<:AbstractNodeMTG,A}
+function Node(name::String, id::Int, parent::Union{Nothing,Node{N,A}}, children::Nothing, MTG::N, attributes::A, traversal_cache::Dict{String,Vector{Node{N,A}}}) where {N<:AbstractNodeMTG,A}
     Node{N,A}(name, id, parent, Vector{Node{N,A}}(), MTG, attributes, traversal_cache)
 end
 
