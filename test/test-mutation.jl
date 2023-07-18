@@ -21,7 +21,6 @@
     # Test by using node fields instead of attributes:
     @mutate_node!(leaf_node, node.MTG.scale = 4)
     @test leaf_node.MTG.scale == 4
-
 end
 
 
@@ -41,10 +40,7 @@ end
     @test leaf_node[:nametest] == "node_5_test2"
 end
 
-
-
 @testset "append!" begin
-
     # On Dict attributes
     mtg = read_mtg("files/simple_plant.mtg", Dict)
     append!(mtg, (test=3,))

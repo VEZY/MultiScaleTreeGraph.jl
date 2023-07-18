@@ -6,7 +6,6 @@ mtg = read_mtg("files/simple_plant.mtg", Dict);
     @test df_mtg[7, :Length] == 0.2
 end
 
-
 @testset "MetaGraph" begin
     meta_mtg = MetaGraph(mtg)
     @test meta_mtg[1][:scales] == [0, 1, 2, 3, 3]
