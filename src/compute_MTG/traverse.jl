@@ -53,19 +53,21 @@ function traverse!(
 )
 
     if !isempty(args)
-        f = (node, args) -> f(node, args...)
+        g = node -> f(node, args...)
+    else
+        g = f
     end
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
     if haskey(node.traversal_cache, cache_name(scale, symbol, link, filter_fun))
         for i in node.traversal_cache[cache_name(scale, symbol, link, filter_fun)]
             # NB: node.traversal_cache[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
-            f(i, args...)
+            g(i)
         end
         return
     end
 
-    traverse!_(node, f, scale, symbol, link, filter_fun)
+    traverse!_(node, g, scale, symbol, link, filter_fun)
 end
 
 function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun)
