@@ -49,7 +49,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
     # Manually put a node in the cache and use it for computation:
     # Carefull, this is just for testing purpose, it is not recommended to do this in a real case.
     no_filter_cache_name = MultiScaleTreeGraph.cache_name(nothing, nothing, nothing, nothing)
-    mtg.traversal_cache[no_filter_cache_name] = [MultiScaleTreeGraph.Node(NodeMTG("/", "Test", 1, 0), Dict(:a => 1))]
+    mtg.traversal_cache[no_filter_cache_name] = [MultiScaleTreeGraph.Node(MutableNodeMTG("/", "Test", 1, 0), Dict{Symbol,Any}(:a => 1))]
 
     # Test if the cache is used:
     traverse!(mtg) do x

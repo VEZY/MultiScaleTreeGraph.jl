@@ -2,8 +2,7 @@
     isleaf(node::Node)
 Test whether a node is a leaf or not.
 """
-isleaf(node::Node) = node.children === nothing
-
+isleaf(node::Node) = length(node.children) == 0
 
 """
     isroot(node::Node)
@@ -64,18 +63,18 @@ phyto = addchild!(
 mtg
 ```
 """
-function addchild!(parent::Node, id::Int, MTG::M, attributes; type=GenericNode()) where {M<:AbstractNodeMTG}
-    child = Node(id, parent, MTG, attributes; type=type)
+function addchild!(parent::Node, id::Int, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    child = Node(id, parent, MTG, attributes)
     return child
 end
 
-function addchild!(parent::Node, MTG::M, attributes; type=GenericNode()) where {M<:AbstractNodeMTG}
-    child = Node(parent, MTG, attributes; type=type)
+function addchild!(parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    child = Node(parent, MTG, attributes)
     return child
 end
 
-function addchild!(parent::Node, MTG::M; type=GenericNode()) where {M<:AbstractNodeMTG}
-    child = Node(parent, MTG; type=type)
+function addchild!(parent::Node, MTG::M) where {M<:AbstractNodeMTG}
+    child = Node(parent, MTG)
     return child
 end
 

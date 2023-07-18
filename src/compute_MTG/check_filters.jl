@@ -11,21 +11,20 @@ check_filters(mtg, scale = (1,2))
 check_filters(mtg, scale = (1,2), symbol = "Leaf", link = "<")
 ```
 """
-function check_filters(node; scale = nothing, symbol = nothing, link = nothing)
+function check_filters(node::Node{N,A}; scale=nothing, symbol=nothing, link=nothing) where {N<:AbstractNodeMTG,A}
 
     root_node = get_root(node)
 
-    nodeMTG_type = typeof(node.MTG)
     if root_node[:scales] !== nothing
-        check_filter(nodeMTG_type, :scale, scale, unique(root_node.attributes[:scales]))
+        check_filter(N, :scale, scale, unique(root_node.attributes[:scales]))
     end
 
     if root_node[:symbols] !== nothing
-        check_filter(nodeMTG_type, :symbol, symbol, unique(root_node.attributes[:symbols]))
+        check_filter(N, :symbol, symbol, unique(root_node.attributes[:symbols]))
     end
 
     if root_node[:link] !== nothing
-        check_filter(nodeMTG_type, :link, link, ("/", "<", "+"))
+        check_filter(N, :link, link, ("/", "<", "+"))
     end
 
     return nothing
@@ -54,26 +53,29 @@ end
 
 Is a node filtered in ? Returns `true` if the node is kept, `false` if it is filtered-out.
 """
-function is_filtered(node, scale, symbol, link, filter_fun)
+@inline function is_filtered(node, scale, symbol, link, filter_fun)
 
-    link_keep = is_filtered(link, node.MTG.link)
-    symbol_keep = is_filtered(symbol, node.MTG.symbol)
-    scale_keep = is_filtered(scale, node.MTG.scale)
+    link_keep = isnothing(link) || is_filtered(link, node.MTG.link)
+    symbol_keep = isnothing(symbol) || is_filtered(symbol, node.MTG.symbol)
+    scale_keep = isnothing(scale) || is_filtered(scale, node.MTG.scale)
     filter_fun_keep = isnothing(filter_fun) || filter_fun(node)
 
     scale_keep && symbol_keep && link_keep && filter_fun_keep
 end
 
-
-function is_filtered(filter, value)
-    isnothing(filter) || value in filter
+@inline function is_filtered(filter::Nothing, value)
+    true
 end
 
-function is_filtered(filter::String, value)
-    isnothing(filter) || value in (filter,)
+@inline function is_filtered(filter, value)
+    value in filter
 end
 
-function is_filtered(filter, value::T) where {T<:Union{Tuple,Array}}
+@inline function is_filtered(filter::String, value)
+    value in (filter,)
+end
+
+@inline function is_filtered(filter, value::T) where {T<:Union{Tuple,Array}}
     all(map(x -> is_filtered(filter, x), value))
 end
 

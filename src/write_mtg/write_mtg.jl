@@ -168,7 +168,7 @@ function get_node_printing!(node, lead, ref, print_node, node_lead=0, node_ref="
     push!(lead, node_lead)
     push!(ref, node_ref)
 
-    index = node.MTG.index === nothing ? "" : string(node.MTG.index)
+    index = node.MTG.index == -9999 ? "" : string(node.MTG.index)
     push!(print_node, node.MTG.link * node.MTG.symbol * index)
 
     if !isleaf(node)

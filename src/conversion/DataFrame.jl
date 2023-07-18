@@ -27,7 +27,7 @@ DataFrame(mtg, :Length)
 DataFrame(mtg, [:Length, :Width])
 ```
 """
-function DataFrame(mtg::Node, key::T) where {T<:Union{AbstractArray,Tuple}}
+function DataFrame(mtg::Node{N,A}, key::T) where {T<:Union{Vector{Symbol},Tuple}} where {N<:AbstractNodeMTG,A}
 
     tree_vars = [:node_id, :node_symbol, :node_scale, :node_index, :parent_id, :node_link] ∪ key
 
@@ -36,12 +36,12 @@ function DataFrame(mtg::Node, key::T) where {T<:Union{AbstractArray,Tuple}}
         traverse(
             mtg,
             node -> (
-                node_id = node.id,
-                node_symbol = node.MTG.symbol,
-                node_scale = node.MTG.scale,
-                node_index = node.MTG.index,
-                parent_id = MultiScaleTreeGraph.get_parent_id(node),
-                node_link = node.MTG.link
+                node_id=node.id,
+                node_symbol=node.MTG.symbol,
+                node_scale=node.MTG.scale,
+                node_index=node.MTG.index,
+                parent_id=MultiScaleTreeGraph.get_parent_id(node),
+                node_link=node.MTG.link
             )
         )
 
@@ -50,7 +50,7 @@ function DataFrame(mtg::Node, key::T) where {T<:Union{AbstractArray,Tuple}}
     insertcols!(df, 1, :tree => get_printing(mtg))
 
     for var in key
-        insertcols!(df, var => [descendants(mtg, var, self = true)...])
+        insertcols!(df, var => [descendants(mtg, var, self=true)...])
     end
 
     # Replace the nothing values by missing values as it is the standard in DataFrames:
