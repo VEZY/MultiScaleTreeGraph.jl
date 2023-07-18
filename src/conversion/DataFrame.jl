@@ -27,7 +27,7 @@ DataFrame(mtg, :Length)
 DataFrame(mtg, [:Length, :Width])
 ```
 """
-function DataFrame(mtg::Node{N,A}, key::T) where {T<:Union{AbstractArray,Tuple}} where {N<:AbstractNodeMTG,A}
+function DataFrame(mtg::Node{N,A}, key::T) where {T<:Union{Vector{Symbol},Tuple}} where {N<:AbstractNodeMTG,A}
 
     tree_vars = [:node_id, :node_symbol, :node_scale, :node_index, :parent_id, :node_link] ∪ key
 
