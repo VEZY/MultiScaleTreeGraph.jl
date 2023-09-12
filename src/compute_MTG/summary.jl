@@ -83,7 +83,7 @@ end
 Get all the scales of an MTG.
 """
 function scales(mtg)
-    vec = String[]
+    vec = Int[]
     traverse!(mtg) do node
         push!(vec, node.MTG.scale)
     end |> unique
