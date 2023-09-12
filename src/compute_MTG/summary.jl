@@ -83,11 +83,17 @@ end
 Get all the scales of an MTG.
 """
 function scales(mtg)
-    unique(traverse(mtg, node -> node.MTG.scale))
+    vec = String[]
+    traverse!(mtg) do node
+        push!(vec, node.MTG.scale)
+    end |> unique
 end
 
 function symbols(mtg)
-    unique(traverse(mtg, node -> node.MTG.symbol))
+    vec = String[]
+    traverse!(mtg) do node
+        push!(vec, node.MTG.symbol)
+    end |> unique
 end
 
 components = symbols
