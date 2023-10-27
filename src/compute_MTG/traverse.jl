@@ -140,7 +140,8 @@ function traverse_(
         val_ = try
             f(node, args...)
         catch e
-            error("Issue in function $f for node $(node.id).")
+            println("Issue in function $f for node $(node.id).")
+            rethrow(e)
         end
 
         push!(val, val_)
