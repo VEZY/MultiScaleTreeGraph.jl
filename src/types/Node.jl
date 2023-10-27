@@ -32,7 +32,7 @@ Type that defines an MTG node (*i.e.* an element) with:
 - `children`: an optional array of children nodes
 - `MTG`: the MTG description, or encoding (see [`NodeMTG`](@ref) or
 [`MutableNodeMTG`](@ref))
-- `attributes`: the node attributes (see [`Attributes`](@ref)), that can be anything but 
+- `attributes`: the node attributes, that can be anything but 
 usually a `Dict{String,Any}`
 - `traversal_cache`: a cache for the traversal, used by *e.g.* [`traverse`](@ref) to traverse more efficiently particular nodes in the MTG
 
