@@ -86,14 +86,17 @@ function scales(mtg)
     vec = Int[]
     traverse!(mtg) do node
         push!(vec, node.MTG.scale)
-    end |> unique
+    end
+
+    return unique(vec)
 end
 
 function symbols(mtg)
     vec = String[]
     traverse!(mtg) do node
         push!(vec, node.MTG.symbol)
-    end |> unique
+    end
+    return unique(vec)
 end
 
 components = symbols

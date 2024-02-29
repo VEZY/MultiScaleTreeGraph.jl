@@ -7,6 +7,10 @@ using Graphs, AbstractTrees
     include("test-read_mtg.jl")
 end
 
+@testset "simple helper functions" begin
+    include("test-summary.jl")
+end
+
 @testset "simple node functions" begin
     include("test-nodes.jl")
 end
