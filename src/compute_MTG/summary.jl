@@ -114,7 +114,15 @@ components, symbols
 
 Get all attributes names available on the mtg and its children.
 """
-get_attributes(mtg) = unique!(vcat(traverse(mtg, node -> collect(keys(node.attributes)))...))
+function get_attributes(mtg)
+    attrs = Set{Symbol}()
+    traverse!(mtg) do node
+        union!(attrs, keys(node.attributes))
+    end
+
+    return collect(attrs)
+end
+
 
 """
     names(mtg)

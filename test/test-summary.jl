@@ -34,7 +34,7 @@ end
 end
 
 @testset "get attributes/names" begin
-    @test get_attributes(mtg) == names(mtg) == [:scales, :description, :symbols, :XEuler, :Length, :Width, :dateDeath, :isAlive]
+    @test sort!(get_attributes(mtg)) == sort!(names(mtg)) == [:Length, :Width, :XEuler, :dateDeath, :description, :isAlive, :scales, :symbols]
 end
 
 @testset "list nodes" begin
