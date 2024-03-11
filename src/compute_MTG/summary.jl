@@ -4,7 +4,7 @@
 Compute the mtg classes based on its content. Usefull after having mutating the mtg nodes.
 """
 function get_classes(mtg)
-    attributes = traverse(mtg, node -> (SYMBOL=node.MTG.symbol, SCALE=node.MTG.scale))
+    attributes = traverse(mtg, node -> (SYMBOL=node.MTG.symbol, SCALE=node.MTG.scale), type=@NamedTuple{SYMBOL::String, SCALE::Int64})
     attributes = unique(attributes)
     df = DataFrame(attributes)
 
@@ -31,7 +31,10 @@ Compute the mtg features section based on its attributes. Usefull after having c
 in the mtg.
 """
 function get_features(mtg)
-    attributes = traverse(mtg, node -> (collect(keys(node.attributes)), [typeof(i) for i in values(node.attributes)]))
+    attributes = traverse(
+        mtg,
+        node -> (collect(keys(node.attributes)), [typeof(i) for i in values(node.attributes)]), type=Tuple{Vector{Symbol},Vector{DataType}}
+    ) |> unique
 
     df = DataFrame(
         :NAME => vcat([i[1] for i in attributes]...),
@@ -84,7 +87,7 @@ Get all the scales of an MTG.
 """
 function scales(mtg)
     vec = Int[]
-    traverse!(mtg) do node
+    traverse(mtg) do node
         push!(vec, node.MTG.scale)
     end
 
@@ -137,7 +140,7 @@ Base.names(mtg::T) where {T<:MultiScaleTreeGraph.Node} = get_attributes(mtg)
 
 List all nodes IDs in the subtree of `mtg`.
 """
-list_nodes(mtg) = traverse(mtg, node -> node.id)
+list_nodes(mtg) = traverse(mtg, node -> node.id, type=Int)
 
 """
     max_id(mtg)

@@ -42,16 +42,7 @@ end
 """
 traverse!, traverse
 
-function traverse!(
-    node::Node,
-    f::Function,
-    args...;
-    scale=nothing,
-    symbol=nothing,
-    link=nothing,
-    filter_fun=nothing
-)
-
+function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing)
     if !isempty(args)
         g = node -> f(node, args...)
     else
@@ -76,7 +67,7 @@ function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun)
             f(node)
         catch e
             println("Issue in function $f for node #$(node.id).")
-            throw(e)
+            rethrow(e)
         end
     end
 
@@ -90,55 +81,41 @@ end
 
 # Non-mutating version:
 # Set-up array of value and call the workhorse (traverse_)
-function traverse(
-    node::Node,
-    f::Function,
-    args...;
-    scale=nothing,
-    symbol=nothing,
-    link=nothing,
-    filter_fun=nothing
-)
+function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, type=Any)
+    if !isempty(args)
+        g = node -> f(node, args...)
+    else
+        g = f
+    end
 
-    val = []
+    val = Array{type,1}()
     # NB: f has to return someting here, if its a mutating function, use traverse!
-    traverse_(
-        node,
-        f,
-        val,
-        args...;
-        scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
-    )
-    return val
-end
-
-# Actual workhorse:
-function traverse_(
-    node::Node,
-    f::Function,
-    val,
-    args...;
-    scale, symbol, link, filter_fun
-)
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
     if haskey(node.traversal_cache, cache_name(scale, symbol, link, filter_fun))
         for i in node.traversal_cache[cache_name(scale, symbol, link, filter_fun)]
             # NB: node.traversal_cache[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
             val_ = try
-                f(i, args...)
+                g(i)
             catch e
                 error("Issue in function $f for node $(node.id).")
+                rethrow(e)
             end
             push!(val, val_)
         end
         return
     end
 
+    traverse_(node, g, val, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
+    return val
+end
+
+# Actual workhorse:
+function traverse_(node::Node, f::Function, val; scale, symbol, link, filter_fun)
     # Else we traverse the mtg:
     if is_filtered(node, scale, symbol, link, filter_fun)
         val_ = try
-            f(node, args...)
+            f(node)
         catch e
             println("Issue in function $f for node $(node.id).")
             rethrow(e)
@@ -149,13 +126,7 @@ function traverse_(
 
     if !isleaf(node)
         for chnode in children(node)
-            traverse_(
-                chnode,
-                f,
-                val,
-                args...;
-                scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
-            )
+            traverse_(chnode, f, val; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
         end
     end
 end
@@ -184,16 +155,4 @@ function traverse(
     filter_fun=nothing
 )
     traverse(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
-end
-
-# Same here but without arguments
-function traverse(
-    f::Function,
-    node::Node;
-    scale=nothing,
-    symbol=nothing,
-    link=nothing,
-    filter_fun=nothing
-)
-    traverse(node, f; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
 end
