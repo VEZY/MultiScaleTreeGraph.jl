@@ -17,11 +17,12 @@ which is either mutating (use `traverse!`) or not (use `traverse`).
     - `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
     - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
     - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
+    - `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that is filtered out (`false`).
+    - `type::Type = Any`: The elements type of the returned array. This can speed-up things. Only available for the non-mutating version.
 
 # Returns
 
-Nothing for `traverse!` because it mutates the (sub-)tree in-place, or an Array of whatever
-the function returns for `traverse`.
+`nothing` for `traverse!` because it mutates the (sub-)tree in-place, or an `Array{type}` (or `Array{Any}` if `type` is not given) for `traverse`.
 
 # Examples
 
@@ -42,7 +43,7 @@ end
 """
 traverse!, traverse
 
-function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing)
+function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true)
     if !isempty(args)
         g = node -> f(node, args...)
     else
@@ -50,18 +51,18 @@ function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothi
     end
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
-    if haskey(node.traversal_cache, cache_name(scale, symbol, link, filter_fun))
-        for i in node.traversal_cache[cache_name(scale, symbol, link, filter_fun)]
+    if haskey(node.traversal_cache, cache_name(scale, symbol, link, all, filter_fun))
+        for i in node.traversal_cache[cache_name(scale, symbol, link, all, filter_fun)]
             # NB: node.traversal_cache[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
             g(i)
         end
         return
     end
 
-    traverse!_(node, g, scale, symbol, link, filter_fun)
+    traverse!_(node, g, scale, symbol, link, filter_fun, all)
 end
 
-function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun)
+function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun, all)
     if is_filtered(node, scale, symbol, link, filter_fun)
         try
             f(node)
@@ -69,11 +70,13 @@ function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun)
             println("Issue in function $f for node #$(node.id).")
             rethrow(e)
         end
+    elseif !all
+        return # When `all=false`, we have to stop when a node is filtered out
     end
 
     if !isleaf(node)
         for chnode in children(node)
-            traverse!_(chnode, f, scale, symbol, link, filter_fun)
+            traverse!_(chnode, f, scale, symbol, link, filter_fun, all)
         end
     end
 end
@@ -81,7 +84,7 @@ end
 
 # Non-mutating version:
 # Set-up array of value and call the workhorse (traverse_)
-function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, type=Any)
+function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, type=Any)
     if !isempty(args)
         g = node -> f(node, args...)
     else
@@ -92,8 +95,8 @@ function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothin
     # NB: f has to return someting here, if its a mutating function, use traverse!
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
-    if haskey(node.traversal_cache, cache_name(scale, symbol, link, filter_fun))
-        for i in node.traversal_cache[cache_name(scale, symbol, link, filter_fun)]
+    if haskey(node.traversal_cache, cache_name(scale, symbol, link, all, filter_fun))
+        for i in node.traversal_cache[cache_name(scale, symbol, link, all, filter_fun)]
             # NB: node.traversal_cache[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
             val_ = try
                 g(i)
@@ -103,15 +106,16 @@ function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothin
             end
             push!(val, val_)
         end
-        return
+        return val
     end
 
-    traverse_(node, g, val, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
+    traverse_(node, g, val, scale, symbol, link, filter_fun, all)
+
     return val
 end
 
 # Actual workhorse:
-function traverse_(node::Node, f::Function, val; scale, symbol, link, filter_fun)
+function traverse_(node::Node, f::Function, val, scale, symbol, link, filter_fun, all)
     # Else we traverse the mtg:
     if is_filtered(node, scale, symbol, link, filter_fun)
         val_ = try
@@ -122,11 +126,13 @@ function traverse_(node::Node, f::Function, val; scale, symbol, link, filter_fun
         end
 
         push!(val, val_)
+    elseif !all
+        return val # When `all=false`, we have to stop when a node is filtered out
     end
 
     if !isleaf(node)
         for chnode in children(node)
-            traverse_(chnode, f, val; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
+            traverse_(chnode, f, val, scale, symbol, link, filter_fun, all)
         end
     end
 end
@@ -139,9 +145,10 @@ function traverse!(
     scale=nothing,
     symbol=nothing,
     link=nothing,
-    filter_fun=nothing
+    filter_fun=nothing,
+    all=true
 )
-    traverse!(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
+    traverse!(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all)
 end
 
 # And with the non-mutating version:
@@ -152,7 +159,8 @@ function traverse(
     scale=nothing,
     symbol=nothing,
     link=nothing,
-    filter_fun=nothing
+    filter_fun=nothing,
+    all=true, type=Any
 )
-    traverse(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun)
+    traverse(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, type=type)
 end

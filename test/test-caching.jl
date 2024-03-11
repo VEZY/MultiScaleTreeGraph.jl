@@ -7,7 +7,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
     cache_nodes!(mtg, symbol="Leaf")
 
     # Cached nodes are stored in the traversal_cache field of the mtg (here, the two leaves):
-    @test mtg.traversal_cache["_cache_c0bffb8cc8a9b075e40d26be9c2cac6349f2a790"] == [get_node(mtg, 5), get_node(mtg, 7)]
+    @test mtg.traversal_cache["_cache_78a6583f9e4f630383e9f8bdcd9d1bc5d1a6e540"] == [get_node(mtg, 5), get_node(mtg, 7)]
     # cache_nodes!(mtg, is_leaf)
     @test traverse(mtg, x -> x.MTG.symbol, symbol="Leaf") == ["Leaf", "Leaf"]
 
@@ -20,19 +20,19 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
     # Cache based on another symbol:
     cache_nodes!(mtg, symbol="Internode")
     @test length(mtg.traversal_cache) == 2
-    @test length(mtg.traversal_cache["_cache_33a9899b1adef0158fa8f2ffa2f898013767bd79"]) == 2
-    @test mtg.traversal_cache["_cache_33a9899b1adef0158fa8f2ffa2f898013767bd79"] == [get_node(mtg, 4), get_node(mtg, 6)]
+    @test length(mtg.traversal_cache["_cache_8b5413ba4d893f432a65c83e5bd53e5839e22a5d"]) == 2
+    @test mtg.traversal_cache["_cache_8b5413ba4d893f432a65c83e5bd53e5839e22a5d"] == [get_node(mtg, 4), get_node(mtg, 6)]
 
     # Cache all nodes:
     cache_nodes!(mtg)
     @test length(mtg.traversal_cache) == 3
-    @test length(mtg.traversal_cache["_cache_b47facf6c998e6f1b7dc7c83eebde8b80e39506d"]) == length(mtg)
+    @test length(mtg.traversal_cache["_cache_ab6319555fc952f43d7d80401e3f1f6124fd6644"]) == length(mtg)
 
     # Cache with 2 filters:
     cache_nodes!(mtg, symbol="Internode", link="<")
     @test length(mtg.traversal_cache) == 4
-    @test length(mtg.traversal_cache["_cache_4b683925f7df64387dff8c1af7aaec36c5fd3d35"]) == 1
-    @test mtg.traversal_cache["_cache_4b683925f7df64387dff8c1af7aaec36c5fd3d35"] == [get_node(mtg, 6)]
+    @test length(mtg.traversal_cache["_cache_ede6d4d594437acaca56712d385c03e014ff1b4b"]) == 1
+    @test mtg.traversal_cache["_cache_ede6d4d594437acaca56712d385c03e014ff1b4b"] == [get_node(mtg, 6)]
 
     traverse!(mtg, symbol="Internode", link="<") do x
         x[:x] = x.id + 2
@@ -48,7 +48,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
 
     # Manually put a node in the cache and use it for computation:
     # Carefull, this is just for testing purpose, it is not recommended to do this in a real case.
-    no_filter_cache_name = MultiScaleTreeGraph.cache_name(nothing, nothing, nothing, nothing)
+    no_filter_cache_name = MultiScaleTreeGraph.cache_name(nothing, nothing, nothing, true, nothing)
     mtg.traversal_cache[no_filter_cache_name] = [MultiScaleTreeGraph.Node(MutableNodeMTG("/", "Test", 1, 0), Dict{Symbol,Any}(:a => 1))]
 
     # Test if the cache is used:

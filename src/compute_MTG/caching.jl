@@ -53,7 +53,7 @@ cache_nodes!(mtg, symbol="Leaf")
 traverse(mtg, x -> x.MTG.symbol, symbol="Leaf") == ["Leaf", "Leaf"]
 ```
 """
-function cache_nodes!(node; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, overwrite=false)
+function cache_nodes!(node; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, overwrite=false)
     # The cache is already present:
     if length(node.traversal_cache) != 0 && haskey(node.traversal_cache, cache_name(scale, symbol, link, all, filter_fun))
         if !overwrite
@@ -67,7 +67,7 @@ function cache_nodes!(node; scale=nothing, symbol=nothing, link=nothing, filter_
     node.traversal_cache[cache_name(scale, symbol, link, all, filter_fun)] = traverse(
         node,
         node -> node,
-        scale=scale, symbol=symbol, link=link, filter_fun=filter_fun
+        scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all
     )
 
     return nothing
