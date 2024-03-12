@@ -6,7 +6,7 @@ function descendants(
     all::Bool=true, # like continue in the R package, but actually the opposite
     self=false,
     filter_fun=nothing,
-    recursivity_level=-1,
+    recursivity_level=Inf,
     ignore_nothing::Bool=false,
     type::Union{Union,DataType}=Any)
 
@@ -18,46 +18,21 @@ function descendants(
 
     val = Array{type,1}()
 
-    if self
-        keep = is_filtered(node, scale, symbol, link, filter_fun_)
 
-        if keep
-            val_ = unsafe_getindex(node, key)
-            push!(val, val_)
-        elseif !all
-            # We don't keep the value and we have to stop at the first filtered-out value
-            return val
-        end
+    traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun_, all=all, recursivity_level=recursivity_level) do chnode
+        push!(val, unsafe_getindex(chnode, key))
+        # Only decrement the recursivity level when the current node is not filtered-out
     end
 
-    descendants_(node, key, scale, symbol, link, all, filter_fun_, val, recursivity_level)
+    # If we don't want to include the value of the current node, we remove it from the array (if it wasn't filtered already):
+    if !self && is_filtered(node, scale, symbol, link, filter_fun_)
+        popfirst!(val)
+    end
+
     return val
 end
 
-
-function descendants_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
-
-    if !isleaf(node) && recursivity_level != 0
-        for chnode in children(node)
-            # Is there any filter happening for the current node? (FALSE if filtered out):
-            keep = is_filtered(chnode, scale, symbol, link, filter_fun)
-
-            if keep
-                val_ = unsafe_getindex(chnode, key)
-                push!(val, val_)
-                # Only decrement the recursivity level when the current node is not filtered-out
-                recursivity_level -= 1
-            end
-
-            # If we want to continue even if the current node is filtered-out
-            if all || keep
-                descendants_(chnode, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
-            end
-        end
-    end
-end
-
-
+#Note: The mutating version is more complicated, so we don't use `traverse!` but make another implementation.
 function descendants!(
     node, key;
     scale=nothing,
@@ -66,7 +41,7 @@ function descendants!(
     all::Bool=true, # like continue in the R package, but actually the opposite
     self=false,
     filter_fun=nothing,
-    recursivity_level=-1,
+    recursivity_level=Inf,
     ignore_nothing=false,
     type::Union{Union,DataType}=Any)
 
@@ -92,7 +67,6 @@ function descendants!(
     end
 
     if node[key_cache] === nothing
-
         descendants_!(node, key, scale, symbol, link, all, filter_fun_, val, recursivity_level, key_cache)
 
         # Caching the result into a cache attribute named after the SHA of the function arguments:
@@ -108,7 +82,6 @@ end
 Fast version of descendants_ that mutates the mtg nodes to cache the information.
 """
 function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, key_cache)
-
     val_i = Array{eltype(val),1}()
     if !isleaf(node) && recursivity_level != 0
         if node[key_cache] === nothing # Is there any cached value? If so, do not recompute
@@ -121,7 +94,6 @@ function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, rec
                     push!(val_i, val_key)
                     # Only decrement the recursivity level when the current node is not filtered-out
                     recursivity_level -= 1
-                    # chnode[key_cache] = val_key
                 end
                 # If we want to continue even if the current node is filtered-out
                 if all || keep
@@ -132,7 +104,6 @@ function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, rec
             append!(val, val_i)
         else
             append!(val, copy(node[key_cache]))
-            # node[key_cache]
         end
     end
 end
@@ -162,13 +133,13 @@ It also only works for trees with attributes of subtype of `AbstractDict`.
 is filtered out (`false`).
 - `self = false`: is the value for the current node needed ?
 - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
-- `recursivity_level = -1`: The maximum number of recursions allowed (considering filters).
+- `recursivity_level = Inf`: The maximum number of recursions allowed (considering filters).
 *E.g.* to get the first level children only: `recursivity_level = 1`, for children +
-grand-children: `recursivity_level = 2`. If a negative value is provided (the default), the
-function returns all valid values from the node to the leaves.
+grand-children: `recursivity_level = 2`. If `Inf` (the default) or a negative value is provided, there is no 
+recursion limitation.
 - `ignore_nothing = false`: filter-out the nodes with `nothing` values for the given `key`
-- `type::Union{Union,DataType}`: The type of the attribute. Makes the function run much
-faster if provided (≈4x faster).
+- `type::Union{Union,DataType}`: The type of the attribute. Can make the function run much
+faster if provided (*e.g.* ≈4x faster).
 
 
 # Tips
@@ -196,8 +167,8 @@ descendants(mtg, :Length) # Short to write, but slower to execute
 descendants(mtg, :Length, type = Union{Nothing,Float64})
 
 # Filter by scale:
-descendants(mtg, :XX, scale = 1, type = Float64)
-descendants(mtg, :Length, scale = 3, type = Float64)
+descendants(mtg, :XEuler, scale = 3, type = Union{Nothing, Float64})
+descendants(mtg, :Length, scale = 3, type = Float64) # No `nothing` value here, no need of a union type
 
 # Filter by symbol:
 descendants(mtg, :Length, symbol = "Leaf")
@@ -210,57 +181,20 @@ descendants(mtg, :Width; filter_fun = isleaf)
 descendants(mtg, [:Width, :Length]; filter_fun = isleaf)
 # The output is an array of arrays of length of the attributes you asked for.
 
-# It is possible to cache the results in the mtg. This is wqy faster when using
-# `@mutate_mtg` (note the `!` at the end of the function name):
-@mutate_mtg!(mtg, subtree_length = sum(descendants!(node, :Length, symbol = "Internode")), symbol = "Internode")
+# It is possible to cache the results in the mtg using the mutating version `descendants!` (note the `!` 
+# at the end of the function name):
+transform!(mtg, node -> sum(descendants!(node, :Length)) => :subtree_length, symbol = "Internode")
 
-function compute_subtree_length(x)
-    length_descendants = filter(x -> x !== nothing, descendants(x, :Length, symbol = "Internode", self = true))
-    length(length_descendants) > 0 ? sum(length_descendants) : nothing
-end
+# Or using `@mutate_mtg!` instead of `transform!`:
+@mutate_mtg!(mtg, subtree_length = sum(descendants!(node, :Length)), symbol = "Internode")
 
-function compute_subtree_length!(x)
-    length_descendants = filter(x -> x !== nothing, descendants!(x, :Length, symbol = "Internode", self = true))
-    length(length_descendants) > 0 ? length_descendants : nothing
-end
+# The cache is stored in a temporary variable with a name that starts with `_cache_` followed by the SHA
+# of the function call, *e.g.*: `:_cache_5c1e97a3af343ce623cbe83befc851092ca61c8d`:
+mtg[1][1][1].attributes
 
-@mutate_mtg!(mtg, subtree_length = compute_subtree_length(node), symbol = "Internode")
-
-file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
-mtg = read_mtg(file)
-@mutate_mtg!(mtg, subtree_length = compute_subtree_length!(node))
-
-file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
-mtg = read_mtg(file)
-compute_subtree_length!(mtg)
-DataFrame(mtg, [:Length, :_cache_9011cfa452383c48086b78014718eeebab7b12b9])
-
-# You can then clean the cach to avoid using too much memory:
+# You can then clean the cache to avoid using too much memory:
 clean_cache!(mtg)
 mtg[1][1][1].attributes
-mtg[1][1][1][2].attributes
-DataFrame(mtg, [:Length, :subtree_length])
-
-file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
-mtg = read_mtg(file)
-node = mtg
-key = :Length
-scale = nothing
-symbol = nothing
-link = nothing
-all= true
-self = false
-filter_fun = nothing
-recursivity_level = -1
-type = Any
-
-# compute_subtree_length!(mtg)
-
-descendants!(mtg, :Length, self = true)
-DataFrame(mtg, [:Length, :subtree_length, :_cache_9011cfa452383c48086b78014718eeebab7b12b9])
-DataFrame(mtg, [:Length, :subtree_length, :_cache_403abd80258f45cfa2a64226edcf3c39c44a3302])
-
-
 ```
 """
 descendants!, descendants

@@ -19,6 +19,7 @@ which is either mutating (use `traverse!`) or not (use `traverse`).
     - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
     - `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that is filtered out (`false`).
     - `type::Type = Any`: The elements type of the returned array. This can speed-up things. Only available for the non-mutating version.
+    - `recursivity_level::Int = Inf`: The maximum depth of the traversal. Default is `Inf` (*i.e.* no limit).
 
 # Returns
 
@@ -43,7 +44,7 @@ end
 """
 traverse!, traverse
 
-function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true)
+function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, recursivity_level=Inf)
     if !isempty(args)
         g = node -> f(node, args...)
     else
@@ -59,10 +60,13 @@ function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothi
         return
     end
 
-    traverse!_(node, g, scale, symbol, link, filter_fun, all)
+    traverse!_(node, g, scale, symbol, link, filter_fun, all, recursivity_level)
 end
 
-function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun, all)
+function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun, all, recursivity_level)
+    recursivity_level == 0 && return
+    recursivity_level -= 1
+
     if is_filtered(node, scale, symbol, link, filter_fun)
         try
             f(node)
@@ -76,7 +80,7 @@ function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun, al
 
     if !isleaf(node)
         for chnode in children(node)
-            traverse!_(chnode, f, scale, symbol, link, filter_fun, all)
+            traverse!_(chnode, f, scale, symbol, link, filter_fun, all, recursivity_level)
         end
     end
 end
@@ -84,7 +88,7 @@ end
 
 # Non-mutating version:
 # Set-up array of value and call the workhorse (traverse_)
-function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, type=Any)
+function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, type=Any, recursivity_level=Inf)
     if !isempty(args)
         g = node -> f(node, args...)
     else
@@ -109,13 +113,19 @@ function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothin
         return val
     end
 
-    traverse_(node, g, val, scale, symbol, link, filter_fun, all)
+    traverse_(node, g, val, scale, symbol, link, filter_fun, all, recursivity_level)
 
     return val
 end
 
 # Actual workhorse:
-function traverse_(node::Node, f::Function, val, scale, symbol, link, filter_fun, all)
+function traverse_(node::Node, f::Function, val, scale, symbol, link, filter_fun, all, recursivity_level)
+    if recursivity_level == 0
+        return
+    else
+        recursivity_level -= 1
+    end
+
     # Else we traverse the mtg:
     if is_filtered(node, scale, symbol, link, filter_fun)
         val_ = try
@@ -132,7 +142,7 @@ function traverse_(node::Node, f::Function, val, scale, symbol, link, filter_fun
 
     if !isleaf(node)
         for chnode in children(node)
-            traverse_(chnode, f, val, scale, symbol, link, filter_fun, all)
+            traverse_(chnode, f, val, scale, symbol, link, filter_fun, all, recursivity_level)
         end
     end
 end
@@ -146,9 +156,10 @@ function traverse!(
     symbol=nothing,
     link=nothing,
     filter_fun=nothing,
-    all=true
+    all=true,
+    recursivity_level=Inf,
 )
-    traverse!(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all)
+    traverse!(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, recursivity_level=recursivity_level)
 end
 
 # And with the non-mutating version:
@@ -160,7 +171,8 @@ function traverse(
     symbol=nothing,
     link=nothing,
     filter_fun=nothing,
-    all=true, type=Any
+    all=true, type=Any,
+    recursivity_level=Inf,
 )
-    traverse(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, type=type)
+    traverse(node, f, args...; scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, type=type, recursivity_level=recursivity_level)
 end
