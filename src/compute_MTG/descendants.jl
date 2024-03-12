@@ -18,7 +18,6 @@ function descendants(
 
     val = Array{type,1}()
 
-
     traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun_, all=all, recursivity_level=recursivity_level) do chnode
         push!(val, unsafe_getindex(chnode, key))
         # Only decrement the recursivity level when the current node is not filtered-out
@@ -32,9 +31,39 @@ function descendants(
     return val
 end
 
+# Same as above, but without the `key` argument (we want the nodes themselves):
+function descendants(
+    node;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true, # like continue in the R package, but actually the opposite
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=Inf,
+)
+
+    # Check the filters once, and then compute the descendants recursively using `descendants_`
+    check_filters(node, scale=scale, symbol=symbol, link=link)
+
+    val = Array{typeof(node),1}()
+
+    traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, recursivity_level=recursivity_level) do chnode
+        push!(val, chnode)
+        # Only decrement the recursivity level when the current node is not filtered-out
+    end
+
+    # If we don't want to include the value of the current node, we remove it from the array (if it wasn't filtered already):
+    if !self && is_filtered(node, scale, symbol, link, filter_fun)
+        popfirst!(val)
+    end
+
+    return val
+end
+
 #Note: The mutating version is more complicated, so we don't use `traverse!` but make another implementation.
 function descendants!(
-    node, key;
+    node::Node{N,A}, key;
     scale=nothing,
     symbol=nothing,
     link=nothing,
@@ -43,7 +72,7 @@ function descendants!(
     filter_fun=nothing,
     recursivity_level=Inf,
     ignore_nothing=false,
-    type::Union{Union,DataType}=Any)
+    type::Union{Union,DataType}=Any) where {N,A<:AbstractDict}
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -110,19 +139,23 @@ end
 
 """
     descendants(node::Node,key,<keyword arguments>)
+    descendants(node::Node,<keyword arguments>)
     descendants!(node::Node,key,<keyword arguments>)
 
-Get attribute values from the descendants (acropetal). The mutating version (`descendants!`)
-cache the results in a cached variable named after the hash of the function call. This version
-is way faster for large trees, but require to clean the chache sometimes (see [`clean_cache!`](@ref)).
-It also only works for trees with attributes of subtype of `AbstractDict`.
+Get attribute values from the descendants of the node (acropetal).
+The first method returns an array of values, the second an array of nodes that respect the filters, and the third the mutating version of the 
+first one that caches the results in the mtg.
+
+The mutating version (`descendants!`) cache the results in a cached variable named after the hash of the function call. This version
+is way faster when `descendants` is called repeateadly for the same computation on large trees, but require to clean the chache sometimes 
+(see [`clean_cache!`](@ref)). It also only works for trees with attributes of subtype of `AbstractDict`.
 
 # Arguments
 
 ## Mandatory arguments
 
 - `node::Node`: The node to start at.
-- `key`: The key, or attribute name. Make it a `Symbol` for faster computation time.
+- `key`: The key, or attribute name (only mandatory for the first and third methods). Make it a `Symbol` for faster computation time.
 
 ## Keyword Arguments
 

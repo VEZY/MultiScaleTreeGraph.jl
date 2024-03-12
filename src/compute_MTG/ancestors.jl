@@ -1,14 +1,16 @@
 """
     ancestors(node::Node,key,<keyword arguments>)
+    ancestors(node::Node,<keyword arguments>)
 
-Get attribute values from the ancestors (basipetal).
+Get attribute values from the ancestors (basipetal), or the ancestor nodes that are not filtered-out.
 
 # Arguments
 
 ## Mandatory arguments
 
 - `node::Node`: The node to start at.
-- `key`: The key, or attribute name. Make it a `Symbol` for faster computation time.
+- `key`: The key, or attribute name. It is only mandatory for the first method that search for attributes values. The second method returns the node directly. 
+Make it a `Symbol` for faster computation time.
 
 ## Keyword Arguments
 
@@ -112,6 +114,60 @@ function ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recurs
         # If we want to continue even if the current node is filtered-out
         if all || keep
             ancestors_(parent, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
+        end
+    end
+end
+
+# Version that returns the nodes instead of the values:
+function ancestors(
+    node;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true, # like continue in the R package, but actually the opposite
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=-1
+)
+
+    # Check the filters once, and then compute the ancestors recursively using `ancestors_`
+    check_filters(node, scale=scale, symbol=symbol, link=link)
+
+    # Change the filtering function if we also want to remove nodes with nothing values.
+    val = Array{typeof(node),1}()
+    # Put the recursivity level into an array so it is mutable in-place:
+
+    if self
+        if is_filtered(node, scale, symbol, link, filter_fun)
+            push!(val, node)
+        elseif !all
+            # We don't keep the value and we have to stop at the first filtered-out value
+            return val
+        end
+    end
+
+    ancestors_(node, scale, symbol, link, all, filter_fun, val, recursivity_level)
+    return val
+end
+
+
+function ancestors_(node, scale, symbol, link, all, filter_fun, val, recursivity_level)
+
+    if !isroot(node) && recursivity_level != 0
+        parent = node.parent
+
+        # Is there any filter happening for the current node? (FALSE if filtered out):
+        keep = is_filtered(parent, scale, symbol, link, filter_fun)
+
+        if keep
+            push!(val, parent)
+            # Only decrement the recursivity level when the current node is not filtered-out
+            recursivity_level -= 1
+        end
+
+        # If we want to continue even if the current node is filtered-out
+        if all || keep
+            ancestors_(parent, scale, symbol, link, all, filter_fun, val, recursivity_level)
         end
     end
 end

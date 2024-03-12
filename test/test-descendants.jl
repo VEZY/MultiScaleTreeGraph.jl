@@ -26,6 +26,11 @@
       clean_cache!(mtg)
       # Get the leaves values:
       @test descendants(mtg, :Width; filter_fun=isleaf) == width_all[[end - 2, end]]
+
+      # Using the method that returns the nodes directly:
+      @test descendants(mtg) == traverse(mtg[1], x -> x)
+      @test descendants(mtg, self=true) == traverse(mtg, x -> x)
+      @test descendants(get_node(mtg, 6), self=true) == [get_node(mtg, 6), get_node(mtg, 7)]
 end
 
 # using BenchmarkTools
