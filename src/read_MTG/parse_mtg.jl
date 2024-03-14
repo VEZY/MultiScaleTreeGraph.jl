@@ -73,12 +73,12 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
     tree_dict = Dict{Int,Node}()
 
     # for i in Iterators.drop(eachindex(splitted_MTG), 1)
-    # tree_dict[4].attributes
+    # node_attributes(tree_dict[4])
     try
         while !eof(f)
             l[1] = next_line!(f, line; whitespace=false)
             length(l[1]) == 0 && continue # ignore empty line
-            parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type)
+            parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type, features, classes)
         end
     catch e
         error(
@@ -252,12 +252,12 @@ end
 
 
 """
-    parse_line_to_node!(tree_dict,l,line,attr_column_start,node_id)
+    parse_line_to_node!(tree_dict, l, line, attr_column_start, node_id, attr_type, mtg_type, features,classes)
 
 Parse a line of the MTG file to a node and add it to the tree dictionary.
 It may also add several nodes if the line contains several MTG elements.
 """
-function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type)
+function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type, features, classes)
 
     splitted_MTG = split(l[1], "\t")
     node_column = findfirst(x -> length(x) > 0, splitted_MTG)

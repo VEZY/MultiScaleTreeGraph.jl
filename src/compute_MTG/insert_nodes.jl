@@ -198,10 +198,10 @@ MultiScaleTreeGraph.new_node_MTG(mtg, (link = "/", symbol = "Leaf", index = 1, s
 MultiScaleTreeGraph.new_node_MTG(
     mtg,
     x -> (
-            link = x[1].MTG.link,
-            symbol = x[1].MTG.symbol,
-            index = x[1].MTG.index,
-            scale = x[1].MTG.scale)
+            link = link(x[1]),
+            symbol = symbol(x[1]),
+            index = index(x[1]),
+            scale = scale(x[1]))
         )
 ```
 """
@@ -215,10 +215,10 @@ function new_node_MTG(node::Node{N,A}, template::T) where {N<:AbstractNodeMTG,A,
 end
 
 """
-    insert_parent!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
-    insert_generation!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
-    insert_child!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
-    insert_sibling!(node, template, attr_fun = node -> typeof(node.attributes)(), max_id = [max_id(node)])
+    insert_parent!(node, template, attr_fun = node -> typeof(node_attributes(node))(), max_id = [max_id(node)])
+    insert_generation!(node, template, attr_fun = node -> typeof(node_attributes(node))(), max_id = [max_id(node)])
+    insert_child!(node, template, attr_fun = node -> typeof(node_attributes(node))(), max_id = [max_id(node)])
+    insert_sibling!(node, template, attr_fun = node -> typeof(node_attributes(node))(), max_id = [max_id(node)])
 
 Insert a node in an MTG as:
 
@@ -258,10 +258,10 @@ mtg
 insert_parent!(
     mtg[1][1],
     node -> (
-        link = node[1].MTG.link,
-        symbol = node[1].MTG.symbol,
-        index = node[1].MTG.index,
-        scale = node[1].MTG.scale)
+        link = link(node[1]),
+        symbol = symbol(node[1]),
+        index = index(node[1]),
+        scale = scale(node[1]))
     )
 )
 ```
@@ -294,12 +294,12 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
         append!(new_node, root_attrs)
 
         # Add the new root node as the parent of the previous one:
-        node.parent = new_node
+        reparent!(node, new_node)
     else
         new_node = Node(
             join(["node_", maxid[1]]),
             maxid[1],
-            node.parent,
+            parent(node),
             Node{N,A}[node],
             new_node_MTG(node, template),
             copy(attr_fun(node)),
@@ -307,14 +307,14 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
         )
 
         # Add the new node to the parent:
-        deleteat!(node.parent.children, findfirst(x -> x.id == node.id, node.parent.children))
+        deleteat!(children(parent(node)), findfirst(x -> node_id(x) == node_id(node), children(parent(node))))
         #? There is also popat! that is equivalent in computation time (I benchmarked it) but 
         #? it requires julia >= v1.5
 
-        push!(node.parent.children, new_node)
+        push!(children(parent(node)), new_node)
 
         # Add the new node as the parent of the previous one:
-        node.parent = new_node
+        reparent!(node, new_node)
     end
 
     return node
@@ -346,7 +346,7 @@ function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=
     )
 
     # Add the new node to the children of the parent node:
-    push!(parent(node).children, new_node)
+    push!(children(parent(node)), new_node)
 
     return node
 end
@@ -359,14 +359,14 @@ function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), max
         join(["node_", maxid[1]]),
         maxid[1],
         node,
-        node.children,
+        children(node),
         new_node_MTG(node, template),
         copy(attr_fun(node)),
         Dict{String,Vector{Node{N,A}}}()
     )
 
     # Add the new node as the only child of the node:
-    node.children = Node[new_node]
+    rechildren!(node, Node{N,A}[new_node])
 
     return node
 end

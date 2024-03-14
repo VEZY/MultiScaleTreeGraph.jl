@@ -144,12 +144,49 @@ end
 ## AbstractTrees compatibility:
 
 # Set the methods for Node:
-AbstractTrees.children(node::Node{T,A}) where {T,A} = node.children
-AbstractTrees.nodevalue(node::Node{T,A}) where {T,A} = node.attributes
-Base.parent(node::Node{T,A}) where {T,A} = node.parent
+
+"""
+    AbstractTrees.children(node::Node{T,A}) where {T,A}
+
+Get the children of a MultiScaleTreeGraph node.
+"""
+AbstractTrees.children(node::Node{T,A}) where {T,A} = getfield(node, :children)
+AbstractTrees.nodevalue(node::Node{T,A}) where {T,A} = getfield(node, :attributes)::A
+
+
+"""
+    Base.parent(node::Node{T,A})
+
+Get the parent of a MultiScaleTreeGraph node. If the node is the root, it returns nothing.
+
+See also [`reparent!`](@ref) to update the parent of a node.
+"""
+Base.parent(node::Node{T,A}) where {T,A} = getfield(node, :parent)
+
+"""
+    AbstractTrees.parent(node::Node{T,A})
+
+Get the parent of a MultiScaleTreeGraph node. If the node is the root, it returns nothing.
+
+See also [`reparent!`](@ref) to update the parent of a node.
+"""
 AbstractTrees.parent(node::Node{T,A}) where {T,A} = Base.parent(node)
 AbstractTrees.childrentype(node::Node{T,A}) where {T,A} = Vector{Node{T,A}}
 AbstractTrees.childtype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
+
+"""
+    reparent!(node::N, p::N) where N<:Node{T,A}
+
+Set the parent of the node.
+"""
+reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,A}}} where {T,A} = setfield!(node, :parent, p)
+
+"""
+    rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
+
+Set the children of the node.
+"""
+rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A} = setfield!(node, :children, chnodes)
 # AbstractTrees.childstatetype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
 
 # Set the traits for Node:
@@ -162,9 +199,9 @@ AbstractTrees.nodetype(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = Node{
 
 function AbstractTrees.nextsibling(node::Node)
     # If there is no parent, no siblings, return nothing:
-    node.parent === nothing && return nothing
+    parent(node) === nothing && return nothing
 
-    all_siblings = children(node.parent)
+    all_siblings = children(parent(node))
     # Get the index of the current node in the siblings:
     node_index = findfirst(x -> x == node, all_siblings)
     if node_index < length(all_siblings)
@@ -176,9 +213,9 @@ end
 
 function AbstractTrees.prevsibling(node::Node)
     # If there is no parent, no siblings, return nothing:
-    node.parent === nothing && return nothing
+    parent(node) === nothing && return nothing
 
-    all_siblings = children(node.parent)
+    all_siblings = children(parent(node))
     # Get the index of the current node in the siblings:
     node_index = findfirst(x -> x == node, all_siblings)
     if node_index > 1
@@ -194,3 +231,142 @@ Base.eltype(::Type{<:TreeIterator{Node{T,A}}}) where {T<:AbstractNodeMTG,A} = No
 
 # Help Julia infer what's inside a Node when doing iteration (another node)
 Base.eltype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
+
+"""
+    node_id(node::Node)
+
+Get the unique id of the node in the MTG.
+"""
+node_id(node::Node) = getfield(node, :id)
+
+"""
+    node_mtg(node::Node)
+
+Get the MTG encoding of the node, *i.e.* the MTG description (see
+[`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref)):
+
+- `scale`: the scale of the node (*e.g.* 1)
+- `symbol`: the symbol of the node (*e.g.* "Axis")
+- `index`: the index of the node (*e.g.* 1, this is free)
+- `link`: the link of the node ("/", "+" or "<")
+
+"""
+node_mtg(node::Node) = getfield(node, :MTG)
+node_mtg!(node::Node{T,A}, mtg_encoding::T) where {T,A} = setfield!(node, :MTG, mtg_encoding)
+
+"""
+    symbol(node::Node)
+
+Get the symbol from the MTG encoding of the node.
+"""
+symbol(node::Node) = getfield(node_mtg(node), :symbol)
+
+"""
+    scale(node::Node)
+
+Get the scale from the MTG encoding of the node.
+"""
+scale(node::Node) = getfield(node_mtg(node), :scale)
+
+
+"""
+    index(node::Node)
+
+Get the index from the MTG encoding of the node.
+"""
+index(node::Node) = getfield(node_mtg(node), :index)
+
+"""
+    link(node::Node)
+
+Get the link from the MTG encoding of the node.
+"""
+link(node::Node) = getfield(node_mtg(node), :link)
+
+"""
+    symbol!(node::Node, symbol)
+
+Set the symbol of the MTG encoding node.
+"""
+symbol!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :symbol, symbol)
+
+"""
+    scale(node::Node)
+
+Get the scale from the MTG encoding of the node.
+"""
+scale!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :scale, symbol)
+
+"""
+    index(node::Node)
+
+Get the index from the MTG encoding of the node.
+"""
+index!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :index, symbol)
+
+"""
+    link(node::Node)
+
+Get the link from the MTG encoding of the node.
+"""
+link!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :link, symbol)
+
+"""
+    node_attributes(node::Node)
+
+Get the attributes of a node.
+"""
+node_attributes(node::Node{T,A}) where {T,A} = getfield(node, :attributes)::A
+
+"""
+    node_attributes!(node::Node)
+
+Set the attributes of a node, *i.e.* replace the whole structure by another. This function is internal, 
+and should not be used directly. Use *e.g.* `node.key = value` to set a single attribute of the node.
+"""
+node_attributes!(node::Node{T,A}, attributes::A) where {T,A} = setfield!(node, :attributes, attributes)
+
+"""
+    get_attributes(mtg)
+
+Get all attributes names available on the mtg and its children.
+"""
+function get_attributes(mtg)
+    attrs = Set{Symbol}()
+    traverse!(mtg) do node
+        union!(attrs, keys(node_attributes(node)))
+    end
+
+    return collect(attrs)
+end
+
+"""
+    names(mtg)
+
+Get all attributes names available on the mtg and its children. This is an alias for
+[`get_attributes`](@ref).
+"""
+Base.names(mtg::T) where {T<:MultiScaleTreeGraph.Node} = get_attributes(mtg)
+
+"""
+    node_traversal_cache(node::Node)
+
+Get the traversal cache of the node if any.
+"""
+node_traversal_cache(node::Node) = getfield(node, :traversal_cache)
+
+Base.getproperty(node::Node, key::Symbol) = unsafe_getindex(node, key)
+Base.hasproperty(node::Node, key::Symbol) = haskey(node_attributes(node), key)
+Base.haskey(node::Node, key::Symbol) = haskey(node_attributes(node), key)
+Base.haskey(node::Node{T,A}, key::Symbol) where {T<:AbstractNodeMTG,A<:MutableNamedTuple} = hasproperty(node_attributes(node), key)
+Base.setproperty!(node::Node{T,A}, key::Symbol, value) where {T<:AbstractNodeMTG,A} = setproperty!(node_attributes(node), key, value)
+Base.setproperty!(node::Node{T,A}, key::Symbol, value) where {T<:AbstractNodeMTG,A<:AbstractDict} = setindex!(node_attributes(node), value, key)
+Base.propertynames(node::Node) = keys(node_attributes(node))
+
+"""
+Indexing Node attributes from node, e.g. node[:length] or node["length"]
+"""
+Base.getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
+Base.getindex(node::Node, key::Symbol) = unsafe_getindex(node, key)
+Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, x, key) = setindex!(node, x, Symbol(key))
+Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, x, key::Symbol) = node_attributes(node)[key] = x

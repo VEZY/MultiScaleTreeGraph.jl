@@ -25,7 +25,7 @@ function pipe_model!(node, root_value; name=:_cache_a7118a60b2a624134bf9eac2d64f
         node[name] = root_value
         return root_value
     else
-        parent_cross_section = node.parent[name]
+        parent_cross_section = parent(node)[name]
         nleaf_node = nleaves!(node)
 
         nleaf_proportion_siblings = nleaf_node / (sum(nleaves_siblings!(node)) + nleaf_node)
@@ -85,7 +85,7 @@ function pipe_model!(node, var_name, threshold_value; allow_missing=false)
 
     if node[var_name] === nothing && !allow_missing
         error(
-            "$var_name not found (`== nothing`) in node `$(node.name)` (id: $(node.id)). ",
+            "$var_name not found (`== nothing`) in node `node_$(node_id(node))` (id: $(node_id(node))). ",
             "Please make sure all nodes have a value, or use `allow_missing = true`."
         )
     end
@@ -95,7 +95,7 @@ function pipe_model!(node, var_name, threshold_value; allow_missing=false)
         node[:_cache_522f54c893bc239eaf0e590bda58d106f91df45d] = node[var_name]
     else
         # The parent cross-section (to share between children):
-        cross_section_to_share = node.parent[:_cache_522f54c893bc239eaf0e590bda58d106f91df45d]
+        cross_section_to_share = parent(node)[:_cache_522f54c893bc239eaf0e590bda58d106f91df45d]
 
         node_siblings = siblings(node)
 
@@ -128,8 +128,8 @@ function pipe_model!(node, var_name, threshold_value; allow_missing=false)
                         val = 0
                     else
                         error(
-                            "$var_name not found (`== nothing`) in `$(node_siblings[i].name)`",
-                            "(id: $(node_siblings[i].id)). ",
+                            "$var_name not found (`== nothing`) in `node_$(node_id(node_siblings[i]))`",
+                            "(id: $(node_id(node_siblings[i]))). ",
                             "Please make sure all nodes have a value, or use `allow_missing = true`."
                         )
                     end

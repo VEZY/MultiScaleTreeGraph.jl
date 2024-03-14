@@ -23,14 +23,14 @@ select!(mtg, :Length => (x -> x / 10) => :length_m, :Width, ignore_nothing = tru
 function select!(
     mtg::Node,
     args...;
-    scale = nothing,
-    symbol = nothing,
-    link = nothing,
-    filter_fun = nothing,
-    ignore_nothing = false
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing,
+    ignore_nothing=false
 )
 
-    check_filters(mtg, scale = scale, symbol = symbol, link = link)
+    check_filters(mtg, scale=scale, symbol=symbol, link=link)
 
     keep_var = []
 
@@ -63,17 +63,17 @@ function select!(
     transform!(
         mtg,
         args...;
-        scale = scale,
-        symbol = symbol,
-        link = link,
-        filter_fun = filter_fun,
-        ignore_nothing = ignore_nothing
+        scale=scale,
+        symbol=symbol,
+        link=link,
+        filter_fun=filter_fun,
+        ignore_nothing=ignore_nothing
     )
 
     # Remove all un-selected attributes from the MTG:
     traverse!(
         mtg,
-        node -> [pop!(node, attr) for attr in setdiff(keys(node.attributes), keep_var)]
+        node -> [pop!(node, attr) for attr in setdiff(keys(node_attributes(node)), keep_var)]
     )
 
 end
@@ -82,22 +82,22 @@ end
 function select(
     mtg::Node,
     args...;
-    scale = nothing,
-    symbol = nothing,
-    link = nothing,
-    filter_fun = nothing,
-    ignore_nothing = false
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    filter_fun=nothing,
+    ignore_nothing=false
 )
     new_mtg = deepcopy(mtg)
 
     select!(
         new_mtg,
         args...;
-        scale = scale,
-        symbol = symbol,
-        link = link,
-        filter_fun = filter_fun,
-        ignore_nothing = ignore_nothing
+        scale=scale,
+        symbol=symbol,
+        link=link,
+        filter_fun=filter_fun,
+        ignore_nothing=ignore_nothing
     )
 
     return new_mtg

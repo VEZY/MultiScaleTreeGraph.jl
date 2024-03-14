@@ -30,14 +30,14 @@ end
 @testset "test mtg content" begin
     @test length(mtg) == 7
     @test typeof(mtg) == Node{NodeMTG,MutableNamedTuple}
-    @test mtg.name == "node_1"
-    @test mtg.attributes[:scales] == [0, 1, 2, 3, 3]
-    @test mtg.attributes[:symbols] == ["Scene", "Individual", "Axis", "Internode", "Leaf"]
-    @test mtg.MTG == NodeMTG("/", "Scene", 0, 0)
-    @test typeof(mtg.children) <: Vector{Node{NodeMTG,MutableNamedTuple}}
+    # @test mtg.name == "node_1"
+    @test node_attributes(mtg)[:scales] == [0, 1, 2, 3, 3]
+    @test node_attributes(mtg)[:symbols] == ["Scene", "Individual", "Axis", "Internode", "Leaf"]
+    @test node_mtg(mtg) == NodeMTG("/", "Scene", 0, 0)
+    @test typeof(children(mtg)) <: Vector{Node{NodeMTG,MutableNamedTuple}}
     @test typeof(mtg[1]) == Node{NodeMTG,MutableNamedTuple}
-    @test mtg[1].name == "node_2"
-    @test mtg[1].parent === mtg
+    # @test mtg[1].name == "node_2"
+    @test parent(mtg[1]) === mtg
 
     leaf_1 = get_node(mtg, 5)
     @test leaf_1[:Length] == 0.2
@@ -57,13 +57,14 @@ end
 end
 
 @testset "test mtg mutation" begin
-    @test (mtg.name = "first_node") == "first_node"
-    @test (mtg.attributes[:scales] .= [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
-    @test (mtg.MTG = MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)) == MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)
-    @test (mtg[1].parent = nothing) === nothing
+    # @test (mtg.name = "first_node") == "first_node"
+    @test (node_attributes(mtg)[:scales] .= [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
+    @test MultiScaleTreeGraph.node_mtg!(mtg, MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)) == MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)
+    reparent!(mtg[1], nothing)
+    @test parent(mtg[1]) === nothing
     node2 = mtg[1]
-    @test (mtg.children = [node2]) == [node2]
-    mtg.attributes = MutableNamedTuple(a=1)
+    rechildren!(mtg, [node2])
+    @test children(mtg) == [node2]
 end
 
 @testset "test mtg with NamedTuples" begin
@@ -71,37 +72,36 @@ end
 
     @test length(mtg) == 7
     @test typeof(mtg) == Node{NodeMTG,NamedTuple}
-    @test mtg.name == "node_1"
-    @test mtg.MTG == MultiScaleTreeGraph.NodeMTG("/", "Scene", 0, 0)
-    @test typeof(mtg.children) == Vector{Node{NodeMTG,NamedTuple}}
-    @test mtg[1].name == "node_2"
-    @test mtg[1].parent === mtg
+    # @test mtg.name == "node_1"
+    @test node_mtg(mtg) == MultiScaleTreeGraph.NodeMTG("/", "Scene", 0, 0)
+    @test typeof(children(mtg)) == Vector{Node{NodeMTG,NamedTuple}}
+    # @test mtg[1].name == "node_2"
+    @test parent(mtg[1]) === mtg
 end
-
 
 @testset "test mtg with Dict" begin
     mtg = read_mtg("files/simple_plant.mtg", Dict, NodeMTG)
     @test length(mtg) == 7
     @test typeof(mtg) == Node{MultiScaleTreeGraph.NodeMTG,Dict{Symbol,Any}}
-    @test mtg.name == "node_1"
-    @test mtg.attributes == Dict(:symbols => ["Scene", "Individual", "Axis", "Internode", "Leaf"],
+    # @test mtg.name == "node_1"
+    @test node_attributes(mtg) == Dict(:symbols => ["Scene", "Individual", "Axis", "Internode", "Leaf"],
         :scales => [0, 1, 2, 3, 3], :description => mtg[:description])
-    @test mtg.MTG == MultiScaleTreeGraph.NodeMTG("/", "Scene", 0, 0)
-    @test typeof(mtg.children) == Vector{Node{NodeMTG,Dict{Symbol,Any}}}
-    @test mtg[1].name == "node_2"
-    @test mtg[1].parent === mtg
+    @test node_mtg(mtg) == MultiScaleTreeGraph.NodeMTG("/", "Scene", 0, 0)
+    @test typeof(children(mtg)) == Vector{Node{NodeMTG,Dict{Symbol,Any}}}
+    # @test mtg[1].name == "node_2"
+    @test parent(mtg[1]) === mtg
 end
-
 
 @testset "test mtg with Dict: mutation" begin
     mtg = read_mtg("files/simple_plant.mtg", Dict, NodeMTG)
-    @test (mtg.name = "first_node") == "first_node"
-    @test (mtg.attributes[:scales] = [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
-    @test (mtg.MTG = MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)) == MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)
-    @test (mtg[1].parent = nothing) === nothing
+    # @test (mtg.name = "first_node") == "first_node"
+    @test (node_attributes(mtg)[:scales] = [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
+    @test MultiScaleTreeGraph.node_mtg!(mtg, MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)) == MultiScaleTreeGraph.NodeMTG("<", "Leaf", 2, 0)
+    reparent!(mtg[1], nothing)
+    @test parent(mtg[1]) === nothing
     node2 = mtg[1]
-    @test (mtg.children = [node2]) == [node2]
-    mtg.attributes = Dict(:a => 3, :b => "test")
+    rechildren!(mtg, [node2])
+    @test children(mtg) == [node2]
 end
 
 
@@ -110,11 +110,11 @@ end
     mtg2 = read_mtg("files/simple_plant-blanks.mtg")
 
     MTG1 = traverse(mtg) do x
-        (x.MTG, x.attributes)
+        (node_mtg(x), node_attributes(x))
     end
 
     MTG2 = traverse(mtg2) do x
-        (x.MTG, x.attributes)
+        (node_mtg(x), node_attributes(x))
     end
 
     @test MTG1 == MTG2
@@ -125,11 +125,11 @@ end
     mtg2 = read_mtg("files/simple_plant-P1U1.mtg")
 
     MTG1 = traverse(mtg) do x
-        (x.MTG, x.attributes)
+        (node_mtg(x), node_attributes(x))
     end
 
     MTG2 = traverse(mtg2) do x
-        (x.MTG, x.attributes)
+        (node_mtg(x), node_attributes(x))
     end
 
     @test MTG1 == MTG2
@@ -142,6 +142,6 @@ end
     @test names(mtg) == [:scales, :description, :symbols]
 
     traverse(mtg) do x
-        !MultiScaleTreeGraph.isroot(x) && @test x.attributes == Dict{Symbol,Any}()
+        !MultiScaleTreeGraph.isroot(x) && @test node_attributes(x) == Dict{Symbol,Any}()
     end
 end

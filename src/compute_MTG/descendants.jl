@@ -223,11 +223,11 @@ transform!(mtg, node -> sum(descendants!(node, :Length)) => :subtree_length, sym
 
 # The cache is stored in a temporary variable with a name that starts with `_cache_` followed by the SHA
 # of the function call, *e.g.*: `:_cache_5c1e97a3af343ce623cbe83befc851092ca61c8d`:
-mtg[1][1][1].attributes
+node_attributes(mtg[1][1][1])
 
 # You can then clean the cache to avoid using too much memory:
 clean_cache!(mtg)
-mtg[1][1][1].attributes
+node_attributes(mtg[1][1][1])
 ```
 """
 descendants!, descendants

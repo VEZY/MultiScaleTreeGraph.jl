@@ -12,19 +12,19 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
     # There is a warning because we don't know how to properly link the leaf (node 5) to its new parent.
 
     # Furthermore, the link of the second child (node 6) was modified from following to decomposing:
-    @test get_node(mtg, 6).MTG.link == "/"
+    @test link(get_node(mtg, 6)) == "/"
 end
 
 @testset "delete_node! with a user function" begin
     mtg = read_mtg(file)
-    delete_node!(get_node(mtg, 4), child_link_fun=node -> node.MTG.link)
+    delete_node!(get_node(mtg, 4), child_link_fun=link)
     # The link of the children didn't change:
-    @test get_node(mtg, 6).MTG.link == "<"
+    @test link(get_node(mtg, 6)) == "<"
 
     delete_node!(get_node(mtg, 3), child_link_fun=node -> "+")
     # Both children links changes to branching:
-    @test get_node(mtg, 5).MTG.link == "+"
-    @test get_node(mtg, 6).MTG.link == "+"
+    @test link(get_node(mtg, 5)) == "+"
+    @test link(get_node(mtg, 6)) == "+"
 end
 
 @testset "delete_nodes!" begin
@@ -45,7 +45,7 @@ end
         mtg,
         filter_fun=function (node)
             if !MultiScaleTreeGraph.isroot(node)
-                node.parent[:Length] !== nothing ? node.parent[:Length] < 0.2 : false
+                parent(node)[:Length] !== nothing ? parent(node)[:Length] < 0.2 : false
             else
                 false
             end

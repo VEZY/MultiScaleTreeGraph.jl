@@ -1,14 +1,8 @@
 """
-Indexing Node attributes from node, e.g. node[:length] or node["length"]
-"""
-Base.getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
-Base.getindex(node::Node, key::Symbol) = unsafe_getindex(node, key)
-
-"""
 Indexing a Node using an integer will index in its children
 """
-Base.getindex(n::Node, i::Integer) = n.children[i]
-Base.setindex!(n::Node, x::Node, i::Integer) = n.children[i] = x
+Base.getindex(n::Node, i::Integer) = children(n)[i]
+Base.setindex!(n::Node, x::Node, i::Integer) = children(n)[i] = x
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"],
@@ -18,7 +12,7 @@ so if a node does not have a field, it does not return an error.
 """
 function unsafe_getindex(node::Node, key::Symbol)
     try
-        getproperty(node.attributes, key)
+        getproperty(node_attributes(node), key)
     catch err
         if err.msg == "type NamedTuple has no field $key" || err.msg == "type Nothing has no field $key"
             nothing
@@ -43,15 +37,12 @@ function unsafe_getindex(
     node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict},
     key::Symbol
 )
-    get(node.attributes, key, nothing)
+    get(node_attributes(node), key, nothing)
 end
 
 function unsafe_getindex(node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict}, key)
     unsafe_getindex(node, Symbol(key))
 end
-
-Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, x, key) = setindex!(node, x, Symbol(key))
-Base.setindex!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, x, key::Symbol) = node.attributes[key] = x
 
 """
 Returns the length of the subtree below the node (including it)

@@ -52,9 +52,9 @@ function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothi
     end
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
-    if haskey(node.traversal_cache, cache_name(scale, symbol, link, all, filter_fun))
-        for i in node.traversal_cache[cache_name(scale, symbol, link, all, filter_fun)]
-            # NB: node.traversal_cache[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
+    if haskey(node_traversal_cache(node), cache_name(scale, symbol, link, all, filter_fun))
+        for i in node_traversal_cache(node)[cache_name(scale, symbol, link, all, filter_fun)]
+            # NB: node_traversal_cache(node)[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
             g(i)
         end
         return
@@ -71,7 +71,7 @@ function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun, al
         try
             f(node)
         catch e
-            println("Issue in function $f for node #$(node.id).")
+            println("Issue in function $f for node #$(node_id(node)).")
             rethrow(e)
         end
     elseif !all
@@ -99,13 +99,13 @@ function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothin
     # NB: f has to return someting here, if its a mutating function, use traverse!
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
-    if haskey(node.traversal_cache, cache_name(scale, symbol, link, all, filter_fun))
-        for i in node.traversal_cache[cache_name(scale, symbol, link, all, filter_fun)]
-            # NB: node.traversal_cache[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
+    if haskey(node_traversal_cache(node), cache_name(scale, symbol, link, all, filter_fun))
+        for i in node_traversal_cache(node)[cache_name(scale, symbol, link, all, filter_fun)]
+            # NB: node_traversal_cache(node)[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
             val_ = try
                 g(i)
             catch e
-                error("Issue in function $f for node $(node.id).")
+                error("Issue in function $f for node $(node_id(node)).")
                 rethrow(e)
             end
             push!(val, val_)
@@ -131,7 +131,7 @@ function traverse_(node::Node, f::Function, val, scale, symbol, link, filter_fun
         val_ = try
             f(node)
         catch e
-            println("Issue in function $f for node $(node.id).")
+            println("Issue in function $f for node $(node_id(node)).")
             rethrow(e)
         end
 

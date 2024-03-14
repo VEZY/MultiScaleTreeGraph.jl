@@ -33,10 +33,7 @@ to re-compute the mtg at a given scale to have only nodes at branching points. T
 to match automatic reconstructions from e.g. LiDAR point cloud with manual measurements.
 4. The default function used for `child_link_fun` is [`new_child_link`](@ref), which tries to be
 clever considering the parent and child links. See its help page for more information. If the
-link shouldn't be modified, use the following function instead:
-```julia
-node -> node.MTG.link
-```
+link shouldn't be modified, use the `link` function instead.
 
 # Examples
 
@@ -111,20 +108,16 @@ several children, it returns an error.
 `child_link_fun` is a function that takes the child node of a deleted node as input and
 returns its new link. The default function is [`new_child_link`](@ref), which tries to be
 clever considering the parent and child links. See its help page for more information. If the
-link shouldn't be modified, use the following function instead:
-
-```julia
-node -> node.MTG.link
-```
+link shouldn't be modified, use the `link` function instead.
 
 The function returns the parent node (or the new root if the node is a root)
 """
 function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:AbstractNodeMTG,A}
     if isroot(node)
-        if length(node.children) == 1
+        if length(children(node)) == 1
             # If it has only one child, make it the new root:
             chnode = children(node)[1]
-            chnode.parent = nothing
+            reparent!(chnode, nothing)
             # Add to the new root the mandatory root attributes:
             root_attrs = Dict(
                 :symbols => node[:symbols],
@@ -134,7 +127,7 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
 
             append!(chnode, root_attrs)
 
-            chnode.MTG.link = child_link_fun(chnode)
+            link!(chnode, child_link_fun(chnode))
 
             node_return = chnode
         else
@@ -147,13 +140,13 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
             # We re-parent the children to the parent of the node.
             for chnode in children(node)
                 # Updating the link of the children:
-                chnode.MTG.link = child_link_fun(chnode)
+                link!(chnode, child_link_fun(chnode))
                 addchild!(parent_node, chnode; force=true)
             end
         end
 
         # Delete the node as child of his parent:
-        deleteat!(parent_node.children, findfirst(x -> x.id == node.id, parent_node.children))
+        deleteat!(children(parent_node), findfirst(x -> node_id(x) == node_id(node), children(parent_node)))
         node_return = parent_node
     end
 
@@ -193,8 +186,8 @@ keep their links.
 """
 function new_child_link(node)
 
-    deleted_link = parent(node).MTG.link
-    child_link = node.MTG.link
+    deleted_link = parent(node) |> link
+    child_link = link(node)
 
     if deleted_link == "+" && child_link == "/"
         new_child_link = child_link

@@ -73,8 +73,8 @@ mtg = read_mtg(file)
 
     @test length(mtg) == 35
     @test length(children(mtg[1][1])) == 2
-    @test children(mtg[1][1])[1].MTG.symbol == "N"
-    @test children(mtg[1][1])[2].MTG.symbol == "GU"
+    @test children(mtg[1][1])[1] |> symbol == "N"
+    @test children(mtg[1][1])[2] |> symbol == "GU"
 
     mtg2 = mktemp() do f, io
         write_mtg(f, mtg)
@@ -86,6 +86,6 @@ mtg = read_mtg(file)
     @test descendants(mtg, :diameter_mm) == descendants(mtg2, :diameter_mm)
     @test descendants(mtg, :length_cm) == descendants(mtg2, :length_cm)
     @test descendants(mtg, :azimuth) == descendants(mtg2, :azimuth)
-    @test traverse(mtg, node -> node.MTG.symbol) == traverse(mtg2, node -> node.MTG.symbol)
-    @test traverse(mtg, node -> node.MTG.index) == traverse(mtg2, node -> node.MTG.index)
+    @test traverse(mtg, symbol) == traverse(mtg2, symbol)
+    @test traverse(mtg, index) == traverse(mtg2, index)
 end

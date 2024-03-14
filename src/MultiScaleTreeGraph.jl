@@ -54,6 +54,7 @@ export read_mtg
 export isleaf
 export isroot
 export children, lastchild
+export reparent!, rechildren!
 export addchild!
 export traverse!
 export traverse
@@ -87,6 +88,9 @@ export (==)
 export check_filters
 export get_features, get_attributes
 export names, scales, symbols, components
+export node_id, node_mtg, node_attributes
+export symbol, scale, index, link
+export symbol!, scale!, index!, link!
 export list_nodes
 export get_classes
 export get_description

@@ -31,14 +31,14 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 
 # Compute a new attribute with the scales and add 2 to its values:
-@mutate_mtg!(mtg, scaling = node.scales .+ 2)
+@mutate_mtg!(mtg, scaling = node.scales .+ 2, filter_fun = node -> node.scales !== nothing)
 
 # Compute several new attributes, some based on others:
-@mutate_mtg!(mtg, x = length(node.name), y = node.x + 2, z = sum(node.y))
+@mutate_mtg!(mtg, x = length(node_id(node)), y = node.x + 2, z = sum(node.y))
 
 # We can also use it without parenthesis:
 
-@mutate_mtg! mtg x = length(node.name)
+@mutate_mtg! mtg x = length(node_id(node))
 ```
 """
 macro mutate_mtg!(mtg, args...)
@@ -95,11 +95,11 @@ mtg = read_mtg(file)
 # see @mutate_mtg!
 
 # Compute several new attributes, some based on others:
-@mutate_node!(mtg, x = length(node.name), y = node.x + 2, z = sum(node.y))
+@mutate_node!(mtg, x = length(node_id(node)), y = node.x + 2, z = sum(node.y))
 
 # We can also use it without parenthesis:
 
-@mutate_node! mtg x = length(node.name)
+@mutate_node! mtg x = length(node_id(node))
 ```
 """
 macro mutate_node!(node, args...)
@@ -125,17 +125,22 @@ an attribute.
 test = :(x = node.name)
 MultiScaleTreeGraph.rewrite_expr!(:mtg,test)
 test
-# :(mtg.attributes[:x] = mtg.name)
+# :(mtg[:x] = mtg.name)
 
 test = :(x = node.foo)
 MultiScaleTreeGraph.rewrite_expr!(:mtg,test)
 test
-# :(mtg.attributes[:x] = mtg.attributes[:foo])
+# :(mtg[:x] = mtg[:foo])
 
-test = :(x = node.MTG.symbol)
+test = :(x = symbol(node))
 MultiScaleTreeGraph.rewrite_expr!(:mtg,test)
 test
-# :(mtg.attributes[:x] = mtg.MTG.symbol)
+# :(mtg[:x] = symbol(mtg))
+
+test = :(x = node_mtg(node) |> symbol)
+MultiScaleTreeGraph.rewrite_expr!(:mtg,test)
+test
+# :(mtg[:x] = node_mtg(mtg) |> symbol)
 ```
 """
 function rewrite_expr!(node_name, arguments::Expr)
@@ -146,13 +151,13 @@ function rewrite_expr!(node_name, arguments::Expr)
     # On the contrary the RHS can use variables from elsewhere, e.g. a constant defined in
     # the REPL
     if isa(arguments, Expr) && arguments.head == :(=) && isa(arguments.args[1], Symbol)
-        arguments.args[1] = :($(node_name).attributes[$(QuoteNode(arguments.args[1]))])
+        arguments.args[1] = :($(node_name)[$(QuoteNode(arguments.args[1]))])
         # if !(Symbol(replace(arg,"node."=>"")) in fieldnames(Node))
-        # x.args[1] = :(node.attributes)
+        # x.args[1] = :(node_attributes(node))
     end
 
-    # For the RHS:
-    for x in arguments.args
+    # For the RHS: e.g.: arguments = :(scale = 3); node_name = :mtg
+    for x in arguments.args # x = 3
         arg = string(x)
         if isa(x, Expr) &&
            (x.head == :. || x.head == :ref) &&
@@ -163,7 +168,7 @@ function rewrite_expr!(node_name, arguments::Expr)
             if !(Symbol(replace(arg, "node." => "")) in fieldnames(Node))
                 if any(match.(Regex.("\\." .* string.(fieldnames(Node))), arg) .!= nothing)
                     # If the expression contains node attributes, only replace the node name
-                    # because they are reserved keywords, e.g.: node.MTG.scale becomes
+                    # because they are reserved keywords, e.g.: node_mtg(node).scale becomes
                     # node_name.MTG.scale
                     x.args[1].args[1] = :($(node_name))
                 else

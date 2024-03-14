@@ -5,10 +5,10 @@
     mtg_code = MultiScaleTreeGraph.NodeMTG("/", "Plant", 1, 1)
     mtg = MultiScaleTreeGraph.Node(mtg_code)
     @test get_attributes(mtg) == []
-    @test mtg.attributes == Dict{Symbol,Any}()
-    @test mtg.id == 1
-    @test mtg.parent === nothing
-    @test mtg.MTG == mtg_code
+    @test node_attributes(mtg) == Dict{Symbol,Any}()
+    @test node_id(mtg) == 1
+    @test parent(mtg) === nothing
+    @test node_mtg(mtg) == mtg_code
 end
 
 @testset "Create node" begin
@@ -18,11 +18,11 @@ end
         mtg,
         MultiScaleTreeGraph.NodeMTG("/", "Internode", 1, 2)
     )
-    @test internode.parent == mtg
-    @test internode.id == 2
-    @test internode.MTG == MultiScaleTreeGraph.NodeMTG("/", "Internode", 1, 2)
-    @test internode.attributes == Dict{Symbol,Any}()
-    @test mtg.children == [internode]
+    @test parent(internode) == mtg
+    @test node_id(internode) == 2
+    @test node_mtg(internode) == MultiScaleTreeGraph.NodeMTG("/", "Internode", 1, 2)
+    @test node_attributes(internode) == Dict{Symbol,Any}()
+    @test children(mtg) == [internode]
 end
 
 # From a file:
@@ -37,7 +37,7 @@ end
 
 @testset "get attribute value" begin
     @test mtg[1][1][1][:Width] == 0.02
-    @test mtg[1][1][1].attributes[:Width] == 0.02
+    @test node_attributes(mtg[1][1][1])[:Width] == 0.02
 end
 
 @testset "set attribute value" begin

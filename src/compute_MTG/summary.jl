@@ -4,7 +4,7 @@
 Compute the mtg classes based on its content. Usefull after having mutating the mtg nodes.
 """
 function get_classes(mtg)
-    attributes = traverse(mtg, node -> (SYMBOL=node.MTG.symbol, SCALE=node.MTG.scale), type=@NamedTuple{SYMBOL::String, SCALE::Int64})
+    attributes = traverse(mtg, node -> (SYMBOL=symbol(node), SCALE=scale(node)), type=@NamedTuple{SYMBOL::String, SCALE::Int64})
     attributes = unique(attributes)
     df = DataFrame(attributes)
 
@@ -33,7 +33,7 @@ in the mtg.
 function get_features(mtg)
     attributes = traverse(
         mtg,
-        node -> (collect(keys(node.attributes)), [typeof(i) for i in values(node.attributes)]), type=Tuple{Vector{Symbol},Vector{DataType}}
+        node -> (collect(keys(node_attributes(node))), [typeof(i) for i in values(node_attributes(node))]), type=Tuple{Vector{Symbol},Vector{DataType}}
     ) |> unique
 
     df = DataFrame(
@@ -88,7 +88,7 @@ Get all the scales of an MTG.
 function scales(mtg)
     vec = Int[]
     traverse(mtg) do node
-        push!(vec, node.MTG.scale)
+        push!(vec, scale(node))
     end
 
     return unique(vec)
@@ -97,7 +97,7 @@ end
 function symbols(mtg)
     vec = String[]
     traverse!(mtg) do node
-        push!(vec, node.MTG.symbol)
+        push!(vec, symbol(node))
     end
     return unique(vec)
 end
@@ -113,34 +113,11 @@ Get all the symbols names, a.k.a. components of an MTG.
 components, symbols
 
 """
-    get_attributes(mtg)
-
-Get all attributes names available on the mtg and its children.
-"""
-function get_attributes(mtg)
-    attrs = Set{Symbol}()
-    traverse!(mtg) do node
-        union!(attrs, keys(node.attributes))
-    end
-
-    return collect(attrs)
-end
-
-
-"""
-    names(mtg)
-
-Get all attributes names available on the mtg and its children. This is an alias for
-[`get_attributes`](@ref).
-"""
-Base.names(mtg::T) where {T<:MultiScaleTreeGraph.Node} = get_attributes(mtg)
-
-"""
     list_nodes(mtg)
 
 List all nodes IDs in the subtree of `mtg`.
 """
-list_nodes(mtg) = traverse(mtg, node -> node.id, type=Int)
+list_nodes(mtg) = traverse(mtg, node -> node_id(node), type=Int)
 
 """
     max_id(mtg)
@@ -154,7 +131,7 @@ function max_id(mtg)
         id > maxid[1] ? maxid[1] = id : nothing
     end
 
-    traverse!(get_root(mtg), x -> update_maxname(x.id, maxid))
+    traverse!(get_root(mtg), x -> update_maxname(node_id(x), maxid))
 
     return maxid[1]
 end

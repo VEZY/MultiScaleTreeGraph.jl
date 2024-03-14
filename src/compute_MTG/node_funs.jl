@@ -2,13 +2,13 @@
     isleaf(node::Node)
 Test whether a node is a leaf or not.
 """
-isleaf(node::Node) = length(node.children) == 0
+isleaf(node::Node) = length(children(node)) == 0
 
 """
     isroot(node::Node)
 Return `true` if `node` is the root node (meaning, it has no parent).
 """
-isroot(node::Node) = node.parent === nothing
+isroot(node::Node) = parent(node) === nothing
 
 """
     lastchild(node::Node)
@@ -20,18 +20,18 @@ function lastchild(node::Node)
     if isleaf(node)
         return nothing
     else
-        allchildren = node.children
+        allchildren = children(node)
         return allchildren[maximum(keys(allchildren))]
     end
 end
 
 """
-    addchild!(parent::Node, id::Int, MTG<:AbstractNodeMTG, attributes)
-    addchild!(parent::Node, MTG<:AbstractNodeMTG, attributes)
-    addchild!(parent::Node, MTG<:AbstractNodeMTG)
-    addchild!(parent::Node, child::Node; force=false)
+    addchild!(p::Node, id::Int, MTG<:AbstractNodeMTG, attributes)
+    addchild!(p::Node, MTG<:AbstractNodeMTG, attributes)
+    addchild!(p::Node, MTG<:AbstractNodeMTG)
+    addchild!(p::Node, child::Node; force=false)
 
-Add a new child to a parent node, and add the parent node as the parent.
+Add a new child to a parent node (`p`), and add the parent node as the parent.
 Returns the child node.
 
 See also [`insert_child!`](@ref), or directly [`Node`](@ref) where we 
@@ -63,33 +63,32 @@ phyto = addchild!(
 mtg
 ```
 """
-function addchild!(parent::Node, id::Int, MTG::M, attributes) where {M<:AbstractNodeMTG}
-    child = Node(id, parent, MTG, attributes)
+function addchild!(p::Node, id::Int, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    child = Node(id, p, MTG, attributes)
     return child
 end
 
-function addchild!(parent::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
-    child = Node(parent, MTG, attributes)
+function addchild!(p::Node, MTG::M, attributes) where {M<:AbstractNodeMTG}
+    child = Node(p, MTG, attributes)
     return child
 end
 
-function addchild!(parent::Node, MTG::M) where {M<:AbstractNodeMTG}
-    child = Node(parent, MTG)
+function addchild!(p::Node, MTG::M) where {M<:AbstractNodeMTG}
+    child = Node(p, MTG)
     return child
 end
 
-function addchild!(parent::Node, child::Node; force=false)
-
-    if child.parent === missing || force == true
-        child.parent = parent
-    elseif child.parent != parent && force == false
+function addchild!(p::Node{N,A}, child::Node; force=false) where {N<:AbstractNodeMTG,A}
+    if parent(child) === nothing || force == true
+        reparent!(child, p)
+    elseif parent(child) != p && force == false
         error("The node already has a parent. Hint: use `force=true` if needed.")
     end
 
-    if parent.children === nothing
-        parent.children = Node[child]
+    if children(p) === nothing
+        rechildren!(child, Node{N,A}[child])
     else
-        push!(parent.children, child)
+        push!(children(p), child)
     end
 
     return child
@@ -103,7 +102,7 @@ function get_root(node::Node)
     if isroot(node)
         return (node)
     else
-        get_root(node.parent)
+        get_root(parent(node))
     end
 end
 
@@ -114,11 +113,11 @@ Return the siblings of `node` as a vector of nodes (or `nothing` if non-existant
 """
 function siblings(node::Node)
     # If there is no parent, no siblings, return nothing:
-    node.parent === nothing && return nothing
+    parent(node) === nothing && return nothing
 
-    all_siblings = children(node.parent)
+    all_siblings = children(parent(node))
 
-    all_siblings[findall(x -> x != node, all_siblings)]
+    return all_siblings[findall(x -> x != node, all_siblings)]
 end
 
 """
@@ -128,12 +127,12 @@ Return the last sibling of `node` (or `nothing` if non-existant).
 """
 function lastsibling(node::Node)
     # If there is no parent, no siblings, return nothing:
-    node.parent === nothing && return nothing
+    parent(node) === nothing && return nothing
 
-    all_siblings = children(node.parent)
+    all_siblings = children(parent(node))
     # Get the index of the current node in the siblings:
 
-    all_siblings[maximum(keys(all_siblings))]
+    return all_siblings[maximum(keys(all_siblings))]
 end
 
 """

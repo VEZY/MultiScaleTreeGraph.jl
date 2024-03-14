@@ -30,11 +30,11 @@ end
 
 
 function to_MetaGraph(node, meta_mtg)
-    meta_mtg[node.id] = node.attributes
+    meta_mtg[node_id(node)] = node_attributes(node)
 
     if !isroot(node)
-        code_node = code_for(meta_mtg, node.id)
-        code_parent = code_for(meta_mtg, parent(node).id)
-        add_edge!(meta_mtg, code_parent, code_node, node.MTG.link)
+        code_node = code_for(meta_mtg, node_id(node))
+        code_parent = code_for(meta_mtg, parent(node) |> node_id)
+        add_edge!(meta_mtg, code_parent, code_node, link(node))
     end
 end

@@ -16,11 +16,11 @@ function check_filters(node::Node{N,A}; scale=nothing, symbol=nothing, link=noth
     root_node = get_root(node)
 
     if root_node[:scales] !== nothing
-        check_filter(N, :scale, scale, unique(root_node.attributes[:scales]))
+        check_filter(N, :scale, scale, unique(root_node[:scales]))
     end
 
     if root_node[:symbols] !== nothing
-        check_filter(N, :symbol, symbol, unique(root_node.attributes[:symbols]))
+        check_filter(N, :symbol, symbol, unique(root_node[:symbols]))
     end
 
     if root_node[:link] !== nothing
@@ -53,11 +53,11 @@ end
 
 Is a node filtered in ? Returns `true` if the node is kept, `false` if it is filtered-out.
 """
-@inline function is_filtered(node, scale, symbol, link, filter_fun)
+@inline function is_filtered(node, mtg_scale, mtg_symbol, mtg_link, filter_fun)
 
-    link_keep = isnothing(link) || is_filtered(link, node.MTG.link)
-    symbol_keep = isnothing(symbol) || is_filtered(symbol, node.MTG.symbol)
-    scale_keep = isnothing(scale) || is_filtered(scale, node.MTG.scale)
+    link_keep = isnothing(mtg_link) || is_filtered(mtg_link, link(node))
+    symbol_keep = isnothing(mtg_symbol) || is_filtered(mtg_symbol, symbol(node))
+    scale_keep = isnothing(mtg_scale) || is_filtered(mtg_scale, scale(node))
     filter_fun_keep = isnothing(filter_fun) || filter_fun(node)
 
     scale_keep && symbol_keep && link_keep && filter_fun_keep

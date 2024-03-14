@@ -1,8 +1,8 @@
 @testset "traverse!" begin
     mtg = read_mtg("files/simple_plant.mtg", Dict)
     # Add a new attributes, x based on node field, y based on x and z using a function:
-    traverse!(mtg, x -> x[:x] = length(x.name))
-    @test mtg[:x] == 6
+    traverse!(mtg, x -> x[:x] = length(node_id(x)))
+    @test mtg[:x] == 1
 
     traverse!(mtg) do x
         x[:y] = x[:x] + 2
@@ -13,14 +13,14 @@ end
 @testset "traverse" begin
     mtg = read_mtg("files/simple_plant.mtg", Dict)
     # Add a new attributes, x based on node field, y based on x and z using a function:
-    name_length = traverse(mtg, x -> length(x.name))
-    @test name_length == repeat([6], length(mtg))
+    node_ids = traverse(mtg, x -> node_id(x))
+    @test node_ids == collect(1:length(mtg))
 
-    name_length_do = traverse(mtg) do x
-        length(x.name) + 2
+    node_ids_do = traverse(mtg) do x
+        node_id(x) + 2
     end
 
-    @test name_length_do == repeat([8], length(mtg))
+    @test node_ids_do == collect(1:length(mtg)) .+ 2
 end
 
 @testset "traverse + filters" begin
@@ -34,7 +34,7 @@ end
     @test traverse(mtg, x -> x, link=["<", "+"]) == [get_node(mtg, 5), get_node(mtg, 6), get_node(mtg, 7)]
     @test traverse(mtg, x -> x, filter_fun=node -> node[:Length] !== nothing && node[:Length] == 0.1) == [get_node(mtg, 4), get_node(mtg, 6)]
     @test traverse(mtg, x -> x, symbol="Internode", filter_fun=node -> node[:Length] !== nothing) == [get_node(mtg, 4), get_node(mtg, 6)]
-    @test traverse(mtg, x -> x, filter_fun=node -> node.MTG.symbol != "Internode", all=false) == [get_node(mtg, i) for i in 1:3]
+    @test traverse(mtg, x -> x, filter_fun=node -> symbol(node) != "Internode", all=false) == [get_node(mtg, i) for i in 1:3]
     @test traverse(mtg, x -> x, symbol="Internode", all=false) == Any[] # No internode in the first level, all=false -> iteration stops before the first node
     @test traverse(mtg, node -> node[:Length]) == Any[nothing, nothing, nothing, 0.1, 0.2, 0.1, 0.2]
     @test traverse(mtg, node -> node[:Length], type=Union{Nothing,Float64}) == Union{Nothing,Float64}[nothing, nothing, nothing, 0.1, 0.2, 0.1, 0.2]

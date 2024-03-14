@@ -6,7 +6,7 @@
 using MultiScaleTreeGraph
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
-node_6 = get_node(mtg, "node_6")
+node_6 = get_node(mtg, 6)
 ```
 
 In this package, the MTG is represented as a [tree data structure](https://en.wikipedia.org/wiki/Tree_%28data_structure%29).
@@ -32,8 +32,9 @@ Here is a little description of each field:
 - children: a dictionary of the children nodes with their `id` as key, or `nothing` if none;
 - `MTG`: The MTG encoding of the node (see below, or [`NodeMTG`](@ref))
 - `attributes`: the node attributes. Usually a `NamedTuple`, a `MutableNamedTuple` or a `Dict` or similar (e.g. `OrderedDict`), but the type is optional. The choice of the data structure depends mainly on how much you plan to change the attributes and their values. Attributes include for example the length or diameter of a node, its colour, 3d position...
-- `type`: the type of the node, by default a `GenericNode` (un-exported), but that can be any type. Usually used to dispatch computations on node type.
 - `traversal_cache`: a cache for the traversal, used by *e.g.* [`traverse`](@ref) to traverse more efficiently particular nodes in the MTG
+
+The value of tee fields are accessed using accessor functions: [`node_id`](@ref), [`parent`](@ref), [`children`](@ref), [`node_mtg`](@ref), [`node_attributes`](@ref), and the last one `get_traversal_cache` which is not exported because users shouldn't use it directly.
 
 The MTG field of a node describes the topology encoding of the node: its type of link with its parent (decompose: `/`, follow: `<`, and branch: `+`), its symbol, index, and scale (see [Node MTG and attributes](@ref) and [The MTG section](@ref) for more details). The MTG field must be encoded in a data structure called [`NodeMTG`](@ref) or in a [`MutableNodeMTG`](@ref). They have four fields corresponding to the topology encoding:
 
@@ -72,7 +73,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 ```
 
-[`read_mtg`](@ref) returns the first node of the MTG, of type [`Node`](@ref)
+[`read_mtg`](@ref) returns the first node of the MTG, of type [`Node`](@ref):
 
 ```@example usepkg
 typeof(mtg)
@@ -80,3 +81,46 @@ typeof(mtg)
 
 !!! note
     The [`Node`](@ref) is a parametric type, that's why `typeof(mtg)` also returns the type used for the MTG data in the node (`MutableNodeMTG`) and the type used for the attributes (`Dict{Symbol, Any}`). But this is not important here.
+
+We can access the fields of the node using the accessor functions:
+
+```@example usepkg
+node_id(mtg)
+```
+
+```@example usepkg
+parent(mtg)
+```
+
+This one returns `nothing` because the node is the root node, it has no parent, but we could use it on its child, and it would return the root again:
+
+```@example usepkg
+mtg_child = mtg[1]
+parent(mtg_child) == mtg
+```
+
+```@example usepkg
+children(mtg)
+```
+
+```@example usepkg
+node_mtg(mtg)
+```
+
+```@example usepkg
+node_attributes(mtg)
+```
+
+The package also provide helper functions to access the MTG encoding of the node directly:
+
+```@example usepkg
+symbol(mtg)
+```
+
+```@example usepkg
+index(mtg)
+```
+
+```@example usepkg
+scale(mtg)
+```

@@ -11,26 +11,26 @@ as they previously were in the mtg.
 See [`delete_nodes!`](@ref) for an example of application.
 """
 function is_segment!(node::Node{N,A}) where {N<:AbstractNodeMTG,A}
-    if !isleaf(node) && !isroot(node) && !isroot(node.parent) && length(node.children) == 1
+    if !isleaf(node) && !isroot(node) && !isroot(parent(node)) && length(children(node)) == 1
         # We keep the root and the leaves, but want to delete the nodes with no branching.
         # We recognise them because they have only one child. Also we want to keep the very
         # first node even if it has only one child.
 
         # If there is only one child but it is branching:
-        if node[1].MTG.link == "+"
+        if node_mtg(node[1]).link == "+"
             return false
         end
 
         # If it's a node that branches, set its unique child as the branching node instead:
-        if node.MTG.link == "+"
-            node_MTG = node[1].MTG
-            node[1].MTG = N("+", node_MTG.symbol, node_MTG.index, node_MTG.scale)
+        if node_mtg(node).link == "+"
+            node_MTG = node_mtg(node[1])
+            node_mtg!(node[1], N("+", node_MTG.symbol, node_MTG.index, node_MTG.scale))
         end
 
         # If it's a node that decompose ("/"), set its unique child as the decomposing node:
-        if node.MTG.link == "/"
-            node_MTG = node[1].MTG
-            node[1].MTG = N("/", node_MTG.symbol, node_MTG.index, node_MTG.scale)
+        if node_mtg(node).link == "/"
+            node_MTG = node_mtg(node[1])
+            node_mtg!(node[1], N("/", node_MTG.symbol, node_MTG.index, node_MTG.scale))
         end
 
         # And return true to delete it:

@@ -43,7 +43,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 
 # Using a leaf node from the mtg:
-leaf_node = mtg.children[1].children[1].children[1].children[1]
+leaf_node = get_node(mtg, 5)
 
 ancestors(leaf_node, :Length) # Short to write, but slower to execute
 
@@ -99,13 +99,13 @@ end
 function ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
 
     if !isroot(node) && recursivity_level != 0
-        parent = node.parent
+        parent_ = parent(node)
 
         # Is there any filter happening for the current node? (FALSE if filtered out):
-        keep = is_filtered(parent, scale, symbol, link, filter_fun)
+        keep = is_filtered(parent_, scale, symbol, link, filter_fun)
 
         if keep
-            val_ = unsafe_getindex(parent, key)
+            val_ = unsafe_getindex(parent_, key)
             push!(val, val_)
             # Only decrement the recursivity level when the current node is not filtered-out
             recursivity_level -= 1
@@ -113,7 +113,7 @@ function ancestors_(node, key, scale, symbol, link, all, filter_fun, val, recurs
 
         # If we want to continue even if the current node is filtered-out
         if all || keep
-            ancestors_(parent, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
+            ancestors_(parent_, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
         end
     end
 end
@@ -154,20 +154,20 @@ end
 function ancestors_(node, scale, symbol, link, all, filter_fun, val, recursivity_level)
 
     if !isroot(node) && recursivity_level != 0
-        parent = node.parent
+        parent_ = parent(node)
 
         # Is there any filter happening for the current node? (FALSE if filtered out):
-        keep = is_filtered(parent, scale, symbol, link, filter_fun)
+        keep = is_filtered(parent_, scale, symbol, link, filter_fun)
 
         if keep
-            push!(val, parent)
+            push!(val, parent_)
             # Only decrement the recursivity level when the current node is not filtered-out
             recursivity_level -= 1
         end
 
         # If we want to continue even if the current node is filtered-out
         if all || keep
-            ancestors_(parent, scale, symbol, link, all, filter_fun, val, recursivity_level)
+            ancestors_(parent_, scale, symbol, link, all, filter_fun, val, recursivity_level)
         end
     end
 end

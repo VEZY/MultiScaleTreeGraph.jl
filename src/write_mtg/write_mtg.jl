@@ -168,8 +168,8 @@ function get_node_printing!(node, lead, ref, print_node, node_lead=0, node_ref="
     push!(lead, node_lead)
     push!(ref, node_ref)
 
-    index = node.MTG.index == -9999 ? "" : string(node.MTG.index)
-    push!(print_node, node.MTG.link * node.MTG.symbol * index)
+    index = node_mtg(node).index == -9999 ? "" : string(node_mtg(node).index)
+    push!(print_node, node_mtg(node).link * symbol(node) * index)
 
     if !isleaf(node)
         chnodes = children(node)

@@ -61,7 +61,7 @@ function branching_order_ascend!(node)
     if isroot(node)
         return 1
     else
-        if node.MTG.link == "+"
+        if link(node) == "+"
             return parent(node)[:branching_order] + 1
         else
             return parent(node)[:branching_order]
@@ -81,7 +81,7 @@ function branching_order_descend!(node)
         end
         val = maximum(val_child)
 
-        if node.MTG.link == "+"
+        if link(node) == "+"
             val += 1
         end
     end

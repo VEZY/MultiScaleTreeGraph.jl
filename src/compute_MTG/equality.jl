@@ -4,18 +4,17 @@
 Test Node equality. The parent, children and siblings are not tested, only their id is.
 """
 function Base.:(==)(a::T, b::T) where {T<:Node}
-    isequal(a.name, b.name) &&
-        isequal(a.id, b.id) &&
+    isequal(node_id(a), node_id(b)) &&
         isequal(
-            isroot(a) ? nothing : parent(a).id,
-            isroot(b) ? nothing : parent(b).id
+            isroot(a) ? nothing : node_id(parent(a)),
+            isroot(b) ? nothing : node_id(parent(b))
         ) &&
         isequal(
-            a.children !== nothing ? keys(a.children) : nothing,
-            a.children !== nothing ? keys(a.children) : nothing
+            children(a) !== nothing ? keys(children(a)) : nothing,
+            children(a) !== nothing ? keys(children(a)) : nothing
         ) &&
-        isequal(a.MTG, b.MTG) &&
-        isequal(a.attributes, b.attributes)
+        isequal(node_mtg(a), node_mtg(b)) &&
+        isequal(node_attributes(a), node_attributes(b))
 end
 
 """

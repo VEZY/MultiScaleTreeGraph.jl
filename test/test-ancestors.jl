@@ -3,7 +3,7 @@
     width_all = [nothing, nothing, nothing, 0.02, 0.1, 0.02, 0.1] # from print(descendants(mtg, :Width, self = true))
 
     # Using a leaf node from the mtg:
-    leaf_node = mtg.children[1].children[1].children[1].children[1]
+    leaf_node = get_node(mtg, 5)
 
     @test ancestors(leaf_node, :Width; type=Union{Nothing,Float64}) == reverse(width_all[1:4])
     @test ancestors(leaf_node, :Width) == reverse(width_all[1:4])
@@ -20,6 +20,6 @@
           width_all[end:-1:end-1]
 
     # Using the method that returns the nodes directly:
-    @test ancestors(leaf_node) == [leaf_node.parent, leaf_node.parent.parent, leaf_node.parent.parent.parent, leaf_node.parent.parent.parent.parent]
-    @test ancestors(leaf_node, self=true) == [leaf_node, leaf_node.parent, leaf_node.parent.parent, leaf_node.parent.parent.parent, leaf_node.parent.parent.parent.parent]
+    @test ancestors(leaf_node) == [leaf_node |> parent, leaf_node |> parent |> parent, leaf_node |> parent |> parent |> parent, leaf_node |> parent |> parent |> parent |> parent]
+    @test ancestors(leaf_node, self=true) == [leaf_node, leaf_node |> parent, leaf_node |> parent |> parent, leaf_node |> parent |> parent |> parent, leaf_node |> parent |> parent |> parent |> parent]
 end

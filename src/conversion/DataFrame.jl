@@ -36,12 +36,12 @@ function DataFrame(mtg::Node{N,A}, key::T) where {T<:Union{Vector{Symbol},Tuple}
         traverse(
             mtg,
             node -> (
-                node_id=node.id,
-                node_symbol=node.MTG.symbol,
-                node_scale=node.MTG.scale,
-                node_index=node.MTG.index,
+                node_id=node_id(node),
+                node_symbol=symbol(node),
+                node_scale=scale(node),
+                node_index=index(node),
                 parent_id=MultiScaleTreeGraph.get_parent_id(node),
-                node_link=node.MTG.link
+                node_link=link(node)
             )
         )
 
@@ -85,8 +85,8 @@ function DataFrame(mtg::Node)
 end
 
 
-function get_parent_id(x)
-    if !isroot(x)
-        return x.parent.id
+function get_parent_id(node)
+    if !isroot(node)
+        return parent(node) |> node_id
     end
 end

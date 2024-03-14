@@ -5,14 +5,14 @@
     max_node_id = [max_id(mtg)]
     length_before = length(mtg)
 
-    insert_parent!(mtg[1][1], template, node -> typeof(node.attributes)(), max_node_id) # providing max_id
+    insert_parent!(mtg[1][1], template, node -> typeof(node_attributes(node))(), max_node_id) # providing max_id
 
     @test length(mtg) == length_before + 1
-    @test mtg[1][1].MTG.link == template.link
-    @test mtg[1][1].MTG.symbol == template.symbol
-    @test mtg[1][1].MTG.index == template.index
-    @test mtg[1][1].MTG.scale == template.scale
-    @test mtg[1][1].id == max_node_id[1]  # max_id is already incremented, but we added one more node
+    @test link(mtg[1][1]) == template.link
+    @test symbol(mtg[1][1]) == template.symbol
+    @test index(mtg[1][1]) == template.index
+    @test scale(mtg[1][1]) == template.scale
+    @test node_id(mtg[1][1]) == max_node_id[1]  # max_id is already incremented, but we added one more node
 
     mtg_2 = read_mtg("files/simple_plant.mtg")
     insert_parent!(mtg_2[1][1], template) # not providing max_id
@@ -25,22 +25,22 @@
     insert_parent!(
         mtg_3[1][1],
         x -> (
-            link=x[1].MTG.link,
-            symbol=x[1].MTG.symbol,
-            index=x[1].MTG.index,
-            scale=x[1].MTG.scale
+            link=link(x[1]),
+            symbol=symbol(x[1]),
+            index=index(x[1]),
+            scale=scale(x[1]),
         )
     ) # not providing max_id
 
     @test mtg_3 == mtg
-    @test mtg_3[1][1].MTG == mtg_3[1][1][1][1].MTG
+    @test node_mtg(mtg_3[1][1]) == node_mtg(mtg_3[1][1][1][1])
 
 
     # Test inserting a new root:
     mtg_4 = read_mtg("files/simple_plant.mtg")
     insert_parent!(mtg_4, template)
 
-    @test get_root(mtg_4).MTG == template
+    @test get_root(mtg_4) |> node_mtg == template
 
     # Test inserting with attributes:
 
@@ -58,7 +58,7 @@
 
     mtg_5 = get_root(mtg_5)
 
-    @test mtg_5.MTG == template
+    @test node_mtg(mtg_5) == template
     @test mtg_5[:Total_Length] ≈ 0.6
     @test mtg_5[1][:Length] == 1
 end
@@ -76,9 +76,9 @@ end
     )
 
     @test length(mtg) == length_before + 1
-    @test mtg[1][1].MTG == template
-    @test mtg[1][1].name == "node_8"
-    @test mtg[1][1].attributes == Dict{Symbol,Any}(:Total_Length => 0.6)
+    @test node_mtg(mtg[1][1]) == template
+    @test node_id(mtg[1][1]) == 8
+    @test node_attributes(mtg[1][1]) == Dict{Symbol,Any}(:Total_Length => 0.6)
 end
 
 
@@ -90,7 +90,7 @@ end
 
     mtg_orig = deepcopy(mtg)
 
-    insert_child!(mtg[1], template, node -> typeof(node.attributes)(), max_node_id) # providing max_id
+    insert_child!(mtg[1], template, node -> typeof(node_attributes(node))(), max_node_id) # providing max_id
     insert_parent!(mtg_orig[1][1], template)
 
     @test length(mtg) == length(mtg_orig)
@@ -106,8 +106,8 @@ end
 
     @test length(mtg) == length_before + 2
 
-    @test get_node(mtg, 8).MTG == template
-    @test get_node(mtg, 9).MTG == template
+    @test get_node(mtg, 8) |> node_mtg == template
+    @test get_node(mtg, 9) |> node_mtg == template
 end
 
 
@@ -119,7 +119,7 @@ end
 
     mtg_orig = deepcopy(mtg)
 
-    insert_child!(mtg[1], template, node -> typeof(node.attributes)(), max_node_id) # providing max_id
+    insert_child!(mtg[1], template, node -> typeof(node_attributes(node))(), max_node_id) # providing max_id
     insert_generation!(mtg_orig[1], template)
 
     @test length(mtg) == length(mtg_orig)
@@ -134,8 +134,8 @@ end
 
     @test length(mtg) == length_before + 2
 
-    @test get_node(mtg, 8).MTG == template
-    @test get_node(mtg, 9).MTG == template
+    @test get_node(mtg, 8) |> node_mtg == template
+    @test get_node(mtg, 9) |> node_mtg == template
 end
 
 
@@ -147,7 +147,7 @@ end
 
     mtg_orig = deepcopy(mtg)
 
-    insert_child!(mtg, template, node -> typeof(node.attributes)(), max_node_id) # providing max_id
+    insert_child!(mtg, template, node -> typeof(node_attributes(node))(), max_node_id) # providing max_id
     insert_sibling!(mtg_orig[1], template)
 
     @test length(mtg) == length(mtg_orig)
@@ -163,6 +163,6 @@ end
 
     @test length(mtg) == length_before + 2
 
-    @test get_node(mtg, 8).MTG == template
-    @test get_node(mtg, 9).MTG == template
+    @test get_node(mtg, 8) |> node_mtg == template
+    @test get_node(mtg, 9) |> node_mtg == template
 end
