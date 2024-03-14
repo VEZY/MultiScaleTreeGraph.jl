@@ -362,21 +362,19 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
         # Instantiating the current node (mutable):
         if node_id[1] == 1
             node_MTG = Node(
-                join(["node_", node_id[1]]),
                 node_id[1],
                 childMTG,
                 node_k_attr
             )
         else
             node_MTG = Node(
-                join(["node_", node_id[1]]),
                 node_id[1],
                 tree_dict[parent_node],
                 childMTG,
                 node_k_attr
             )
         end
-        # Add the node to tree_dict to be able to access it by name:
+        # Add the node to tree_dict to be able to access it by id:
         push!(tree_dict, node_id[1] => node_MTG)
 
         # Keeping track of the last node used in the current MTG column

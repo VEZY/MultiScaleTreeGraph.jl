@@ -2,19 +2,9 @@
     Node(MTG<:AbstractNodeMTG)
     Node(parent::Node, MTG<:AbstractNodeMTG)
     Node(id::Int, MTG<:AbstractNodeMTG, attributes)
-    Node(name::String, id::Int, MTG<:AbstractNodeMTG, attributes)
     Node(id::Int, parent::Node, MTG<:AbstractNodeMTG, attributes)
-    Node(name::String, id::Int, parent::Node, MTG<:AbstractNodeMTG, attributes)
+    Node(id::Int, parent::Node, children::Vector{Node}, MTG<:AbstractNodeMTG, attributes)
     Node(
-        name::String,
-        id::Int,
-        parent::Node,
-        children::Vector{Node},
-        MTG<:AbstractNodeMTG,
-        attributes
-    )
-    Node(
-        name::String,
         id::Int,
         parent::Node,
         children::Vector{Node},
@@ -26,8 +16,7 @@
 
 Type that defines an MTG node (*i.e.* an element) with:
 
-- `name`: the name of the node
-- `id`: its unique id
+- `id`: The unique id of node (unique in the whole MTG)
 - `parent`: the parent node (if not the root node)
 - `children`: an optional array of children nodes
 - `MTG`: the MTG description, or encoding (see [`NodeMTG`](@ref) or
@@ -48,18 +37,13 @@ to create a node as a child of another node (see example below).
 
 ```julia
 mtg = Node(NodeMTG("/", "Plant", 1, 1))
-internode = Node(
-    mtg,
-    NodeMTG("/", "Internode", 1, 2)
-)
+internode = Node(mtg, NodeMTG("/", "Internode", 1, 2))
 # Note that the node is created with a parent, so it is not necessary to add it as a child of the `mtg ` Node
 
 mtg
 ```
 """
 mutable struct Node{N<:AbstractNodeMTG,A}
-    "Name of the node. Should be unique in the MTG"
-    name::String
     "Node unique ID"
     id::Int
     "Parent node"
@@ -74,20 +58,19 @@ mutable struct Node{N<:AbstractNodeMTG,A}
     traversal_cache::Dict{String,Vector{Node{N,A}}}
 end
 
-# Shorter way of instantiating a Node:
-function Node(name::String, id::Int, parent::Union{Nothing,Node{N,A}}, children::Nothing, MTG::N, attributes::A, traversal_cache::Dict{String,Vector{Node{N,A}}}) where {N<:AbstractNodeMTG,A}
-    Node{N,A}(name, id, parent, Vector{Node{N,A}}(), MTG, attributes, traversal_cache)
+# All deprecated methods (the ones with a node name) :
+@deprecate Node(name::String, id::Int, parent::Union{Nothing,Node{N,A}}, children::Nothing, MTG::N, attributes::A, traversal_cache::Dict{String,Vector{Node{N,A}}}) where {N<:AbstractNodeMTG,A} Node(id, parent, children, MTG, attributes, traversal_cache)
+@deprecate Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple} Node(id, MTG, attributes)
+@deprecate Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple} Node(id, MTG, attributes)
+@deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A} Node(id, parent, MTG, attributes)
+@deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple} Node(id, parent, MTG, attributes)
+@deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple} Node(id, parent, MTG, attributes)
+
+# For the root:
+function Node(id::Int, MTG::T, attributes::A) where {T<:AbstractNodeMTG,A}
+    Node(id, nothing, Vector{Node{T,A}}(), MTG, attributes, Dict{String,Vector{Node{T,A}}}())
 end
 
-# - for the root:
-function Node(name::String, id::Int, MTG::T, attributes::A) where {T<:AbstractNodeMTG,A}
-    Node(name, id, nothing, Vector{Node{T,A}}(), MTG, attributes, Dict{String,Vector{Node{T,A}}}())
-end
-
-# If the name is not given, we compute one from the id:
-function Node(id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG}
-    Node(join(["node_", id]), id, MTG, attributes)
-end
 # If the id is not given, it is the root node, so we use 1
 Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
 
@@ -95,39 +78,35 @@ Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
 # can't mutate attributes, i.e. we get somthing like
 # Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
 # Node{NodeMTG,MutableNamedTuple}
-function Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    Node{M,MutableNamedTuple}(name, id, nothing, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
+function Node(id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
+    Node{M,MutableNamedTuple}(id, nothing, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
 end
 
-function Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    Node{M,NamedTuple}(name, id, nothing, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
+function Node(id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
+    Node{M,NamedTuple}(id, nothing, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
 end
 
 # Add a node as a child of another node:
-function Node(name::String, id::Int, parent::Node, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A}
-    node = Node(name, id, parent, Vector{Node{M,A}}(), MTG, attributes, Dict{String,Vector{Node{M,A}}}())
+function Node(id::Int, parent::Node, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A}
+    node = Node(id, parent, Vector{Node{M,A}}(), MTG, attributes, Dict{String,Vector{Node{M,A}}}())
     addchild!(parent, node)
     return node
 end
 
 # Special case for NamedTuple here:
-function Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    node = Node{M,NamedTuple}(name, id, parent, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,NamedTuple}}}())
+function Node(id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
+    node = Node{M,NamedTuple}(id, parent, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,NamedTuple}}}())
     addchild!(parent, node)
     return node
 end
 
 # Idem for MutableNamedTuple here:
-function Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    node = Node{M,MutableNamedTuple}(name, id, parent, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
+function Node(id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
+    node = Node{M,MutableNamedTuple}(id, parent, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
     addchild!(parent, node)
     return node
 end
 
-# Idem, if the name is not given, we compute one from the id:
-function Node(id::Int, parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG}
-    Node(join(["node_", id]), id, parent, MTG, attributes)
-end
 # If the id is not given, it is the root node, so we use 1
 function Node(parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG}
     Node(new_id(get_root(parent)), parent, MTG, attributes)

@@ -89,7 +89,7 @@ get the filters as keyword arguments in macros.
 # Examples
 
 ```julia
-args = (:(x = length(node.name)), :(y = node.x + 2), :(scale = 2))
+args = (:(x = node_id(node)), :(y = node.x + 2), :(scale = 2))
 MultiScaleTreeGraph.parse_macro_args(args)
 ```
 """

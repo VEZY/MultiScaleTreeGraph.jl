@@ -26,7 +26,6 @@ fieldnames(Node)
 
 Here is a little description of each field:
 
-- `name`: The name of the node. It is completely free, but is usually set automatically when reading the MTG. The automatic name is based on the id of the node in the MTG, *e.g.* "node_1" for the first node.
 - `id`: The unique integer identifier of the node. It can be set by the user but is usually set automatically.
 - `parent`: The parent node of the curent node. If the curent node is the root node, it will return `nothing`. You can test whether a node is a root node sing the [`isroot`](@ref) function.
 - children: a dictionary of the children nodes with their `id` as key, or `nothing` if none;

@@ -238,9 +238,8 @@ Insert a node in an MTG as:
 - `attr_fun`: A function to compute new attributes based on the filtered node. Must return
 attribute values of the same type as the one used in other nodes from the MTG (*e.g.* Dict or
 NamedTuple). If you just need to pass attributes values to a node use `x -> your_values`.
-- `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of length one.
-Used to compute the name of the inserted node. It is incremented in the function, and use by
-default the value from [`max_id`](@ref).
+- `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of length one. It is incremented in the function, 
+and use by default the value from [`max_id`](@ref).
 
 # Examples
 
@@ -275,7 +274,6 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
     if isroot(node)
 
         new_node = Node(
-            join(["node_", maxid[1]]),
             maxid[1],
             nothing,
             Node{N,A}[node],
@@ -297,7 +295,6 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
         reparent!(node, new_node)
     else
         new_node = Node(
-            join(["node_", maxid[1]]),
             maxid[1],
             parent(node),
             Node{N,A}[node],
@@ -336,7 +333,6 @@ function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=
     maxid[1] += 1
 
     new_node = Node(
-        join(["node_", maxid[1]]),
         maxid[1],
         parent(node),
         Vector{Node{N,A}}(),
@@ -356,7 +352,6 @@ function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), max
     maxid[1] += 1
 
     new_node = Node(
-        join(["node_", maxid[1]]),
         maxid[1],
         node,
         children(node),

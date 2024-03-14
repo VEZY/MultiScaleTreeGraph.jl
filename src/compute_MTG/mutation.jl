@@ -122,10 +122,10 @@ an attribute.
 # Examples
 
 ```
-test = :(x = node.name)
+test = :(x = node.var)
 MultiScaleTreeGraph.rewrite_expr!(:mtg,test)
 test
-# :(mtg[:x] = mtg.name)
+# :(mtg[:x] = mtg[:var])
 
 test = :(x = node.foo)
 MultiScaleTreeGraph.rewrite_expr!(:mtg,test)

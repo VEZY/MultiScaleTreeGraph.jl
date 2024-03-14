@@ -30,14 +30,14 @@ which is either mutating (use `traverse!`) or not (use `traverse`).
 ```julia
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
-traverse!(mtg, x -> isleaf(x) ? println(x.name," is a leaf") : nothing)
+traverse!(mtg, node -> isleaf(node) ? println(node_id(node)," is a leaf") : nothing)
 node_5 is a leaf
 node_7 is a leaf
 
 # We can also use the `do...end` block notation when we have a complex set of instructions:
-traverse!(mtg) do x
-    if isleaf(x)
-         println(x.name," is a leaf")
+traverse!(mtg) do node
+    if isleaf(node)
+         println(node_id(x)," is a leaf")
     end
 end
 ```

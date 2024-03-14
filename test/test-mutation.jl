@@ -25,7 +25,7 @@ end
     # Using a leaf node from the mtg:
     leaf_node = get_node(mtg, 5)
 
-    # Add a new attribute based on the name:
+    # Add a new attribute based on the id:
     @mutate_mtg!(mtg, nametest = string("node_", node_id(node), "_test"))
     @test mtg[:nametest] == "node_1_test"
     @test leaf_node[:nametest] == "node_5_test"

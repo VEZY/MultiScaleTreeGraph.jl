@@ -57,7 +57,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 
 # We can use transform to apply a function over all nodes (same as using [`traverse!`](@ref))
-transform!(mtg,  x -> isleaf(x) ? println(x.name," is a leaf") : nothing)
+transform!(mtg,  node -> isleaf(node) ? println(node_id(x)," is a leaf") : nothing)
 node_5 is a leaf
 node_7 is a leaf
 
