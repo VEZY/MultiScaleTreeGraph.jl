@@ -18,14 +18,18 @@ function descendants(
 
     val = Array{type,1}()
 
-    traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun_, all=all, recursivity_level=recursivity_level) do chnode
-        push!(val, unsafe_getindex(chnode, key))
-        # Only decrement the recursivity level when the current node is not filtered-out
-    end
-
-    # If we don't want to include the value of the current node, we remove it from the array (if it wasn't filtered already):
-    if !self && is_filtered(node, scale, symbol, link, filter_fun_)
-        popfirst!(val)
+    if self
+        traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun_, all=all, recursivity_level=recursivity_level) do chnode
+            push!(val, unsafe_getindex(chnode, key))
+            # Only decrement the recursivity level when the current node is not filtered-out
+        end
+    else
+        # If we don't want to include the value of the current node, we apply the traversal to its children directly:
+        for chnode in children(node)
+            traverse!(chnode, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun_, all=all, recursivity_level=recursivity_level) do chnode
+                push!(val, unsafe_getindex(chnode, key))
+            end
+        end
     end
 
     return val
@@ -48,14 +52,17 @@ function descendants(
 
     val = Array{typeof(node),1}()
 
-    traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, recursivity_level=recursivity_level) do chnode
-        push!(val, chnode)
-        # Only decrement the recursivity level when the current node is not filtered-out
-    end
-
-    # If we don't want to include the value of the current node, we remove it from the array (if it wasn't filtered already):
-    if !self && is_filtered(node, scale, symbol, link, filter_fun)
-        popfirst!(val)
+    if self
+        traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, recursivity_level=recursivity_level) do chnode
+            push!(val, chnode)
+        end
+    else
+        # If we don't want to include the value of the current node, we apply the traversal to its children directly:
+        for chnode in children(node)
+            traverse!(chnode, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, recursivity_level=recursivity_level) do chnode
+                push!(val, chnode)
+            end
+        end
     end
 
     return val
