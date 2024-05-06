@@ -60,6 +60,6 @@ end
 
 @testset "Adding a child with a different MTG encoding type" begin
     mtg = read_mtg(file, Dict, MutableNodeMTG)
-    @test_throws "The parent node has an MTG encoding of type `MutableNodeMTG`, but the MTG encoding you provide is of type `NodeMTG`, please make sure they are the same." Node(mtg, NodeMTG("/", "Branch", 1, 2))
+    VERSION >= v"1.7" && @test_throws "The parent node has an MTG encoding of type `MutableNodeMTG`, but the MTG encoding you provide is of type `NodeMTG`, please make sure they are the same." Node(mtg, NodeMTG("/", "Branch", 1, 2))
 end
 
