@@ -20,6 +20,25 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
     @test length(new_mtg) == length_start - 1
 end
 
+@testset "delete_node!: delete root node" begin
+    # Delete a node:
+    mtg = read_mtg(file)
+    length_start = length(mtg)
+    mtg = delete_node!(mtg)
+    @test length(mtg) == length_start - 1
+
+    @test symbol(mtg) == "Individual"
+    @test scale(mtg) == 1
+    @test index(mtg) == 0
+    @test link(mtg) == "/"
+
+    # Deleting the root node with several children should raise an error:
+    mtg = read_mtg(file)
+    Node(mtg, MutableNodeMTG("/", "Branch", 1, 2))
+    length_start = length(mtg)
+    @test_throws "Can't delete the root node if it has several children" delete_node!(mtg)
+end
+
 @testset "delete_node! with a user function" begin
     mtg = read_mtg(file)
     delete_node!(get_node(mtg, 4), child_link_fun=link)
