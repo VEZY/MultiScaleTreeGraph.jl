@@ -87,10 +87,17 @@ function Node(id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:Named
 end
 
 # Add a node as a child of another node:
-function Node(id::Int, parent::Node, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A}
+function Node(id::Int, parent::Node{M,A}, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A}
     node = Node(id, parent, Vector{Node{M,A}}(), MTG, attributes, Dict{String,Vector{Node{M,A}}}())
     addchild!(parent, node)
     return node
+end
+
+function Node(id::Int, parent::Node{M,A}, MTG::T, attributes::A) where {M<:AbstractNodeMTG,A,T<:AbstractNodeMTG}
+    error(
+        "The parent node has an MTG encoding of type `$(M)`, but the MTG encoding you provide is of type `$(T)`,",
+        " please make sure they are the same."
+    )
 end
 
 # Special case for NamedTuple here:
