@@ -13,6 +13,11 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
 
     # Furthermore, the link of the second child (node 6) was modified from following to decomposing:
     @test link(get_node(mtg, 6)) == "/"
+
+    # Delete a root node:
+    mtg = read_mtg(file)
+    new_mtg = delete_node!(mtg)
+    @test length(new_mtg) == length_start - 1
 end
 
 @testset "delete_node! with a user function" begin

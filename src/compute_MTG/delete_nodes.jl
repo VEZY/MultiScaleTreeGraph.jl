@@ -117,6 +117,7 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
         if length(children(node)) == 1
             # If it has only one child, make it the new root:
             chnode = children(node)[1]
+            link!(chnode, child_link_fun(chnode))
             reparent!(chnode, nothing)
             # Add to the new root the mandatory root attributes:
             root_attrs = Dict(
@@ -126,8 +127,6 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
             )
 
             append!(chnode, root_attrs)
-
-            link!(chnode, child_link_fun(chnode))
 
             node_return = chnode
         else
