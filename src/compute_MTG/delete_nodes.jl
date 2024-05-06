@@ -25,12 +25,10 @@ as input and returns its new link (see details).
 1. The function is acropetal, meaning it will apply the deletion from leaves to the root to ensure
 that one pass is enough and we don't repeat the process of visiting already visited children.
 2. The function does not do anything fancy, it let the user take care of its own rules when
-deleting nodes. So if you delete a branching node, the whole subtree will be modified and take
-the link of the children. This process is left to the user becaue it highly depends on the mtg
-structure.
+deleting nodes, except for the link (see below).
 3. The package provides some pre-made functions for filtering. See for example [`is_segment!`](@ref)
 to re-compute the mtg at a given scale to have only nodes at branching points. This is often used
-to match automatic reconstructions from e.g. LiDAR point cloud with manual measurements.
+to match automatic reconstructions from *e.g.* LiDAR point cloud with manual measurements.
 4. The default function used for `child_link_fun` is [`new_child_link`](@ref), which tries to be
 clever considering the parent and child links. See its help page for more information. If the
 link shouldn't be modified, use the `link` function instead.
@@ -149,7 +147,9 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
         node_return = parent_node
     end
 
-    node = nothing
+    # Clean the old deleted node (isolate it, no parent, no children):
+    reparent!(node, nothing)
+    rechildren!(node, Node{N,A}[])
 
     return node_return
 end
