@@ -36,7 +36,7 @@ end
     mtg = read_mtg(file)
     Node(mtg, MutableNodeMTG("/", "Branch", 1, 2))
     length_start = length(mtg)
-    @test_throws "Can't delete the root node if it has several children" delete_node!(mtg)
+    VERSION >= v"1.7" && @test_throws "Can't delete the root node if it has several children" delete_node!(mtg)
 end
 
 @testset "delete_node! with a user function" begin
