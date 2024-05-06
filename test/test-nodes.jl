@@ -26,7 +26,8 @@ end
 end
 
 # From a file:
-mtg = read_mtg("files/simple_plant.mtg")
+file = "files/simple_plant.mtg"
+mtg = read_mtg(file)
 
 @testset "names" begin
     @test sort!(get_attributes(mtg)) == [:Length, :Width, :XEuler, :dateDeath, :description, :isAlive, :scales, :symbols]
@@ -55,3 +56,10 @@ end
     # This is the function from AbstractTrees.jl
     AbstractTrees.getdescendant(mtg, (1, 1, 1, 2)) == get_node(mtg, 6)
 end
+
+
+@testset "Adding a child with a different MTG encoding type" begin
+    mtg = read_mtg(file, Dict, MutableNodeMTG)
+    @test_throws "The parent node has an MTG encoding of type `MutableNodeMTG`, but the MTG encoding you provide is of type `NodeMTG`, please make sure they are the same." Node(mtg, NodeMTG("/", "Branch", 1, 2))
+end
+
