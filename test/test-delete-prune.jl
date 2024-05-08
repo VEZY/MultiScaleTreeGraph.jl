@@ -76,6 +76,11 @@ end
         end
     )
     @test length(mtg) === length_start - 3
+
+    # Delete multiple root nodes
+    mtg = read_mtg(file)
+    new_mtg = delete_nodes!(mtg, filter_fun = node -> node_mtg(node).scale != 3)
+    @test length(new_mtg) == 4
 end
 
 @testset "prune! a node" begin
