@@ -217,7 +217,7 @@ function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, 
         end
     end
 
-    node_attributes(attr_type, node_attr)
+    parse_node_attributes(attr_type, node_attr)
 end
 
 """
@@ -229,16 +229,16 @@ Instantiate a `attr_type` struct with `node_attr` keys and values
 - `attr_type::DataType`: the type of the structure used to hold the attributes
 - `node_attr::String`: The node attributes as a `Dict`
 """
-function node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{NamedTuple,MutableNamedTuple}}
+function parse_node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{NamedTuple,MutableNamedTuple}}
     attr_type{tuple(Symbol.(keys(node_attr))...)}(tuple(values(node_attr)...))
 end
 
-function node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{AbstractDict}}
+function parse_node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{AbstractDict}}
     Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)), values(node_attr)))
 end
 
 # node_attributes for DataFrame
-function node_attributes(::Type{DataFrame}, node_attr)
+function parse_node_attributes(::Type{DataFrame}, node_attr)
     DataFrame(node_attr)
 end
 
