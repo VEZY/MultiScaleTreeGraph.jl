@@ -347,7 +347,8 @@ Base.haskey(node::Node, key::Symbol) = haskey(node_attributes(node), key)
 Base.haskey(node::Node{T,A}, key::Symbol) where {T<:AbstractNodeMTG,A<:MutableNamedTuple} = hasproperty(node_attributes(node), key)
 Base.setproperty!(node::Node{T,A}, key::Symbol, value) where {T<:AbstractNodeMTG,A} = setproperty!(node_attributes(node), key, value)
 Base.setproperty!(node::Node{T,A}, key::Symbol, value) where {T<:AbstractNodeMTG,A<:AbstractDict} = setindex!(node_attributes(node), value, key)
-Base.propertynames(node::Node) = keys(node_attributes(node))
+Base.keys(node::Node) = keys(node_attributes(node))
+Base.propertynames(node::Node) = keys(node)
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"]
