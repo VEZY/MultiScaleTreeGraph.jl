@@ -61,8 +61,10 @@ function delete_nodes!(
     check_filters(node, scale=scale, symbol=symbol, link=link)
     filtered = is_filtered(node, scale, symbol, link, filter_fun)
 
-    if filtered
+    while filtered
         node = delete_node!(node)
+        filtered = is_filtered(node, scale, symbol, link, filter_fun)
+
         # Don't go further if all == false
         !all && return
     end
