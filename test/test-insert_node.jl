@@ -123,7 +123,11 @@ end
     insert_generation!(mtg_orig[1], template)
 
     @test length(mtg) == length(mtg_orig)
-    @test mtg_orig[1][1] == mtg_orig[1][1]
+    @test mtg[1][2] == mtg_orig[1][1]
+
+    parent(get_node(mtg_orig, 8)) == mtg_orig[1]
+    parent(get_node(mtg_orig, 3)) == get_node(mtg_orig, 8)
+    children(get_node(mtg_orig, 2))[1] == get_node(mtg_orig, 8)
 end
 
 @testset "test insert_generations!" begin
