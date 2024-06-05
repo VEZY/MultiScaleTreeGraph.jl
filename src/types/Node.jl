@@ -127,6 +127,9 @@ function Node(parent::Node{N,A}, MTG::T) where {N<:AbstractNodeMTG,A,T<:Abstract
     Node(parent, MTG, A())
 end
 
+# Copying a node returns the node:
+Base.copy(node::Node) = node
+
 ## AbstractTrees compatibility:
 
 # Set the methods for Node:
