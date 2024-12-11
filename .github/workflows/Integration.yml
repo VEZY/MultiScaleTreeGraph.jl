@@ -32,7 +32,7 @@ jobs:
         arch:
           - x64
         package:
-        - {user: PalmStudio, repo: XPalm.jl}
+        #- {user: PalmStudio, repo: XPalm.jl}
         - {user: VEZY, repo: PlantGeom.jl}
         - {user: VEZY, repo: PlantSimEngine.jl}
     steps:
