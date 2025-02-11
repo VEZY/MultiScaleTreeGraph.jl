@@ -11,7 +11,8 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://VEZY.github.io/MultiScaleTreeGraph.jl",
-        assets=String[]
+        assets=String[],
+        size_threshold=300000
     ),
     pages=[
         "Home" => "index.md",
