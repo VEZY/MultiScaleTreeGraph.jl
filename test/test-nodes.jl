@@ -1,5 +1,50 @@
-
 # Create a node:
+
+@testset "NodeMTG and MutableNodeMTG" begin
+    # Test NodeMTG constructor with all arguments
+    node_mtg = MultiScaleTreeGraph.NodeMTG("/", "Plant", 1, 2)
+    @test node_mtg.link == "/"
+    @test node_mtg.symbol == "Plant"
+    @test node_mtg.index == 1
+    @test node_mtg.scale == 2
+
+    # Test NodeMTG constructor with nothing as index
+    node_mtg_nothing = MultiScaleTreeGraph.NodeMTG("/", "Internode", nothing, 3)
+    @test node_mtg_nothing.link == "/"
+    @test node_mtg_nothing.symbol == "Internode"
+    @test node_mtg_nothing.index == -9999
+    @test node_mtg_nothing.scale == 3
+
+    # Test MutableNodeMTG constructor with all arguments
+    mutable_node_mtg = MultiScaleTreeGraph.MutableNodeMTG("+", "Leaf", 2, 4)
+    @test mutable_node_mtg.link == "+"
+    @test mutable_node_mtg.symbol == "Leaf"
+    @test mutable_node_mtg.index == 2
+    @test mutable_node_mtg.scale == 4
+
+    # Test MutableNodeMTG constructor with nothing as index
+    mutable_node_mtg_nothing = MultiScaleTreeGraph.MutableNodeMTG("<", "Apex", nothing, 5)
+    @test mutable_node_mtg_nothing.link == "<"
+    @test mutable_node_mtg_nothing.symbol == "Apex"
+    @test mutable_node_mtg_nothing.index == -9999
+    @test mutable_node_mtg_nothing.scale == 5
+
+    # Test mutability of MutableNodeMTG
+    mutable_node_mtg.link = "<"
+    mutable_node_mtg.symbol = "Flower"
+    mutable_node_mtg.index = 3
+    mutable_node_mtg.scale = 6
+    @test mutable_node_mtg.link == "<"
+    @test mutable_node_mtg.symbol == "Flower"
+    @test mutable_node_mtg.index == 3
+    @test mutable_node_mtg.scale == 6
+
+    # Test assertions
+    @test_throws AssertionError MultiScaleTreeGraph.NodeMTG("/", "Plant", 1, -1)  # scale < 0
+    @test_throws AssertionError MultiScaleTreeGraph.NodeMTG("invalid", "Plant", 1, 1)  # invalid link
+    @test_throws AssertionError MultiScaleTreeGraph.MutableNodeMTG("/", "Plant", 1, -1)  # scale < 0
+    @test_throws AssertionError MultiScaleTreeGraph.MutableNodeMTG("invalid", "Plant", 1, 1)  # invalid link
+end
 
 @testset "Create node" begin
     mtg_code = MultiScaleTreeGraph.NodeMTG("/", "Plant", 1, 1)

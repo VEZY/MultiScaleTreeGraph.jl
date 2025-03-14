@@ -34,15 +34,31 @@ struct NodeMTG <: AbstractNodeMTG
     symbol::String
     index::Int
     scale::Int
+
+    function NodeMTG(link, symbol, index, scale)
+        @assert scale >= 0 "The scale should be greater than or equal to 0."
+        @assert link in ["/", "<", "+"] "The link should be one of '/', '<', '+'"
+        return new(link, symbol, index, scale)
+    end
 end
 
-NodeMTG(link, symbol, index::Nothing, scale) = NodeMTG(link, symbol, -9999, scale)
+function NodeMTG(link, symbol, index::Nothing, scale)
+    return NodeMTG(link, symbol, -9999, scale)
+end
 
 mutable struct MutableNodeMTG <: AbstractNodeMTG
     link::String
     symbol::String
     index::Int
     scale::Int
+
+    function MutableNodeMTG(link, symbol, index, scale)
+        @assert scale >= 0 "The scale should be greater than or equal to 0."
+        @assert link in ["/", "<", "+"] "The link should be one of '/', '<', '+'"
+        new(link, symbol, index, scale)
+    end
 end
 
-MutableNodeMTG(link, symbol, index::Nothing, scale) = MutableNodeMTG(link, symbol, -9999, scale)
+function MutableNodeMTG(link, symbol, index::Nothing, scale)
+    MutableNodeMTG(link, symbol, -9999, scale)
+end
