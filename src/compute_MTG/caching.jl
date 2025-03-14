@@ -34,8 +34,8 @@ end
 """
     cache_nodes!(node; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, overwrite=false)
 
-Cache the nodes of the mtg based on the filters that would be applied to a traversal. This is automatically
-usually for traversal then when using [`traverse!`](@ref) or [`transform!`](@ref).
+Cache the nodes of the mtg based on the filters that would be applied to a traversal. This is used automatically
+when traversing using [`traverse!`](@ref) or [`transform!`](@ref).
 
 # Examples
 
