@@ -122,9 +122,14 @@ end
 # Only the MTG is given, by default we use Dict as attributes:
 Node(MTG::T) where {T<:AbstractNodeMTG} = Node(1, MTG, Dict{Symbol,Any}())
 
-# Only the MTG and parent are given, by default we use the parent attribute type:
+# Only the ID, MTG and parent are given, by default we use the parent attribute type:
+function Node(id::Int, parent::Node{N,A}, MTG::T) where {N<:AbstractNodeMTG,A,T<:AbstractNodeMTG}
+    Node(id, parent, MTG, A())
+end
+
+# Same but without the id:
 function Node(parent::Node{N,A}, MTG::T) where {N<:AbstractNodeMTG,A,T<:AbstractNodeMTG}
-    Node(parent, MTG, A())
+    Node(new_id(get_root(parent)), parent, MTG, A())
 end
 
 # Copying a node returns the node:
