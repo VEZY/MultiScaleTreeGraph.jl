@@ -73,6 +73,8 @@ end
 
 # If the id is not given, it is the root node, so we use 1
 Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
+# Not attributes given, by default we use Dict:
+Node(id::Int, MTG::T) where {T<:AbstractNodeMTG} = Node(id, MTG, Dict{Symbol,Any}())
 
 # Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
 # can't mutate attributes, i.e. we get somthing like
