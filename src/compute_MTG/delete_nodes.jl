@@ -185,14 +185,14 @@ mixing branching and change in scale.
 Note that in the case (1) of the warning the first child only takes the "/" link, the others
 keep their links.
 """
-function new_child_link(node)
+function new_child_link(node, verbose=true)
 
     deleted_link = parent(node) |> link
     child_link = link(node)
 
     if deleted_link == "+" && child_link == "/"
         new_child_link = child_link
-        @warn join(
+        verbose && @warn join(
             [
             "Scale of the child node decomposed but its deleted parent was branching.",
             " Keep decomposition, please check if the branching is still correct."
@@ -202,7 +202,7 @@ function new_child_link(node)
         new_child_link = deleted_link
     elseif deleted_link == "/" && child_link == "+"
         new_child_link = child_link
-        @warn join(
+        verbose && @warn join(
             [
             "Scale of the child node branched but its deleted parent was decomposing.",
             " Keep branching, please check if the decomposition is still correct."
