@@ -285,27 +285,43 @@ link(node::Node) = getfield(node_mtg(node), :link)
 Set the symbol of the MTG encoding node.
 """
 symbol!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :symbol, symbol)
+function symbol!(node::Node{T,A}, new_symbol) where {T<:NodeMTG,A}
+    current_node_mtg = node_mtg(node)
+    node_mtg!(node, NodeMTG(current_node_mtg.link, new_symbol, current_node_mtg.index, current_node_mtg.scale))
+end
 
 """
-    scale(node::Node)
+    scale!(node::Node, new_scale)
 
-Get the scale from the MTG encoding of the node.
+Set the scale of the MTG encoding of the node. The scale should be some kind of integer.
 """
-scale!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :scale, symbol)
-
-"""
-    index(node::Node)
-
-Get the index from the MTG encoding of the node.
-"""
-index!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :index, symbol)
+scale!(node::Node{T,A}, new_scale) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :scale, new_scale)
+function scale!(node::Node{T,A}, new_scale) where {T<:NodeMTG,A}
+    current_node_mtg = node_mtg(node)
+    node_mtg!(node, NodeMTG(current_node_mtg.link, current_node_mtg.symbol, current_node_mtg.index, new_scale))
+end
 
 """
-    link(node::Node)
+    index!(node::Node, new_index)
 
-Get the link from the MTG encoding of the node.
+Set the index of the MTG encoding of the node. The index should be some kind of integer.
 """
-link!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :link, symbol)
+index!(node::Node{T,A}, new_index) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :index, new_index)
+function index!(node::Node{T,A}, new_index) where {T<:NodeMTG,A}
+    current_node_mtg = node_mtg(node)
+    node_mtg!(node, NodeMTG(current_node_mtg.link, current_node_mtg.symbol, new_index, current_node_mtg.scale))
+end
+
+"""
+    link!(node::Node, new_link)
+
+Set the link of the MTG encoding of the node. It can be one of "/", "<", or "+".
+"""
+link!(node::Node{T,A}, new_link) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :link, new_link)
+function link!(node::Node{T,A}, new_link) where {T<:NodeMTG,A}
+    current_node_mtg = node_mtg(node)
+    node_mtg!(node, NodeMTG(new_link, current_node_mtg.symbol, current_node_mtg.index, current_node_mtg.scale))
+end
 
 """
     node_attributes(node::Node)
