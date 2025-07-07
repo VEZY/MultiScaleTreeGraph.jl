@@ -125,13 +125,13 @@ list_nodes(mtg) = traverse(mtg, node -> node_id(node), type=Int)
 Returns the maximum id of the mtg
 """
 function max_id(mtg)
-    maxid = [0]
+    maxid = Ref(0)
 
     function update_maxname(id, maxid)
-        id > maxid[1] ? maxid[1] = id : nothing
+        id > maxid[] ? maxid[] = id : nothing
     end
 
     traverse!(get_root(mtg), x -> update_maxname(node_id(x), maxid))
 
-    return maxid[1]
+    return maxid[]
 end
