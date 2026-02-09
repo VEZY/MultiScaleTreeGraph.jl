@@ -161,8 +161,10 @@ end
 SUITE[suite_name]["many_queries"]["children_repeated"] = @benchmarkable children_workload($sample_nodes, 300)
 SUITE[suite_name]["many_queries"]["parent_repeated"] = @benchmarkable parent_workload($sample_nodes, 300)
 SUITE[suite_name]["many_queries"]["ancestors_repeated"] = @benchmarkable ancestors_workload($leaves, 40)
-if hasmethod(ancestors!, Tuple{AbstractVector,Node,Symbol})
-    SUITE[suite_name]["many_queries"]["ancestors_repeated_inplace"] = @benchmarkable ancestors_workload_inplace($leaves, 40)
+# Test if ancestors! exists in the package first:
+if isdefined(MultiScaleTreeGraph, :ancestors!)
+    SUITE[suite_name]["many_queries"]["ancestors_repeated_inplace_1"] = @benchmarkable ancestors_workload_inplace_1($leaves, 40)
+    SUITE[suite_name]["many_queries"]["ancestors_repeated_inplace_2"] = @benchmarkable ancestors_workload_inplace_2($leaves, 40)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
