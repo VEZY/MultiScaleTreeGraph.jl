@@ -88,7 +88,20 @@ function ancestors_workload(nodes, reps::Int)
     return s
 end
 
-function ancestors_workload_inplace(nodes, reps::Int)
+function ancestors_workload_inplace_1(nodes, reps::Int)
+    s = 0.0
+    @inbounds for _ in 1:reps
+        for n in nodes
+            out = ancestors!(n, :mass, recursivity_level=4, type=Float64)
+            for v in out
+                s += v
+            end
+        end
+    end
+    return s
+end
+
+function ancestors_workload_inplace_2(nodes, reps::Int)
     s = 0.0
     buf = Float64[]
     @inbounds for _ in 1:reps
@@ -111,14 +124,13 @@ function descendants_extraction_workload(root)
     return s
 end
 
-function descendants_extraction_workload_inplace(root)
+function descendants_extraction_workload_inplace_1(root)
+    descendants!(root, :mass, type=Float64)
+end
+
+function descendants_extraction_workload_inplace_2(root)
     vals = Float64[]
     descendants!(vals, root, :mass, type=Float64)
-    s = 0.0
-    @inbounds for v in vals
-        s += v
-    end
-    return s
 end
 
 suite_name = "mstg"
@@ -139,11 +151,19 @@ SUITE[suite_name] = BenchmarkGroup([
 root, leaves, sample_nodes = synthetic_tree()
 SUITE[suite_name]["traverse"]["full_tree_nodes"] = @benchmarkable traverse!($root, _ -> nothing)
 SUITE[suite_name]["traverse_extract"]["descendants_mass"] = @benchmarkable descendants_extraction_workload($root)
-SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace"] = @benchmarkable descendants_extraction_workload_inplace($root)
+SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace"] = @benchmarkable descendants_extraction_workload_inplace_1($root)
+
+# Add this one only if we have a method for `descendants!(val, node, key, type)`
+if hasmethod(descendants!, Tuple{AbstractVector,Node,Symbol})
+    SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace"] = @benchmarkable descendants_extraction_workload_inplace_2($root)
+end
+
 SUITE[suite_name]["many_queries"]["children_repeated"] = @benchmarkable children_workload($sample_nodes, 300)
 SUITE[suite_name]["many_queries"]["parent_repeated"] = @benchmarkable parent_workload($sample_nodes, 300)
 SUITE[suite_name]["many_queries"]["ancestors_repeated"] = @benchmarkable ancestors_workload($leaves, 40)
-SUITE[suite_name]["many_queries"]["ancestors_repeated_inplace"] = @benchmarkable ancestors_workload_inplace($leaves, 40)
+if hasmethod(ancestors!, Tuple{AbstractVector,Node,Symbol})
+    SUITE[suite_name]["many_queries"]["ancestors_repeated_inplace"] = @benchmarkable ancestors_workload_inplace($leaves, 40)
+end
 
 if abspath(PROGRAM_FILE) == @__FILE__
     results = run(SUITE, verbose=true)
