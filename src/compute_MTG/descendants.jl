@@ -1,3 +1,59 @@
+function collect_descendant_values!(node, key, scale, symbol, link, filter_fun, all, val, recursivity_level)
+    recursivity_level == 0 && return val
+    recursivity_level -= 1
+
+    keep = is_filtered(node, scale, symbol, link, filter_fun)
+    if keep
+        push!(val, unsafe_getindex(node, key))
+    elseif !all
+        return val
+    end
+
+    @inbounds for chnode in children(node)
+        collect_descendant_values!(chnode, key, scale, symbol, link, filter_fun, all, val, recursivity_level)
+    end
+    return val
+end
+
+function collect_descendant_values_no_filter!(node, key, val, recursivity_level)
+    recursivity_level == 0 && return val
+    recursivity_level -= 1
+
+    push!(val, unsafe_getindex(node, key))
+    @inbounds for chnode in children(node)
+        collect_descendant_values_no_filter!(chnode, key, val, recursivity_level)
+    end
+    return val
+end
+
+function collect_descendant_nodes!(node, scale, symbol, link, filter_fun, all, val, recursivity_level)
+    recursivity_level == 0 && return val
+    recursivity_level -= 1
+
+    keep = is_filtered(node, scale, symbol, link, filter_fun)
+    if keep
+        push!(val, node)
+    elseif !all
+        return val
+    end
+
+    @inbounds for chnode in children(node)
+        collect_descendant_nodes!(chnode, scale, symbol, link, filter_fun, all, val, recursivity_level)
+    end
+    return val
+end
+
+function collect_descendant_nodes_no_filter!(node, val, recursivity_level)
+    recursivity_level == 0 && return val
+    recursivity_level -= 1
+
+    push!(val, node)
+    @inbounds for chnode in children(node)
+        collect_descendant_nodes_no_filter!(chnode, val, recursivity_level)
+    end
+    return val
+end
+
 function descendants(
     node, key;
     scale=nothing,
@@ -17,17 +73,21 @@ function descendants(
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
 
     val = Array{type,1}()
+    use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
 
     if self
-        traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun_, all=all, recursivity_level=recursivity_level) do chnode
-            push!(val, unsafe_getindex(chnode, key))
-            # Only decrement the recursivity level when the current node is not filtered-out
+        if use_no_filter
+            collect_descendant_values_no_filter!(node, key, val, recursivity_level)
+        else
+            collect_descendant_values!(node, key, scale, symbol, link, filter_fun_, all, val, recursivity_level)
         end
     else
         # If we don't want to include the value of the current node, we apply the traversal to its children directly:
         for chnode in children(node)
-            traverse!(chnode, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun_, all=all, recursivity_level=recursivity_level) do chnode
-                push!(val, unsafe_getindex(chnode, key))
+            if use_no_filter
+                collect_descendant_values_no_filter!(chnode, key, val, recursivity_level)
+            else
+                collect_descendant_values!(chnode, key, scale, symbol, link, filter_fun_, all, val, recursivity_level)
             end
         end
     end
@@ -51,21 +111,95 @@ function descendants(
     check_filters(node, scale=scale, symbol=symbol, link=link)
 
     val = Array{typeof(node),1}()
+    use_no_filter = no_node_filters(scale, symbol, link, filter_fun)
 
     if self
-        traverse!(node, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, recursivity_level=recursivity_level) do chnode
-            push!(val, chnode)
+        if use_no_filter
+            collect_descendant_nodes_no_filter!(node, val, recursivity_level)
+        else
+            collect_descendant_nodes!(node, scale, symbol, link, filter_fun, all, val, recursivity_level)
         end
     else
         # If we don't want to include the value of the current node, we apply the traversal to its children directly:
         for chnode in children(node)
-            traverse!(chnode, scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all, recursivity_level=recursivity_level) do chnode
-                push!(val, chnode)
+            if use_no_filter
+                collect_descendant_nodes_no_filter!(chnode, val, recursivity_level)
+            else
+                collect_descendant_nodes!(chnode, scale, symbol, link, filter_fun, all, val, recursivity_level)
             end
         end
     end
 
     return val
+end
+
+function descendants!(
+    out::AbstractVector,
+    node, key;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true,
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=Inf,
+    ignore_nothing::Bool=false,
+    type::Union{Union,DataType}=Any,
+)
+    check_filters(node, scale=scale, symbol=symbol, link=link)
+    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
+    use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
+
+    empty!(out)
+    if self
+        if use_no_filter
+            collect_descendant_values_no_filter!(node, key, out, recursivity_level)
+        else
+            collect_descendant_values!(node, key, scale, symbol, link, filter_fun_, all, out, recursivity_level)
+        end
+    else
+        for chnode in children(node)
+            if use_no_filter
+                collect_descendant_values_no_filter!(chnode, key, out, recursivity_level)
+            else
+                collect_descendant_values!(chnode, key, scale, symbol, link, filter_fun_, all, out, recursivity_level)
+            end
+        end
+    end
+    return out
+end
+
+function descendants!(
+    out::AbstractVector,
+    node;
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true,
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=Inf,
+)
+    check_filters(node, scale=scale, symbol=symbol, link=link)
+    use_no_filter = no_node_filters(scale, symbol, link, filter_fun)
+
+    empty!(out)
+    if self
+        if use_no_filter
+            collect_descendant_nodes_no_filter!(node, out, recursivity_level)
+        else
+            collect_descendant_nodes!(node, scale, symbol, link, filter_fun, all, out, recursivity_level)
+        end
+    else
+        for chnode in children(node)
+            if use_no_filter
+                collect_descendant_nodes_no_filter!(chnode, out, recursivity_level)
+            else
+                collect_descendant_nodes!(chnode, scale, symbol, link, filter_fun, all, out, recursivity_level)
+            end
+        end
+    end
+    return out
 end
 
 #Note: The mutating version is more complicated, so we don't use `traverse!` but make another implementation.

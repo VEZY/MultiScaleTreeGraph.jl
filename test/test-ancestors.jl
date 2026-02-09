@@ -19,7 +19,19 @@
     @test ancestors(leaf_node, :Width, symbol=("Leaf", "Internode"), self=true) ==
           width_all[end:-1:end-1]
 
+    buf_vals = Union{Nothing,Float64}[]
+    @test ancestors!(buf_vals, leaf_node, :Width; type=Union{Nothing,Float64}) ==
+          reverse(width_all[1:4])
+    @test ancestors!(buf_vals, leaf_node, :Width, symbol=("Leaf", "Internode"), self=true) ==
+          width_all[end:-1:end-1]
+
     # Using the method that returns the nodes directly:
     @test ancestors(leaf_node) == [leaf_node |> parent, leaf_node |> parent |> parent, leaf_node |> parent |> parent |> parent, leaf_node |> parent |> parent |> parent |> parent]
     @test ancestors(leaf_node, self=true) == [leaf_node, leaf_node |> parent, leaf_node |> parent |> parent, leaf_node |> parent |> parent |> parent, leaf_node |> parent |> parent |> parent |> parent]
+
+    buf_nodes = typeof(leaf_node)[]
+    @test ancestors!(buf_nodes, leaf_node) ==
+          [leaf_node |> parent, leaf_node |> parent |> parent, leaf_node |> parent |> parent |> parent, leaf_node |> parent |> parent |> parent |> parent]
+    @test ancestors!(buf_nodes, leaf_node, self=true) ==
+          [leaf_node, leaf_node |> parent, leaf_node |> parent |> parent, leaf_node |> parent |> parent |> parent, leaf_node |> parent |> parent |> parent |> parent]
 end

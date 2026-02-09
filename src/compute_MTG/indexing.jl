@@ -24,13 +24,33 @@ end
 
 unsafe_getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
 
+@inline function unsafe_getindex(node::Node{M,NamedTuple}, key::Symbol) where {M<:AbstractNodeMTG}
+    attrs = node_attributes(node)
+    hasproperty(attrs, key) ? getproperty(attrs, key) : nothing
+end
+
+@inline function unsafe_getindex(node::Node{M,MutableNamedTuple}, key::Symbol) where {M<:AbstractNodeMTG}
+    attrs = node_attributes(node)
+    hasproperty(attrs, key) ? getproperty(attrs, key) : nothing
+end
+
 # For a vector of keys:
-unsafe_getindex(node::Node, key::Union{Vector{Symbol},Vector{String}}) = [unsafe_getindex(node, i) for i in key]
+function unsafe_getindex(node::Node, key::Union{Vector{Symbol},Vector{String}})
+    vals = Vector{Any}(undef, length(key))
+    @inbounds for i in eachindex(key)
+        vals[i] = unsafe_getindex(node, key[i])
+    end
+    vals
+end
 function unsafe_getindex(
     node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDict{Symbol,S} where {S}},
     key::Union{Vector{Symbol},Vector{String}}
 )
-    [unsafe_getindex(node, i) for i in key]
+    vals = Vector{Any}(undef, length(key))
+    @inbounds for i in eachindex(key)
+        vals[i] = unsafe_getindex(node, key[i])
+    end
+    vals
 end
 
 function unsafe_getindex(

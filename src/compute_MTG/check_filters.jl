@@ -11,7 +11,11 @@ check_filters(mtg, scale = (1,2))
 check_filters(mtg, scale = (1,2), symbol = "Leaf", link = "<")
 ```
 """
+@inline no_node_filters(scale, symbol, link, filter_fun=nothing) =
+    isnothing(scale) && isnothing(symbol) && isnothing(link) && isnothing(filter_fun)
+
 function check_filters(node::Node{N,A}; scale=nothing, symbol=nothing, link=nothing) where {N<:AbstractNodeMTG,A}
+    no_node_filters(scale, symbol, link) && return nothing
 
     root_node = get_root(node)
 
@@ -76,7 +80,10 @@ end
 end
 
 @inline function is_filtered(filter, value::T) where {T<:Union{Tuple,Array}}
-    all(map(x -> is_filtered(filter, x), value))
+    for x in value
+        is_filtered(filter, x) || return false
+    end
+    return true
 end
 
 

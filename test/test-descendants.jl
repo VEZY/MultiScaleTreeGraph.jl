@@ -18,6 +18,11 @@
       @test descendants(mtg2, :Width, symbol=("Leaf", "Internode"), self=true) ==
             width_all[end-1:end]
 
+      out_vals = Union{Nothing,Float64}[]
+      @test descendants!(out_vals, mtg, :Width; type=Union{Nothing,Float64}) == width_all
+      @test descendants!(out_vals, mtg2, :Width, symbol=("Leaf", "Internode"), self=true) ==
+            width_all[end-1:end]
+
       # Using the mutating version:
       @test descendants!(mtg, :Width) == descendants(mtg, :Width)
       @test descendants!(mtg2, :Width, symbol=("Leaf", "Internode"), self=true) ==
@@ -31,6 +36,11 @@
       @test descendants(mtg) == traverse(mtg[1], x -> x)
       @test descendants(mtg, self=true) == traverse(mtg, x -> x)
       @test descendants(get_node(mtg, 6), self=true) == [get_node(mtg, 6), get_node(mtg, 7)]
+
+      out_nodes = typeof(mtg)[]
+      @test descendants!(out_nodes, mtg) == traverse(mtg[1], x -> x)
+      @test descendants!(out_nodes, mtg, self=true) == traverse(mtg, x -> x)
+      @test descendants!(out_nodes, get_node(mtg, 6), self=true) == [get_node(mtg, 6), get_node(mtg, 7)]
 end
 
 # using BenchmarkTools

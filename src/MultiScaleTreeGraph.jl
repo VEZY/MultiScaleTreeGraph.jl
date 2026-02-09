@@ -79,7 +79,7 @@ export insert_parents!, insert_generations!, insert_children!, insert_siblings!
 export insert_parent!, insert_generation!, insert_child!, insert_sibling!
 export write_mtg
 export is_segment!
-export descendants, ancestors, descendants!
+export descendants, ancestors, ancestors!, descendants!
 export Node
 export AbstractNodeMTG
 export NodeMTG

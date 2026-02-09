@@ -2,7 +2,7 @@
     isleaf(node::Node)
 Test whether a node is a leaf or not.
 """
-isleaf(node::Node) = length(children(node)) == 0
+isleaf(node::Node) = isempty(children(node))
 
 """
     isroot(node::Node)
@@ -20,8 +20,7 @@ function lastchild(node::Node)
     if isleaf(node)
         return nothing
     else
-        allchildren = children(node)
-        return allchildren[maximum(keys(allchildren))]
+        return last(children(node))
     end
 end
 
@@ -85,11 +84,7 @@ function addchild!(p::Node{N,A}, child::Node; force=false) where {N<:AbstractNod
         error("The node already has a parent. Hint: use `force=true` if needed.")
     end
 
-    if children(p) === nothing
-        rechildren!(child, Node{N,A}[child])
-    else
-        push!(children(p), child)
-    end
+    push!(children(p), child)
 
     return child
 end
@@ -99,11 +94,11 @@ end
 Find the root node of a tree, given any node in the tree.
 """
 function get_root(node::Node)
-    if isroot(node)
-        return (node)
-    else
-        get_root(parent(node))
+    root = node
+    while !isroot(root)
+        root = parent(root)
     end
+    return root
 end
 
 """
@@ -113,11 +108,23 @@ Return the siblings of `node` as a vector of nodes (or `nothing` if non-existant
 """
 function siblings(node::Node)
     # If there is no parent, no siblings, return nothing:
-    parent(node) === nothing && return nothing
+    parent_ = parent(node)
+    parent_ === nothing && return nothing
 
-    all_siblings = children(parent(node))
+    all_siblings = children(parent_)
+    nsiblings = length(all_siblings)
+    nsiblings <= 1 && return similar(all_siblings, 0)
 
-    return all_siblings[findall(x -> x != node, all_siblings)]
+    out = Vector{eltype(all_siblings)}(undef, nsiblings - 1)
+    j = 1
+    @inbounds for sibling in all_siblings
+        if sibling !== node
+            out[j] = sibling
+            j += 1
+        end
+    end
+    resize!(out, j - 1)
+    return out
 end
 
 """
@@ -127,12 +134,9 @@ Return the last sibling of `node` (or `nothing` if non-existant).
 """
 function lastsibling(node::Node)
     # If there is no parent, no siblings, return nothing:
-    parent(node) === nothing && return nothing
-
-    all_siblings = children(parent(node))
-    # Get the index of the current node in the siblings:
-
-    return all_siblings[maximum(keys(all_siblings))]
+    parent_ = parent(node)
+    parent_ === nothing && return nothing
+    return last(children(parent_))
 end
 
 """

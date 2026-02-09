@@ -39,3 +39,20 @@ end
     @test traverse(mtg, node -> node[:Length]) == Any[nothing, nothing, nothing, 0.1, 0.2, 0.1, 0.2]
     @test traverse(mtg, node -> node[:Length], type=Union{Nothing,Float64}) == Union{Nothing,Float64}[nothing, nothing, nothing, 0.1, 0.2, 0.1, 0.2]
 end
+
+@testset "traverse deep no-filter path" begin
+    root = Node(1, NodeMTG("/", "Plant", 1, 1))
+    current = root
+    for i in 1:5000
+        current = Node(i + 1, current, NodeMTG("<", "Segment", i, 2))
+    end
+
+    out = traverse(root, node -> node_id(node), type=Int)
+    @test length(out) == 5001
+    @test out[1] == 1
+    @test out[end] == 5001
+
+    n = Ref(0)
+    traverse!(root, _ -> n[] += 1)
+    @test n[] == 5001
+end
