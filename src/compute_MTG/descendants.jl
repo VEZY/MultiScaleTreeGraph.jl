@@ -144,7 +144,6 @@ function descendants!(
     filter_fun=nothing,
     recursivity_level=Inf,
     ignore_nothing::Bool=false,
-    type::Union{Union,DataType}=Any,
 )
     check_filters(node, scale=scale, symbol=symbol, link=link)
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
