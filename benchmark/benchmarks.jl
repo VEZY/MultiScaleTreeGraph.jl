@@ -88,25 +88,12 @@ function ancestors_workload(nodes, reps::Int)
     return s
 end
 
-function ancestors_workload_inplace_1(nodes, reps::Int)
-    s = 0.0
-    @inbounds for _ in 1:reps
-        for n in nodes
-            out = ancestors!(n, :mass, recursivity_level=4, type=Float64)
-            for v in out
-                s += v
-            end
-        end
-    end
-    return s
-end
-
-function ancestors_workload_inplace_2(nodes, reps::Int)
+function ancestors_workload_inplace(nodes, reps::Int)
     s = 0.0
     buf = Float64[]
     @inbounds for _ in 1:reps
         for n in nodes
-            ancestors!(buf, n, :mass, recursivity_level=4, type=Float64)
+            ancestors!(buf, n, :mass, recursivity_level=4)
             for v in buf
                 s += v
             end
@@ -163,7 +150,7 @@ SUITE[suite_name]["many_queries"]["parent_repeated"] = @benchmarkable parent_wor
 SUITE[suite_name]["many_queries"]["ancestors_repeated"] = @benchmarkable ancestors_workload($leaves, 40)
 # Test if ancestors! exists in the package first:
 if isdefined(MultiScaleTreeGraph, :ancestors!)
-    SUITE[suite_name]["many_queries"]["ancestors_repeated_inplace"] = @benchmarkable ancestors_workload_inplace(leaves, 40)
+    SUITE[suite_name]["many_queries"]["ancestors_repeated_inplace"] = @benchmarkable ancestors_workload_inplace($leaves, 40)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
