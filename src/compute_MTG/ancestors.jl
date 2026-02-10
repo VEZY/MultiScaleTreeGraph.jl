@@ -15,7 +15,7 @@ Make it a `Symbol` for faster computation time.
 ## Keyword Arguments
 
 - `scale = nothing`: The scale to filter-in (i.e. to keep). Usually a Tuple-alike of integers.
-- `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
+- `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Symbols.
 - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
 - `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that
 is filtered out (`false`).
@@ -56,8 +56,8 @@ ancestors(leaf_node, :XX, scale = 1, type = Float64)
 ancestors(leaf_node, :Length, scale = 3, type = Float64)
 
 # Filter by symbol:
-ancestors(leaf_node, :Length, symbol = "Internode")
-ancestors(leaf_node, :Length, symbol = ("Axis","Internode"))
+ancestors(leaf_node, :Length, symbol = :Internode)
+ancestors(leaf_node, :Length, symbol = (:Axis,:Internode))
 ```
 """
 function ancestors(

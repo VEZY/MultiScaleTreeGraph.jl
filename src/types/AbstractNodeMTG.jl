@@ -59,7 +59,7 @@ struct NodeMTG <: AbstractNodeMTG
         link_ = to_mtg_link(link)
         symbol_ = to_mtg_symbol(symbol)
         @assert scale >= 0 "The scale should be greater than or equal to 0."
-        @assert link_ in (:/, :<, :+) "The link should be one of '/', '<', '+'"
+        @assert link_ in (:/, :<, :+) "The link should be one of `:/`, `:<`, `:+`"
         return new(link_, symbol_, index, scale)
     end
 end
@@ -78,7 +78,7 @@ mutable struct MutableNodeMTG <: AbstractNodeMTG
         link_ = to_mtg_link(link)
         symbol_ = to_mtg_symbol(symbol)
         @assert scale >= 0 "The scale should be greater than or equal to 0."
-        @assert link_ in (:/, :<, :+) "The link should be one of '/', '<', '+'"
+        @assert link_ in (:/, :<, :+) "The link should be one of ':/', ':<', ':+'"
         new(link_, symbol_, index, scale)
     end
 end

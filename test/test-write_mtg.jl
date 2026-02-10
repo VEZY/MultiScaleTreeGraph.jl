@@ -73,8 +73,8 @@ mtg = read_mtg(file)
 
     @test length(mtg) == 35
     @test length(children(mtg[1][1])) == 2
-    @test children(mtg[1][1])[1] |> symbol == "N"
-    @test children(mtg[1][1])[2] |> symbol == "GU"
+    @test children(mtg[1][1])[1] |> symbol == :N
+    @test children(mtg[1][1])[2] |> symbol == :GU
 
     mtg2 = mktemp() do f, io
         write_mtg(f, mtg)

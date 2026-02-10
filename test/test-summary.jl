@@ -2,14 +2,14 @@ mtg = read_mtg("files/simple_plant.mtg");
 
 @testset "getting scales" begin
     @test scales(mtg) == [0, 1, 2, 3]
-    @test symbols(mtg) == components(mtg) == ["Scene", "Individual", "Axis", "Internode", "Leaf"]
+    @test symbols(mtg) == components(mtg) == [:Scene, :Individual, :Axis, :Internode, :Leaf]
 end
 
 @testset "test classes" begin
     classes = get_classes(mtg)
     @test typeof(classes) == DataFrame
     @test size(classes) == (5, 5)
-    @test String.(classes.SYMBOL) == ["Scene", "Individual", "Axis", "Internode", "Leaf"]
+    @test classes.SYMBOL == [:Scene, :Individual, :Axis, :Internode, :Leaf]
     @test classes.SCALE == [0, 1, 2, 3, 3]
     @test classes.DECOMPOSITION == ["FREE" for i = 1:5]
     @test classes.INDEXATION == ["FREE" for i = 1:5]

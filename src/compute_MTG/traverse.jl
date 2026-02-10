@@ -14,8 +14,8 @@ which is either mutating (use `traverse!`) or not (use `traverse`).
 - <keyword arguments>:
 
     - `scale = nothing`: The scale to filter-in (i.e. to keep). Usually a Tuple-alike of integers.
-    - `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
-    - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
+    - `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Symbols.
+    - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Symbols.
     - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
     - `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that is filtered out (`false`).
     - `type::Type = Any`: The elements type of the returned array. This can speed-up things. Only available for the non-mutating version.

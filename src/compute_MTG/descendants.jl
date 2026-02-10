@@ -312,8 +312,8 @@ is way faster when `descendants` is called repeateadly for the same computation 
 ## Keyword Arguments
 
 - `scale = nothing`: The scale to filter-in (i.e. to keep). Usually a Tuple-alike of integers.
-- `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
-- `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
+- `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Symbols.
+- `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Symbols.
 - `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that
 is filtered out (`false`).
 - `self = false`: is the value for the current node needed ?
@@ -356,8 +356,8 @@ descendants(mtg, :XEuler, scale = 3, type = Union{Nothing, Float64})
 descendants(mtg, :Length, scale = 3, type = Float64) # No `nothing` value here, no need of a union type
 
 # Filter by symbol:
-descendants(mtg, :Length, symbol = "Leaf")
-descendants(mtg, :Length, symbol = ("Leaf","Internode"))
+descendants(mtg, :Length, symbol = :Leaf)
+descendants(mtg, :Length, symbol = (:Leaf,:Internode))
 
 # Filter by function, e.g. get the values for the leaves only:
 descendants(mtg, :Width; filter_fun = isleaf)
@@ -368,10 +368,10 @@ descendants(mtg, [:Width, :Length]; filter_fun = isleaf)
 
 # It is possible to cache the results in the mtg using the mutating version `descendants!` (note the `!` 
 # at the end of the function name):
-transform!(mtg, node -> sum(descendants!(node, :Length)) => :subtree_length, symbol = "Internode")
+transform!(mtg, node -> sum(descendants!(node, :Length)) => :subtree_length, symbol = :Internode)
 
 # Or using `@mutate_mtg!` instead of `transform!`:
-@mutate_mtg!(mtg, subtree_length = sum(descendants!(node, :Length)), symbol = "Internode")
+@mutate_mtg!(mtg, subtree_length = sum(descendants!(node, :Length)), symbol = :Internode)
 
 # The cache is stored in a temporary variable with a name that starts with `_cache_` followed by the SHA
 # of the function call, *e.g.*: `:_cache_5c1e97a3af343ce623cbe83befc851092ca61c8d`:

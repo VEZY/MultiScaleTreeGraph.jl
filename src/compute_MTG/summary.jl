@@ -95,7 +95,7 @@ function scales(mtg)
 end
 
 function symbols(mtg)
-    vec = String[]
+    vec = Symbol[]
     traverse!(mtg) do node
         push!(vec, symbol(node))
     end

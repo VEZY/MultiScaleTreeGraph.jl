@@ -8,7 +8,7 @@ Check if the filters are consistant with the mtg onto which they are applied
 ```julia
 check_filters(mtg, scale = 1)
 check_filters(mtg, scale = (1,2))
-check_filters(mtg, scale = (1,2), symbol = "Leaf", link = "<")
+check_filters(mtg, scale = (1,2), symbol = :Leaf, link = :<)
 ```
 """
 @inline no_node_filters(scale, symbol, link, filter_fun=nothing) =

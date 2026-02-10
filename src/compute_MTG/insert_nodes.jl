@@ -31,12 +31,12 @@ the children of the inserted node: `insert_generations!`
 ## Keyword Arguments (filters)
 
 - `scale = nothing`: The scale at which to insert. Usually a Tuple-alike of integers.
-- `symbol = nothing`: The symbol at which to insert. Usually a Tuple-alike of Strings.
-- `link = nothing`: The link with at which to insert. Usually a Tuple-alike of Char.
+- `symbol = nothing`: The symbol at which to insert. Usually a Tuple-alike of Symbols.
+- `link = nothing`: The link with at which to insert. Usually a Tuple-alike of Symbols.
 - `all::Bool = true`: Continue after the first insertion (`true`), or stop.
 - `filter_fun = nothing`: Any function taking a node as input, e.g. [`isleaf`](@ref) to decide
 on which node the insertion will be based on.
-
+  
 # Examples
 
 ```julia
@@ -44,7 +44,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 
 # Insert new Shoot nodes before all scale 2 nodes:
-mtg = insert_parents!(mtg, MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1), scale = 2)
+mtg = insert_parents!(mtg, MultiScaleTreeGraph.MutableNodeMTG(:/, :Shoot, 0, 1), scale = 2)
 
 mtg
 ```
@@ -188,12 +188,11 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","si
 mtg = read_mtg(file)
 
 # using a NodeMTG as a template:
-MultiScaleTreeGraph.new_node_MTG(mtg, NodeMTG("/", "Leaf", 1, 2))
+MultiScaleTreeGraph.new_node_MTG(mtg, NodeMTG(:/, :Leaf, 1, 2))
 # Note that it returns a MutableNodeMTG because `mtg` is using this type instead of a `NodeMTG`
 
 # using a NamedTuple as a template:
-MultiScaleTreeGraph.new_node_MTG(mtg, (link = "/", symbol = "Leaf", index = 1, scale = 2))
-
+MultiScaleTreeGraph.new_node_MTG(mtg, (link = :/, symbol = :Leaf, index = 1, scale = 2))
 # using a function that returns a template based on the first child of the node:
 MultiScaleTreeGraph.new_node_MTG(
     mtg,
@@ -260,7 +259,7 @@ insert_parent!(
         link = link(node[1]),
         symbol = symbol(node[1]),
         index = index(node[1]),
-        scale = scale(node[1]))
+        scale = scale(node[1])
     )
 )
 ```
