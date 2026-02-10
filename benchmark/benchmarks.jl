@@ -138,11 +138,11 @@ SUITE[suite_name] = BenchmarkGroup([
 root, leaves, sample_nodes = synthetic_tree()
 SUITE[suite_name]["traverse"]["full_tree_nodes"] = @benchmarkable traverse!($root, _ -> nothing)
 SUITE[suite_name]["traverse_extract"]["descendants_mass"] = @benchmarkable descendants_extraction_workload($root)
-SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace"] = @benchmarkable descendants_extraction_workload_inplace_1($root)
+SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace_1"] = @benchmarkable descendants_extraction_workload_inplace_1($root)
 
 # Add this one only if we have a method for `descendants!(val, node, key, type)`
 if hasmethod(descendants!, Tuple{AbstractVector,Node,Symbol})
-    SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace"] = @benchmarkable descendants_extraction_workload_inplace_2($root)
+    SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace_2"] = @benchmarkable descendants_extraction_workload_inplace_2($root)
 end
 
 SUITE[suite_name]["many_queries"]["children_repeated"] = @benchmarkable children_workload($sample_nodes, 300)
