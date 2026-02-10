@@ -19,7 +19,7 @@
             width_all[end-1:end]
 
       out_vals = Union{Nothing,Float64}[]
-      @test descendants!(out_vals, mtg, :Width; type=Union{Nothing,Float64}) == width_all
+      @test descendants!(out_vals, mtg, :Width) == width_all
       @test descendants!(out_vals, mtg2, :Width, symbol=("Leaf", "Internode"), self=true) ==
             width_all[end-1:end]
 
