@@ -14,7 +14,7 @@ function synthetic_tree(; branching::Int=4, depth::Int=8, nsamples::Int=256, see
 
     root = Node(
         1,
-        NodeMTG(:/, :Scale1, 1, 1),
+        NodeMTG("/", "Scale1", 1, 1),
         Dict{Symbol,Any}(
             :mass => rand(rng),
             :area => rand(rng),
@@ -27,7 +27,7 @@ function synthetic_tree(; branching::Int=4, depth::Int=8, nsamples::Int=256, see
 
     for d in 1:depth
         next_frontier = Node{NodeMTG,Dict{Symbol,Any}}[]
-        sym = Symbol("Scale$(d + 1)")
+        sym = "Scale$(d + 1)"
         sc = d + 1
         for p in frontier
             for b in 1:branching
@@ -35,7 +35,7 @@ function synthetic_tree(; branching::Int=4, depth::Int=8, nsamples::Int=256, see
                 child = Node(
                     next_id,
                     p,
-                    NodeMTG(:<, sym, b, sc),
+                    NodeMTG("<", sym, b, sc),
                     Dict{Symbol,Any}(
                         :mass => rand(rng),
                         :area => rand(rng),
