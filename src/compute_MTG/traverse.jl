@@ -44,6 +44,65 @@ end
 """
 traverse!, traverse
 
+function traverse_no_filter!(node::Node, f::Function, recursivity_level)
+    nodes = Vector{typeof(node)}(undef, 1)
+    levels = Vector{typeof(recursivity_level)}(undef, 1)
+    nodes[1] = node
+    levels[1] = recursivity_level
+
+    while !isempty(nodes)
+        current = pop!(nodes)
+        current_level = pop!(levels)
+        current_level == 0 && continue
+        next_level = current_level - 1
+
+        try
+            f(current)
+        catch e
+            println("Issue in function $f for node #$(node_id(current)).")
+            rethrow(e)
+        end
+
+        all_children = children(current)
+        @inbounds for i in lastindex(all_children):-1:firstindex(all_children)
+            push!(nodes, all_children[i])
+            push!(levels, next_level)
+        end
+    end
+
+    return nothing
+end
+
+function traverse_no_filter(node::Node, f::Function, val, recursivity_level)
+    nodes = Vector{typeof(node)}(undef, 1)
+    levels = Vector{typeof(recursivity_level)}(undef, 1)
+    nodes[1] = node
+    levels[1] = recursivity_level
+
+    while !isempty(nodes)
+        current = pop!(nodes)
+        current_level = pop!(levels)
+        current_level == 0 && continue
+        next_level = current_level - 1
+
+        val_ = try
+            f(current)
+        catch e
+            println("Issue in function $f for node $(node_id(current)).")
+            rethrow(e)
+        end
+        push!(val, val_)
+
+        all_children = children(current)
+        @inbounds for i in lastindex(all_children):-1:firstindex(all_children)
+            push!(nodes, all_children[i])
+            push!(levels, next_level)
+        end
+    end
+
+    return val
+end
+
 function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, recursivity_level=Inf)
     if !isempty(args)
         g = node -> f(node, args...)
@@ -52,11 +111,21 @@ function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothi
     end
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
-    if haskey(node_traversal_cache(node), cache_name(scale, symbol, link, all, filter_fun))
-        for i in node_traversal_cache(node)[cache_name(scale, symbol, link, all, filter_fun)]
-            # NB: node_traversal_cache(node)[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
-            g(i)
+    cache = node_traversal_cache(node)
+    if !isempty(cache)
+        cache_key = cache_name(scale, symbol, link, all, filter_fun)
+        cached_nodes = get(cache, cache_key, nothing)
+        if cached_nodes !== nothing
+            for i in cached_nodes
+                # NB: node_traversal_cache(node)[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
+                g(i)
+            end
+            return
         end
+    end
+
+    if no_node_filters(scale, symbol, link, filter_fun)
+        traverse_no_filter!(node, g, recursivity_level)
         return
     end
 
@@ -99,17 +168,28 @@ function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothin
     # NB: f has to return someting here, if its a mutating function, use traverse!
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
-    if haskey(node_traversal_cache(node), cache_name(scale, symbol, link, all, filter_fun))
-        for i in node_traversal_cache(node)[cache_name(scale, symbol, link, all, filter_fun)]
-            # NB: node_traversal_cache(node)[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
-            val_ = try
-                g(i)
-            catch e
-                error("Issue in function $f for node $(node_id(node)).")
-                rethrow(e)
+    cache = node_traversal_cache(node)
+    if !isempty(cache)
+        cache_key = cache_name(scale, symbol, link, all, filter_fun)
+        cached_nodes = get(cache, cache_key, nothing)
+
+        if cached_nodes !== nothing
+            for i in cached_nodes
+                # NB: node_traversal_cache(node)[cache_name(scale, symbol, link, filter_fun)] is a Vector of nodes corresponding to the traversal filters applied.
+                val_ = try
+                    g(i)
+                catch e
+                    error("Issue in function $f for node $(node_id(node)).")
+                    rethrow(e)
+                end
+                push!(val, val_)
             end
-            push!(val, val_)
+            return val
         end
+    end
+
+    if no_node_filters(scale, symbol, link, filter_fun)
+        traverse_no_filter(node, g, val, recursivity_level)
         return val
     end
 

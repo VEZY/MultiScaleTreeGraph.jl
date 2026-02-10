@@ -193,31 +193,40 @@ AbstractTrees.ChildIndexing(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = 
 AbstractTrees.NodeType(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = HasNodeType()
 AbstractTrees.nodetype(::Type{<:Node{T,A}}) where {T<:AbstractNodeMTG,A} = Node{T,A}
 
+@inline function sibling_index(all_siblings, node)
+    @inbounds for i in eachindex(all_siblings)
+        all_siblings[i] === node && return i
+    end
+    return nothing
+end
+
 function AbstractTrees.nextsibling(node::Node)
     # If there is no parent, no siblings, return nothing:
-    parent(node) === nothing && return nothing
+    parent_ = parent(node)
+    parent_ === nothing && return nothing
 
-    all_siblings = children(parent(node))
+    all_siblings = children(parent_)
     # Get the index of the current node in the siblings:
-    node_index = findfirst(x -> x == node, all_siblings)
-    if node_index < length(all_siblings)
-        all_siblings[node_index+1]
-    else
+    node_index = sibling_index(all_siblings, node)
+    if node_index === nothing || node_index >= lastindex(all_siblings)
         nothing
+    else
+        all_siblings[node_index+1]
     end
 end
 
 function AbstractTrees.prevsibling(node::Node)
     # If there is no parent, no siblings, return nothing:
-    parent(node) === nothing && return nothing
+    parent_ = parent(node)
+    parent_ === nothing && return nothing
 
-    all_siblings = children(parent(node))
+    all_siblings = children(parent_)
     # Get the index of the current node in the siblings:
-    node_index = findfirst(x -> x == node, all_siblings)
-    if node_index > 1
-        all_siblings[node_index-1]
-    else
+    node_index = sibling_index(all_siblings, node)
+    if node_index === nothing || node_index <= firstindex(all_siblings)
         nothing
+    else
+        all_siblings[node_index-1]
     end
 end
 

@@ -88,25 +88,12 @@ function ancestors_workload(nodes, reps::Int)
     return s
 end
 
-function ancestors_workload_inplace_1(nodes, reps::Int)
-    s = 0.0
-    @inbounds for _ in 1:reps
-        for n in nodes
-            out = ancestors!(n, :mass, recursivity_level=4, type=Float64)
-            for v in out
-                s += v
-            end
-        end
-    end
-    return s
-end
-
-function ancestors_workload_inplace_2(nodes, reps::Int)
+function ancestors_workload_inplace(nodes, reps::Int)
     s = 0.0
     buf = Float64[]
     @inbounds for _ in 1:reps
         for n in nodes
-            ancestors!(buf, n, :mass, recursivity_level=4, type=Float64)
+            ancestors!(buf, n, :mass, recursivity_level=4)
             for v in buf
                 s += v
             end
@@ -130,7 +117,7 @@ end
 
 function descendants_extraction_workload_inplace_2(root)
     vals = Float64[]
-    descendants!(vals, root, :mass, type=Float64)
+    descendants!(vals, root, :mass)
 end
 
 suite_name = "mstg"
@@ -151,17 +138,18 @@ SUITE[suite_name] = BenchmarkGroup([
 root, leaves, sample_nodes = synthetic_tree()
 SUITE[suite_name]["traverse"]["full_tree_nodes"] = @benchmarkable traverse!($root, _ -> nothing)
 SUITE[suite_name]["traverse_extract"]["descendants_mass"] = @benchmarkable descendants_extraction_workload($root)
-SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace"] = @benchmarkable descendants_extraction_workload_inplace_1($root)
+SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace_1"] = @benchmarkable descendants_extraction_workload_inplace_1($root)
 
 # Add this one only if we have a method for `descendants!(val, node, key, type)`
 if hasmethod(descendants!, Tuple{AbstractVector,Node,Symbol})
-    SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace"] = @benchmarkable descendants_extraction_workload_inplace_2($root)
+    SUITE[suite_name]["traverse_extract"]["descendants_mass_inplace_2"] = @benchmarkable descendants_extraction_workload_inplace_2($root)
 end
 
 SUITE[suite_name]["many_queries"]["children_repeated"] = @benchmarkable children_workload($sample_nodes, 300)
 SUITE[suite_name]["many_queries"]["parent_repeated"] = @benchmarkable parent_workload($sample_nodes, 300)
 SUITE[suite_name]["many_queries"]["ancestors_repeated"] = @benchmarkable ancestors_workload($leaves, 40)
-if hasmethod(ancestors!, Tuple{AbstractVector,Node,Symbol})
+# Test if ancestors! exists in the package first:
+if isdefined(MultiScaleTreeGraph, :ancestors!)
     SUITE[suite_name]["many_queries"]["ancestors_repeated_inplace"] = @benchmarkable ancestors_workload_inplace($leaves, 40)
 end
 

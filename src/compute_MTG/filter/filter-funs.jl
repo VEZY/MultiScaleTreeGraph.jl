@@ -39,6 +39,13 @@ function is_segment!(node::Node{N,A}) where {N<:AbstractNodeMTG,A}
     return false
 end
 
+@inline function all_not_nothing(node, attr_keys)
+    for key in attr_keys
+        unsafe_getindex(node, key) === nothing && return false
+    end
+    return true
+end
+
 """
     filter_fun_nothing(filter_fun, ignore_nothing, attr_keys)
 
@@ -51,12 +58,12 @@ function filter_fun_nothing(filter_fun, ignore_nothing, attr_keys)
         if filter_fun !== nothing
             filter_fun_ =
                 function (node)
-                    all([unsafe_getindex(node, i) !== nothing for i in attr_keys]) && filter_fun(node)
+                    all_not_nothing(node, attr_keys) && filter_fun(node)
                 end
         else
             filter_fun_ =
                 function (node)
-                    all([unsafe_getindex(node, i) !== nothing for i in attr_keys])
+                    all_not_nothing(node, attr_keys)
                 end
         end
     else
