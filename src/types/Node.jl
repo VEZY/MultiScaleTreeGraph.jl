@@ -264,7 +264,7 @@ node_mtg!(node::Node{T,A}, mtg_encoding::T) where {T,A} = setfield!(node, :MTG, 
 
 Get the symbol from the MTG encoding of the node.
 """
-symbol(node::Node) = String(getfield(node_mtg(node), :symbol))
+symbol(node::Node) = getfield(node_mtg(node), :symbol)
 
 """
     scale(node::Node)
@@ -286,7 +286,7 @@ index(node::Node) = getfield(node_mtg(node), :index)
 
 Get the link from the MTG encoding of the node.
 """
-link(node::Node) = String(getfield(node_mtg(node), :link))
+link(node::Node) = getfield(node_mtg(node), :link)
 
 """
     symbol!(node::Node, symbol)

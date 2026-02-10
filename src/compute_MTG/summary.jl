@@ -4,7 +4,7 @@
 Compute the mtg classes based on its content. Usefull after having mutating the mtg nodes.
 """
 function get_classes(mtg)
-    attributes = traverse(mtg, node -> (SYMBOL=symbol(node), SCALE=scale(node)), type=@NamedTuple{SYMBOL::String, SCALE::Int64})
+    attributes = traverse(mtg, node -> (SYMBOL=symbol(node), SCALE=scale(node)), type=@NamedTuple{SYMBOL::Symbol, SCALE::Int64})
     attributes = unique(attributes)
     df = DataFrame(attributes)
 
