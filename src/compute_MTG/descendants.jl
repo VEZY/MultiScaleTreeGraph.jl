@@ -65,6 +65,8 @@ function descendants(
     recursivity_level=Inf,
     ignore_nothing::Bool=false,
     type::Union{Union,DataType}=Any)
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -106,6 +108,8 @@ function descendants(
     filter_fun=nothing,
     recursivity_level=Inf,
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -144,7 +148,10 @@ function descendants!(
     filter_fun=nothing,
     recursivity_level=Inf,
     ignore_nothing::Bool=false,
+    type::Union{Union,DataType}=Any,
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
@@ -179,6 +186,8 @@ function descendants!(
     filter_fun=nothing,
     recursivity_level=Inf,
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun)
 
@@ -213,6 +222,8 @@ function descendants!(
     recursivity_level=Inf,
     ignore_nothing=false,
     type::Union{Union,DataType}=Any) where {N,A<:AbstractDict}
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -278,9 +289,10 @@ function descendants_!(node, key, scale, symbol, link, all, filter_fun, val, rec
 end
 
 """
-    descendants(node::Node,key,<keyword arguments>)
-    descendants(node::Node,<keyword arguments>)
-    descendants!(node::Node,key,<keyword arguments>)
+    descendants(node::Node,key;<keyword arguments>)
+    descendants(node::Node;<keyword arguments>)
+    descendants!(node::Node,key;<keyword arguments>)
+    descendants!(out::AbstractVector,node::Node,key;<keyword arguments>)
 
 Get attribute values from the descendants of the node (acropetal).
 The first method returns an array of values, the second an array of nodes that respect the filters, and the third the mutating version of the 
@@ -288,7 +300,7 @@ first one that caches the results in the mtg.
 
 The mutating version (`descendants!`) cache the results in a cached variable named after the hash of the function call. This version
 is way faster when `descendants` is called repeateadly for the same computation on large trees, but require to clean the chache sometimes 
-(see [`clean_cache!`](@ref)). It also only works for trees with attributes of subtype of `AbstractDict`.
+(see [`clean_cache!`](@ref)).
 
 # Arguments
 

@@ -264,7 +264,7 @@ node_mtg!(node::Node{T,A}, mtg_encoding::T) where {T,A} = setfield!(node, :MTG, 
 
 Get the symbol from the MTG encoding of the node.
 """
-symbol(node::Node) = getfield(node_mtg(node), :symbol)
+symbol(node::Node) = String(getfield(node_mtg(node), :symbol))
 
 """
     scale(node::Node)
@@ -286,14 +286,14 @@ index(node::Node) = getfield(node_mtg(node), :index)
 
 Get the link from the MTG encoding of the node.
 """
-link(node::Node) = getfield(node_mtg(node), :link)
+link(node::Node) = String(getfield(node_mtg(node), :link))
 
 """
     symbol!(node::Node, symbol)
 
 Set the symbol of the MTG encoding node.
 """
-symbol!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :symbol, symbol)
+symbol!(node::Node{T,A}, symbol) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :symbol, to_mtg_symbol(symbol))
 function symbol!(node::Node{T,A}, new_symbol) where {T<:NodeMTG,A}
     current_node_mtg = node_mtg(node)
     node_mtg!(node, NodeMTG(current_node_mtg.link, new_symbol, current_node_mtg.index, current_node_mtg.scale))
@@ -326,7 +326,7 @@ end
 
 Set the link of the MTG encoding of the node. It can be one of "/", "<", or "+".
 """
-link!(node::Node{T,A}, new_link) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :link, new_link)
+link!(node::Node{T,A}, new_link) where {T<:MutableNodeMTG,A} = setfield!(node_mtg(node), :link, to_mtg_link(new_link))
 function link!(node::Node{T,A}, new_link) where {T<:NodeMTG,A}
     current_node_mtg = node_mtg(node)
     node_mtg!(node, NodeMTG(new_link, current_node_mtg.symbol, current_node_mtg.index, current_node_mtg.scale))

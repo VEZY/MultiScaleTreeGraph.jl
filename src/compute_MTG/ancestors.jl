@@ -71,6 +71,8 @@ function ancestors(
     recursivity_level=-1,
     ignore_nothing=false,
     type::Union{Union,DataType}=Any)
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -146,6 +148,8 @@ function ancestors(
     filter_fun=nothing,
     recursivity_level=-1
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -219,6 +223,8 @@ function ancestors!(
     ignore_nothing=false,
     type::Union{Union,DataType}=Any,
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
@@ -251,6 +257,8 @@ function ancestors!(
     filter_fun=nothing,
     recursivity_level=-1,
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun)
 

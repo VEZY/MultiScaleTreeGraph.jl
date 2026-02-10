@@ -27,11 +27,16 @@ end
     mtg = read_mtg("files/simple_plant.mtg", Dict)
     # Add a new attributes, x based on node field, y based on x and z using a function:
     @test traverse(mtg, x -> x, symbol="Internode") == [get_node(mtg, 4), get_node(mtg, 6)]
+    @test traverse(mtg, x -> x, symbol=:Internode) == [get_node(mtg, 4), get_node(mtg, 6)]
     @test traverse(mtg, x -> x, scale=3) == [get_node(mtg, 4), get_node(mtg, 5), get_node(mtg, 6), get_node(mtg, 7)]
     @test traverse(mtg, x -> x, scale=3) == traverse(mtg, x -> x, symbol=["Internode", "Leaf"])
+    @test traverse(mtg, x -> x, scale=3) == traverse(mtg, x -> x, symbol=[:Internode, :Leaf])
     @test traverse(mtg, x -> x, link="+") == [get_node(mtg, 5), get_node(mtg, 7)]
+    @test traverse(mtg, x -> x, link=:+) == [get_node(mtg, 5), get_node(mtg, 7)]
     @test traverse(mtg, x -> x, link="<") == [get_node(mtg, 6)]
+    @test traverse(mtg, x -> x, link=:<) == [get_node(mtg, 6)]
     @test traverse(mtg, x -> x, link=["<", "+"]) == [get_node(mtg, 5), get_node(mtg, 6), get_node(mtg, 7)]
+    @test traverse(mtg, x -> x, link=[:<, :+]) == [get_node(mtg, 5), get_node(mtg, 6), get_node(mtg, 7)]
     @test traverse(mtg, x -> x, filter_fun=node -> node[:Length] !== nothing && node[:Length] == 0.1) == [get_node(mtg, 4), get_node(mtg, 6)]
     @test traverse(mtg, x -> x, symbol="Internode", filter_fun=node -> node[:Length] !== nothing) == [get_node(mtg, 4), get_node(mtg, 6)]
     @test traverse(mtg, x -> x, filter_fun=node -> symbol(node) != "Internode", all=false) == [get_node(mtg, i) for i in 1:3]

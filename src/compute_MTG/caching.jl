@@ -54,6 +54,8 @@ traverse(mtg, x -> symbol(x), symbol="Leaf") == ["Leaf", "Leaf"]
 ```
 """
 function cache_nodes!(node; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, overwrite=false)
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
     # The cache is already present:
     if length(node_traversal_cache(node)) != 0 && haskey(node_traversal_cache(node), cache_name(scale, symbol, link, all, filter_fun))
         if !overwrite

@@ -8,6 +8,11 @@
     @test node_mtg.index == 1
     @test node_mtg.scale == 2
 
+    # Symbol inputs should also be accepted and exposed as strings for compatibility
+    node_mtg_sym = MultiScaleTreeGraph.NodeMTG(:/, :Plant, 1, 2)
+    @test node_mtg_sym.link == "/"
+    @test node_mtg_sym.symbol == "Plant"
+
     # Test NodeMTG constructor with nothing as index
     node_mtg_nothing = MultiScaleTreeGraph.NodeMTG("/", "Internode", nothing, 3)
     @test node_mtg_nothing.link == "/"
@@ -29,6 +34,10 @@
     @test mutable_node_mtg_nothing.index == -9999
     @test mutable_node_mtg_nothing.scale == 5
 
+    mutable_node_mtg_sym = MultiScaleTreeGraph.MutableNodeMTG(:+, :Leaf, 2, 4)
+    @test mutable_node_mtg_sym.link == "+"
+    @test mutable_node_mtg_sym.symbol == "Leaf"
+
     # Test mutability of MutableNodeMTG
     mutable_node_mtg.link = "<"
     mutable_node_mtg.symbol = "Flower"
@@ -36,6 +45,10 @@
     mutable_node_mtg.scale = 6
     @test mutable_node_mtg.link == "<"
     @test mutable_node_mtg.symbol == "Flower"
+    mutable_node_mtg.link = :+
+    mutable_node_mtg.symbol = :Leaf
+    @test mutable_node_mtg.link == "+"
+    @test mutable_node_mtg.symbol == "Leaf"
     @test mutable_node_mtg.index == 3
     @test mutable_node_mtg.scale == 6
 
@@ -107,4 +120,3 @@ end
     mtg = read_mtg(file, Dict, MutableNodeMTG)
     VERSION >= v"1.7" && @test_throws "The parent node has an MTG encoding of type `MutableNodeMTG`, but the MTG encoding you provide is of type `NodeMTG`, please make sure they are the same." Node(mtg, NodeMTG("/", "Branch", 1, 2))
 end
-

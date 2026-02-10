@@ -14,6 +14,27 @@ check_filters(mtg, scale = (1,2), symbol = "Leaf", link = "<")
 @inline no_node_filters(scale, symbol, link, filter_fun=nothing) =
     isnothing(scale) && isnothing(symbol) && isnothing(link) && isnothing(filter_fun)
 
+@inline normalize_symbol_filter(filter::Nothing) = nothing
+@inline normalize_symbol_filter(filter::Symbol) = filter
+@inline normalize_symbol_filter(filter::AbstractString) = Symbol(filter)
+@inline normalize_symbol_filter(filter::Char) = Symbol(filter)
+@inline function normalize_symbol_filter(filter::T) where {T<:Union{Tuple,AbstractArray}}
+    map(normalize_symbol_filter, filter)
+end
+
+@inline normalize_link_filter(filter::Nothing) = nothing
+@inline normalize_link_filter(filter::Symbol) = filter
+@inline normalize_link_filter(filter::AbstractString) = Symbol(filter)
+@inline normalize_link_filter(filter::Char) = Symbol(filter)
+@inline function normalize_link_filter(filter::T) where {T<:Union{Tuple,AbstractArray}}
+    map(normalize_link_filter, filter)
+end
+
+@inline normalize_symbol_allowed(filters::Nothing) = nothing
+@inline function normalize_symbol_allowed(filters::T) where {T<:Union{Tuple,AbstractArray}}
+    map(normalize_symbol_filter, filters)
+end
+
 function check_filters(node::Node{N,A}; scale=nothing, symbol=nothing, link=nothing) where {N<:AbstractNodeMTG,A}
     no_node_filters(scale, symbol, link) && return nothing
 
@@ -24,11 +45,11 @@ function check_filters(node::Node{N,A}; scale=nothing, symbol=nothing, link=noth
     end
 
     if root_node[:symbols] !== nothing
-        check_filter(N, :symbol, symbol, unique(root_node[:symbols]))
+        check_filter(N, :symbol, normalize_symbol_filter(symbol), unique(normalize_symbol_allowed(root_node[:symbols])))
     end
 
     if root_node[:link] !== nothing
-        check_filter(N, :link, link, ("/", "<", "+"))
+        check_filter(N, :link, normalize_link_filter(link), (:/, :<, :+))
     end
 
     return nothing
@@ -37,7 +58,11 @@ end
 function check_filter(nodetype, type::Symbol, filter, filters)
     if !isnothing(filter)
         filter_type = fieldtype(nodetype, type)
-        !(typeof(filter) <: filter_type) &&
+        filter_ok = typeof(filter) <: filter_type
+        if type == :symbol || type == :link
+            filter_ok = filter_ok || typeof(filter) <: Union{Symbol,AbstractString,Char}
+        end
+        !filter_ok &&
             @warn "The $type argument should be of type $filter_type"
         if !(filter in filters)
             @warn "The $type argument should be one of: $filters, and you provided $filter."
@@ -58,9 +83,9 @@ end
 Is a node filtered in ? Returns `true` if the node is kept, `false` if it is filtered-out.
 """
 @inline function is_filtered(node, mtg_scale, mtg_symbol, mtg_link, filter_fun)
-
-    link_keep = isnothing(mtg_link) || is_filtered(mtg_link, link(node))
-    symbol_keep = isnothing(mtg_symbol) || is_filtered(mtg_symbol, symbol(node))
+    node_mtg_ = node_mtg(node)
+    link_keep = isnothing(mtg_link) || is_filtered(mtg_link, getfield(node_mtg_, :link))
+    symbol_keep = isnothing(mtg_symbol) || is_filtered(mtg_symbol, getfield(node_mtg_, :symbol))
     scale_keep = isnothing(mtg_scale) || is_filtered(mtg_scale, scale(node))
     filter_fun_keep = isnothing(filter_fun) || filter_fun(node)
 
@@ -75,8 +100,42 @@ end
     value in filter
 end
 
-@inline function is_filtered(filter::String, value)
-    value in (filter,)
+@inline function is_filtered(filter::AbstractString, value::Symbol)
+    Symbol(filter) === value
+end
+
+@inline function is_filtered(filter::AbstractString, value::AbstractString)
+    filter == value
+end
+
+@inline function is_filtered(filter::AbstractString, value)
+    filter == value
+end
+
+@inline function is_filtered(filter::Symbol, value::AbstractString)
+    filter === Symbol(value)
+end
+
+@inline function is_filtered(filter::Symbol, value::Symbol)
+    filter === value
+end
+
+@inline function is_filtered(filter::Symbol, value)
+    filter === value
+end
+
+@inline function is_filtered(filter::T, value::Symbol) where {T<:Union{Tuple,AbstractArray}}
+    for f in filter
+        is_filtered(f, value) && return true
+    end
+    return false
+end
+
+@inline function is_filtered(filter::T, value::AbstractString) where {T<:Union{Tuple,AbstractArray}}
+    for f in filter
+        is_filtered(f, value) && return true
+    end
+    return false
 end
 
 @inline function is_filtered(filter, value::T) where {T<:Union{Tuple,Array}}
