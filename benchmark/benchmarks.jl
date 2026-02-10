@@ -88,7 +88,20 @@ function ancestors_workload(nodes, reps::Int)
     return s
 end
 
-function ancestors_workload_inplace(nodes, reps::Int)
+function ancestors_workload_inplace_1(nodes, reps::Int)
+    s = 0.0
+    @inbounds for _ in 1:reps
+        for n in nodes
+            out = ancestors!(n, :mass, recursivity_level=4, type=Float64)
+            for v in out
+                s += v
+            end
+        end
+    end
+    return s
+end
+
+function ancestors_workload_inplace_2(nodes, reps::Int)
     s = 0.0
     buf = Float64[]
     @inbounds for _ in 1:reps
