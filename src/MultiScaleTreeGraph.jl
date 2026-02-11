@@ -99,6 +99,7 @@ export ColumnarStore
 export Column, SymbolBucket, MTGAttributeStore, NodeAttrRef
 export attribute, attribute!, attributes, attribute_names
 export add_column!, drop_column!, rename_column!
+export descendants_strategy, descendants_strategy!
 export columnarize!
 export symbol_table, mtg_table
 export list_nodes

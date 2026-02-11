@@ -3,6 +3,19 @@ Marker type used by `read_mtg` to request the columnar attribute backend.
 """
 struct ColumnarStore end
 
+mutable struct SubtreeIndexCache
+    dirty::Bool
+    built::Bool
+    strategy::Symbol
+    query_count::Int
+    mutation_count::Int
+    tin::Vector{Int}
+    tout::Vector{Int}
+    dfs_order::Vector{Int}
+end
+
+SubtreeIndexCache() = SubtreeIndexCache(true, false, :auto, 0, 0, Int[], Int[], Int[])
+
 mutable struct Column{T}
     name::Symbol
     data::Vector{T}
@@ -27,6 +40,7 @@ mutable struct MTGAttributeStore
     buckets::Vector{SymbolBucket}
     node_bucket::Vector{Int}
     node_row::Vector{Int}
+    subtree_index::SubtreeIndexCache
 end
 
 struct ColumnarQueryPlan
@@ -35,7 +49,121 @@ struct ColumnarQueryPlan
 end
 
 function MTGAttributeStore()
-    MTGAttributeStore(Dict{Symbol,Int}(), SymbolBucket[], Int[], Int[])
+    MTGAttributeStore(Dict{Symbol,Int}(), SymbolBucket[], Int[], Int[], SubtreeIndexCache())
+end
+
+@inline function _validate_descendants_strategy(strategy::Symbol)
+    strategy in (:auto, :pointer, :indexed) && return strategy
+    error("Unknown descendants strategy $(strategy). Expected :auto, :pointer, or :indexed.")
+end
+
+@inline descendants_strategy(store::MTGAttributeStore) = store.subtree_index.strategy
+
+function descendants_strategy!(store::MTGAttributeStore, strategy::Symbol)
+    store.subtree_index.strategy = _validate_descendants_strategy(strategy)
+    return store
+end
+
+@inline function _mark_subtree_index_mutation!(store::MTGAttributeStore)
+    idx = store.subtree_index
+    idx.dirty = true
+    if idx.built
+        idx.mutation_count += 1
+    end
+    return nothing
+end
+
+@inline function _can_use_index_without_rebuild(store::MTGAttributeStore)
+    idx = store.subtree_index
+    idx.built && !idx.dirty
+end
+
+@inline function _descendants_should_rebuild_auto(idx::SubtreeIndexCache)
+    # Keep pointer traversal for mutation-heavy periods; switch when queries dominate.
+    idx.query_count >= max(8, 4 * idx.mutation_count)
+end
+
+function _rebuild_subtree_index!(store::MTGAttributeStore, root)
+    nmax = length(store.node_bucket)
+    tin = Vector{Int}(undef, nmax)
+    tout = Vector{Int}(undef, nmax)
+    @inbounds for i in 1:nmax
+        tin[i] = 0
+        tout[i] = 0
+    end
+
+    nactive = 0
+    @inbounds for i in 1:nmax
+        nactive += store.node_bucket[i] == 0 ? 0 : 1
+    end
+    dfs_order = Int[]
+    sizehint!(dfs_order, nactive)
+
+    stack_nodes = Vector{typeof(root)}(undef, 1)
+    stack_pos = Vector{Int}(undef, 1)
+    stack_nodes[1] = root
+    stack_pos[1] = 0
+    t = 0
+
+    while !isempty(stack_nodes)
+        current = stack_nodes[end]
+        pos = stack_pos[end]
+
+        if pos == 0
+            nid = node_id(current)
+            t += 1
+            tin[nid] = t
+            push!(dfs_order, nid)
+            stack_pos[end] = 1
+            pos = 1
+        end
+
+        ch = children(current)
+        if pos <= length(ch)
+            stack_pos[end] = pos + 1
+            push!(stack_nodes, ch[pos])
+            push!(stack_pos, 0)
+        else
+            tout[node_id(current)] = t
+            pop!(stack_nodes)
+            pop!(stack_pos)
+        end
+    end
+
+    idx = store.subtree_index
+    idx.tin = tin
+    idx.tout = tout
+    idx.dfs_order = dfs_order
+    idx.dirty = false
+    idx.built = true
+    idx.query_count = 0
+    idx.mutation_count = 0
+    return idx
+end
+
+function _prepare_subtree_index!(store::MTGAttributeStore, root)
+    idx = store.subtree_index
+    strategy = idx.strategy
+
+    if strategy === :pointer
+        return false
+    elseif strategy === :indexed
+        _can_use_index_without_rebuild(store) || _rebuild_subtree_index!(store, root)
+        return true
+    end
+
+    # :auto
+    if _can_use_index_without_rebuild(store)
+        return true
+    end
+
+    idx.query_count += 1
+    if _descendants_should_rebuild_auto(idx)
+        _rebuild_subtree_index!(store, root)
+        return true
+    end
+
+    return false
 end
 
 mutable struct NodeAttrRef
@@ -163,6 +291,7 @@ function _bucket_row(ref::NodeAttrRef)
 end
 
 function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
+    _mark_subtree_index_mutation!(store)
     _ensure_node_capacity!(store, node_id)
     bid = _get_or_create_bucket!(store, symbol)
     bucket = store.buckets[bid]
@@ -187,6 +316,7 @@ function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::S
 end
 
 function _remove_node!(store::MTGAttributeStore, node_id::Int)
+    _mark_subtree_index_mutation!(store)
     node_id > length(store.node_bucket) && return nothing
     bid = store.node_bucket[node_id]
     bid == 0 && return nothing

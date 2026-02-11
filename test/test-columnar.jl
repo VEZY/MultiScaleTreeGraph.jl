@@ -41,3 +41,29 @@ all_df = DataFrame(all_table)
 @test :symbol in Symbol.(names(all_df))
 @test all_df.node_id == list_nodes(mtg)
 @test any(ismissing, all_df.Width)
+
+# Hybrid descendants traversal strategy.
+@test descendants_strategy(mtg) == :auto
+descendants_strategy!(mtg, :indexed)
+@test descendants_strategy(mtg) == :indexed
+
+store = MultiScaleTreeGraph._node_store(mtg)
+@test store.subtree_index.dirty
+leaf_widths_before = descendants(mtg, :Width, symbol=:Leaf, ignore_nothing=true)
+@test !store.subtree_index.dirty
+@test store.subtree_index.built
+
+insert_child!(
+    mtg[1],
+    MutableNodeMTG(:+, :Leaf, 0, 3),
+    _ -> Dict{Symbol,Any}(:Width => 9.99, :Area => 0.01, :mass => 0.1),
+)
+@test store.subtree_index.dirty
+leaf_widths_after = descendants(mtg, :Width, symbol=:Leaf, ignore_nothing=true)
+@test !store.subtree_index.dirty
+@test length(leaf_widths_after) == length(leaf_widths_before) + 1
+@test leaf_widths_after[end] == 9.99
+
+descendants_strategy!(mtg, :pointer)
+@test descendants_strategy(mtg) == :pointer
+@test descendants(mtg, :Width, symbol=:Leaf, ignore_nothing=true) == leaf_widths_after

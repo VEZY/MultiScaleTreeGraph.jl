@@ -220,14 +220,23 @@ AbstractTrees.childtype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
 
 Set the parent of the node.
 """
-reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,A}}} where {T,A} = setfield!(node, :parent, p)
+function reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,A}}} where {T,A}
+    setfield!(node, :parent, p)
+    _mark_structure_mutation!(node)
+    p === nothing || _mark_structure_mutation!(p)
+    return p
+end
 
 """
     rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
 
 Set the children of the node.
 """
-rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A} = setfield!(node, :children, chnodes)
+function rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
+    setfield!(node, :children, chnodes)
+    _mark_structure_mutation!(node)
+    return chnodes
+end
 # AbstractTrees.childstatetype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
 
 # Set the traits for Node:
@@ -444,6 +453,15 @@ function _node_store(node::Node)
     return store
 end
 
+@inline function _mark_structure_mutation!(node::Node)
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs || return nothing
+    store = _store_for_node_attrs(attrs)
+    store === nothing && return nothing
+    _mark_subtree_index_mutation!(store)
+    return nothing
+end
+
 function add_column!(node::Node, symbol::Symbol, key::Symbol, ::Type{T}; default::T) where {T}
     add_column!(_node_store(node), symbol, key, T, default=default)
 end
@@ -477,6 +495,33 @@ function rename_column!(node::Node, symbols::AbstractVector{Symbol}, from::Symbo
     for sym in symbols
         rename_column!(store, sym, from, to)
     end
+    return node
+end
+
+"""
+    descendants_strategy(node::Node)
+    descendants_strategy!(node::Node, strategy::Symbol)
+
+Get or set how `descendants(node, key, ...)` is computed for columnar MTGs.
+
+- `:auto` (default): choose automatically based on workload.
+- `:pointer`: always follow parent/children links directly in the graph.
+- `:indexed`: use a precomputed index for descendant lookups.
+
+The index is based on a Depth-First Search (DFS) visit order (visit a branch deeply, then the
+next branch). It can speed up repeated descendant requests on mostly stable trees, while
+`:pointer` is often better when the tree structure changes very frequently.
+"""
+function descendants_strategy(node::Node)
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs || return :pointer
+    store = _store_for_node_attrs(attrs)
+    store === nothing && return :pointer
+    return descendants_strategy(store)
+end
+
+function descendants_strategy!(node::Node, strategy::Symbol)
+    descendants_strategy!(_node_store(node), strategy)
     return node
 end
 
