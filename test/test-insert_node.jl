@@ -1,7 +1,7 @@
 
 @testset "test insert_parent!" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    template = MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1)
+    template = MultiScaleTreeGraph.MutableNodeMTG(:/, :Shoot, 0, 1)
     max_node_id = [max_id(mtg)]
     length_before = length(mtg)
 
@@ -66,7 +66,7 @@ end
 
 @testset "test insert_parents!" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    template = MutableNodeMTG("/", "Shoot", 0, 1)
+    template = MutableNodeMTG(:/, :Shoot, 0, 1)
     length_before = length(mtg)
     insert_parents!(
         mtg,
@@ -84,7 +84,7 @@ end
 
 @testset "test insert_child!" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    template = MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1)
+    template = MultiScaleTreeGraph.MutableNodeMTG(:/, :Shoot, 0, 1)
     max_node_id = [max_id(mtg)]
     length_before = length(mtg)
 
@@ -100,9 +100,9 @@ end
 
 @testset "test insert_children!" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    template = MutableNodeMTG("/", "Rachis", 0, 4)
+    template = MutableNodeMTG(:/, :Rachis, 0, 4)
     length_before = length(mtg)
-    insert_children!(mtg, template, symbol="Leaf")
+    insert_children!(mtg, template, symbol=:Leaf)
 
     @test length(mtg) == length_before + 2
 
@@ -113,7 +113,7 @@ end
 
 @testset "test insert_generation!" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    template = MultiScaleTreeGraph.MutableNodeMTG("/", "Shoot", 0, 1)
+    template = MultiScaleTreeGraph.MutableNodeMTG(:/, :Shoot, 0, 1)
     max_node_id = [max_id(mtg)]
     length_before = length(mtg)
 
@@ -132,9 +132,9 @@ end
 
 @testset "test insert_generations!" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    template = MutableNodeMTG("/", "Rachis", 0, 4)
+    template = MutableNodeMTG(:/, :Rachis, 0, 4)
     length_before = length(mtg)
-    insert_generations!(mtg, template, symbol="Internode")
+    insert_generations!(mtg, template, symbol=:Internode)
 
     @test length(mtg) == length_before + 2
 
@@ -145,7 +145,7 @@ end
 
 @testset "test insert_sibling!" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    template = MultiScaleTreeGraph.MutableNodeMTG("/", "Individual", 0, 1)
+    template = MultiScaleTreeGraph.MutableNodeMTG(:/, :Individual, 0, 1)
     max_node_id = [max_id(mtg)]
     length_before = length(mtg)
 
@@ -160,10 +160,10 @@ end
 
 @testset "test insert_siblings!" begin
     mtg = read_mtg("files/simple_plant.mtg")
-    template = MutableNodeMTG("+", "Leaf", 0, 3)
+    template = MutableNodeMTG(:+, :Leaf, 0, 3)
     length_before = length(mtg)
     # Add a new leaf at each leaf node:
-    insert_siblings!(mtg, template, symbol="Leaf")
+    insert_siblings!(mtg, template, symbol=:Leaf)
 
     @test length(mtg) == length_before + 2
 

@@ -14,8 +14,8 @@ which is either mutating (use `traverse!`) or not (use `traverse`).
 - <keyword arguments>:
 
     - `scale = nothing`: The scale to filter-in (i.e. to keep). Usually a Tuple-alike of integers.
-    - `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
-    - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
+    - `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Symbols.
+    - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Symbols.
     - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
     - `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that is filtered out (`false`).
     - `type::Type = Any`: The elements type of the returned array. This can speed-up things. Only available for the non-mutating version.
@@ -109,6 +109,8 @@ function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothi
     else
         g = f
     end
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
     cache = node_traversal_cache(node)
@@ -163,6 +165,8 @@ function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothin
     else
         g = f
     end
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     val = Array{type,1}()
     # NB: f has to return someting here, if its a mutating function, use traverse!

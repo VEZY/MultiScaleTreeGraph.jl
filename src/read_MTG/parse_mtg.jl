@@ -353,8 +353,8 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
 
         # Instantiating the current node MTG:
         childMTG = mtg_type(
-            node_element[1],
-            symbol,
+            Symbol(node_element[1]),
+            Symbol(symbol),
             node_element[3],
             scale
         )

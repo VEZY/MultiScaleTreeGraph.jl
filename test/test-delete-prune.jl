@@ -12,7 +12,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
     # There is a warning because we don't know how to properly link the leaf (node 5) to its new parent.
 
     # Furthermore, the link of the second child (node 6) was modified from following to decomposing:
-    @test link(get_node(mtg, 6)) == "/"
+    @test link(get_node(mtg, 6)) == :/
 
     # Delete a root node:
     mtg = read_mtg(file)
@@ -27,14 +27,14 @@ end
     mtg = delete_node!(mtg)
     @test length(mtg) == length_start - 1
 
-    @test symbol(mtg) == "Individual"
+    @test symbol(mtg) == :Individual
     @test scale(mtg) == 1
     @test index(mtg) == 0
-    @test link(mtg) == "/"
+    @test link(mtg) == :/
 
     # Deleting the root node with several children should raise an error:
     mtg = read_mtg(file)
-    Node(mtg, MutableNodeMTG("/", "Branch", 1, 2))
+    Node(mtg, MutableNodeMTG(:/, :Branch, 1, 2))
     length_start = length(mtg)
     VERSION >= v"1.7" && @test_throws "Can't delete the root node if it has several children" delete_node!(mtg)
 end
@@ -43,12 +43,12 @@ end
     mtg = read_mtg(file)
     delete_node!(get_node(mtg, 4), child_link_fun=link)
     # The link of the children didn't change:
-    @test link(get_node(mtg, 6)) == "<"
+    @test link(get_node(mtg, 6)) == :<
 
-    delete_node!(get_node(mtg, 3), child_link_fun=node -> "+")
+    delete_node!(get_node(mtg, 3), child_link_fun=node -> :+)
     # Both children links changes to branching:
-    @test link(get_node(mtg, 5)) == "+"
-    @test link(get_node(mtg, 6)) == "+"
+    @test link(get_node(mtg, 5)) == :+
+    @test link(get_node(mtg, 6)) == :+
 end
 
 @testset "delete_nodes!" begin
@@ -60,7 +60,7 @@ end
 
     # Delete the leaves:
     mtg = read_mtg(file)
-    delete_nodes!(mtg, symbol="Leaf")
+    delete_nodes!(mtg, symbol=:Leaf)
     @test length(mtg) === length_start - 2
 
     # Delete with a function, here we delete all nodes that have a parent with Length < 0.2:
@@ -79,7 +79,7 @@ end
 
     # Delete multiple root nodes
     mtg = read_mtg(file)
-    new_mtg = delete_nodes!(mtg, filter_fun = node -> node_mtg(node).scale != 3)
+    new_mtg = delete_nodes!(mtg, filter_fun=node -> node_mtg(node).scale != 3)
     @test length(new_mtg) == 4
 end
 

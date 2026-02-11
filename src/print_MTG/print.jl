@@ -44,7 +44,7 @@ end
 Format the printing of the tree according to link: follow or branching
 """
 function get_printing(node::Node; leading::AbstractString="")
-    node_vec = [link(node) * " " * string(node_id(node)) * ": " * symbol(node)]
+    node_vec = [string(link(node)) * " " * string(node_id(node)) * ": " * string(symbol(node))]
     print_below = get_printing_(node; leading="")
     if print_below !== nothing
         append!(node_vec, print_below)
@@ -64,10 +64,10 @@ function get_printing_(node::Node; leading::AbstractString="")
             id = node_id(chnode)
             i += 1
             if i != last
-                to_print = leading * "\u251C\u2500 " * mtg_encoding.link * " " * string(id) * ": " * mtg_encoding.symbol
+                to_print = leading * "\u251C\u2500 " * string(mtg_encoding.link) * " " * string(id) * ": " * string(mtg_encoding.symbol)
                 new_leading = leading * "\u2502  "
             else
-                to_print = leading * "\u2514\u2500 " * mtg_encoding.link * " " * string(id) * ": " * mtg_encoding.symbol
+                to_print = leading * "\u2514\u2500 " * string(mtg_encoding.link) * " " * string(id) * ": " * string(mtg_encoding.symbol)
                 new_leading = leading * "   "
             end
             append!(child_vec, [to_print])

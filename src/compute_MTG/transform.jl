@@ -12,8 +12,8 @@ attributes specified by `args...`.
 - <keyword arguments>:
 
     - `scale = nothing`: The scale to filter-in (i.e. to keep). Usually a Tuple-alike of integers.
-    - `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
-    - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
+    - `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Symbols.
+    - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Symbols.
     - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref).
     - `ignore_nothing = false`: filter-out the nodes with `nothing` values for the given
     attributes used as inputs (apply only to the form :var_name => ...)

@@ -19,7 +19,7 @@ function MetaGraph(g::Node{N,A}) where {N<:AbstractNodeMTG,A}
             DiGraph(),
             label_type=Dict{Int64,Int64}(),
             vertex_data_type=Dict{Int64,Tuple{Int64,A}}(),
-            edge_data_type=Dict{Tuple{Int64,Int64},String}(),
+            edge_data_type=Dict{Tuple{Int64,Int64},Symbol}(),
             graph_data="MTG",
             weight_function=edata -> 1.0,
             default_weight=1.0,

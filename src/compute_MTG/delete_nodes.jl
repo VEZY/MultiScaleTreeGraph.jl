@@ -12,8 +12,8 @@ Delete nodes in mtg following filters rules.
 ## Keyword Arguments (filters)
 
 - `scale = nothing`: The scale to delete. Usually a Tuple-alike of integers.
-- `symbol = nothing`: The symbol to delete. Usually a Tuple-alike of Strings.
-- `link = nothing`: The link with the previous node to delete. Usually a Tuple-alike of Char.
+- `symbol = nothing`: The symbol to delete. Usually a Tuple-alike of Symbols.
+- `link = nothing`: The link with the previous node to delete. Usually a Tuple-alike of Symbol.
 - `all::Bool = true`: Continue after the first deletion (`true`), or stop?
 - `filter_fun = nothing`: Any filtering function taking a node as input, e.g. [`isleaf`](@ref)
 to decide whether to delete a node or not.
@@ -42,9 +42,9 @@ mtg = read_mtg(file)
 delete_nodes!(mtg, scale = 2) # Will remove all nodes of scale 2
 
 # Delete the leaves:
-delete_nodes!(mtg, symbol = "Leaf")
+delete_nodes!(mtg, :Leaf)
 # Delete the leaves and internodes:
-delete_nodes!(mtg, symbol = ("Leaf","Internode"))
+delete_nodes!(mtg, symbol = (:Leaf,:Internode))
 ```
 """
 function delete_nodes!(
@@ -190,7 +190,7 @@ function new_child_link(node, verbose=true)
     deleted_link = parent(node) |> link
     child_link = link(node)
 
-    if deleted_link == "+" && child_link == "/"
+    if deleted_link == :+ && child_link == :/
         new_child_link = child_link
         verbose && @warn join(
             [
@@ -198,9 +198,9 @@ function new_child_link(node, verbose=true)
             " Keep decomposition, please check if the branching is still correct."
         ]
         ) deleted_link child_link new_child_link
-    elseif deleted_link == "+" && child_link == "<"
+    elseif deleted_link == :+ && child_link == :<
         new_child_link = deleted_link
-    elseif deleted_link == "/" && child_link == "+"
+    elseif deleted_link == :/ && child_link == :+
         new_child_link = child_link
         verbose && @warn join(
             [
@@ -208,7 +208,7 @@ function new_child_link(node, verbose=true)
             " Keep branching, please check if the decomposition is still correct."
         ]
         ) deleted_link child_link new_child_link
-    elseif deleted_link == "/" && child_link == "<"
+    elseif deleted_link == :/ && child_link == :<
         new_child_link = deleted_link
     else
         new_child_link = child_link

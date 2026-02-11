@@ -10,22 +10,22 @@
       @test d[1] === width_all[1]
       d_typed = descendants(mtg, :Width, type=Union{Nothing,Float64})
       @test typeof(d_typed) == Vector{Union{Nothing,Float64}}
-      @test descendants(mtg, :Width, symbol=("Leaf", "Internode")) == width_all[3:end]
+      @test descendants(mtg, :Width, symbol=(:Leaf, :Internode)) == width_all[3:end]
 
       mtg2 = mtg[1][1][1][2]
-      @test descendants(mtg2, :Width, symbol="Leaf")[1] == width_all[end]
+      @test descendants(mtg2, :Width, symbol=:Leaf)[1] == width_all[end]
 
-      @test descendants(mtg2, :Width, symbol=("Leaf", "Internode"), self=true) ==
+      @test descendants(mtg2, :Width, symbol=(:Leaf, :Internode), self=true) ==
             width_all[end-1:end]
 
       out_vals = Union{Nothing,Float64}[]
       @test descendants!(out_vals, mtg, :Width) == width_all
-      @test descendants!(out_vals, mtg2, :Width, symbol=("Leaf", "Internode"), self=true) ==
+      @test descendants!(out_vals, mtg2, :Width, symbol=(:Leaf, :Internode), self=true) ==
             width_all[end-1:end]
 
       # Using the mutating version:
       @test descendants!(mtg, :Width) == descendants(mtg, :Width)
-      @test descendants!(mtg2, :Width, symbol=("Leaf", "Internode"), self=true) ==
+      @test descendants!(mtg2, :Width, symbol=(:Leaf, :Internode), self=true) ==
             width_all[end-1:end]
 
       clean_cache!(mtg)

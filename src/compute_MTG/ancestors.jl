@@ -15,7 +15,7 @@ Make it a `Symbol` for faster computation time.
 ## Keyword Arguments
 
 - `scale = nothing`: The scale to filter-in (i.e. to keep). Usually a Tuple-alike of integers.
-- `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Strings.
+- `symbol = nothing`: The symbol to filter-in. Usually a Tuple-alike of Symbols.
 - `link = nothing`: The link with the previous node to filter-in. Usually a Tuple-alike of Char.
 - `all::Bool = true`: Return all filtered-in nodes (`true`), or stop at the first node that
 is filtered out (`false`).
@@ -56,8 +56,8 @@ ancestors(leaf_node, :XX, scale = 1, type = Float64)
 ancestors(leaf_node, :Length, scale = 3, type = Float64)
 
 # Filter by symbol:
-ancestors(leaf_node, :Length, symbol = "Internode")
-ancestors(leaf_node, :Length, symbol = ("Axis","Internode"))
+ancestors(leaf_node, :Length, symbol = :Internode)
+ancestors(leaf_node, :Length, symbol = (:Axis,:Internode))
 ```
 """
 function ancestors(
@@ -71,6 +71,8 @@ function ancestors(
     recursivity_level=-1,
     ignore_nothing=false,
     type::Union{Union,DataType}=Any)
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -146,6 +148,8 @@ function ancestors(
     filter_fun=nothing,
     recursivity_level=-1
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -219,6 +223,8 @@ function ancestors!(
     ignore_nothing=false,
     type::Union{Union,DataType}=Any,
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
@@ -251,6 +257,8 @@ function ancestors!(
     filter_fun=nothing,
     recursivity_level=-1,
 )
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun)
 
