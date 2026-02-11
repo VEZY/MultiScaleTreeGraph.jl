@@ -111,7 +111,7 @@ function ancestors_workload(nodes, reps::Int)
     s = 0.0
     @inbounds for _ in 1:reps
         for n in nodes
-            vals = ancestors(n, :Length, recursivity_level=4, type=Union{Nothing,Float64})
+            vals = ancestors(n, :Length, recursivity_level=4)
             for v in vals
                 v === nothing || (s += v)
             end
@@ -137,7 +137,7 @@ end
 function descendants_repeated_workload(root, reps::Int)
     s = 0.0
     @inbounds for _ in 1:reps
-        vals = descendants(root, :Length, symbol=:Internode, ignore_nothing=true, type=Float64)
+        vals = descendants(root, :Length, symbol=:Internode, ignore_nothing=true)
         for v in vals
             s += v
         end
@@ -194,7 +194,7 @@ function descendants_tuple_workload(root)
 end
 
 function descendants_mixed_one(root; ignore_nothing::Bool)
-    descendants(root, :Length, symbol=(:Leaf, :Internode), ignore_nothing=ignore_nothing, type=Union{Nothing,Float64})
+    descendants(root, :Length, symbol=(:Leaf, :Internode), ignore_nothing=ignore_nothing)
 end
 
 function descendants_mixed_many(root; ignore_nothing::Bool)
@@ -217,7 +217,7 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
     tier["traverse_update"]["multi_attr_leaf_only"] = @benchmarkable traverse_update_multi_leaf!($root)
     tier["traverse_update"]["multi_attr_leaf_internode"] = @benchmarkable traverse_update_multi_mixed!($root)
 
-    tier["descendants_query"]["one_attr_one_symbol"] = @benchmarkable descendants($root, :Length, symbol=:Internode, ignore_nothing=true, type=Float64)
+    tier["descendants_query"]["one_attr_one_symbol"] = @benchmarkable descendants($root, :Length, symbol=:Internode, ignore_nothing=true)
     tier["descendants_query"]["many_attr_one_symbol"] = @benchmarkable descendants_tuple_workload($root)
     tier["descendants_query"]["one_attr_mixed_keep_nothing"] = @benchmarkable descendants_mixed_one($root, ignore_nothing=false)
     tier["descendants_query"]["one_attr_mixed_ignore_nothing"] = @benchmarkable descendants_mixed_one($root, ignore_nothing=true)

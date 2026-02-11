@@ -26,14 +26,7 @@ is filtered out (`false`).
 `recursivity_level = 2`. If a negative value is provided (the default), the function returns
 all valid values from the node to the root.
 - `ignore_nothing = false`: filter-out the nodes with `nothing` values for the given `key`
-- `type::Union{Union,DataType}`: The type of the attribute. Makes the function run much
-faster if provided (≈4x faster).
-
-# Note
-
-In most cases, the `type` argument should be given as a union of `Nothing` and the data type
-of the attribute to manage missing or inexistant data, e.g. measurements made at one scale
-only. See examples for more details.
+- `type::Union{Union,DataType}`: Deprecated. Return types are inferred automatically.
 
 # Examples
 
@@ -45,15 +38,11 @@ mtg = read_mtg(file)
 # Using a leaf node from the mtg:
 leaf_node = get_node(mtg, 5)
 
-ancestors(leaf_node, :Length) # Short to write, but slower to execute
-
-# Fast version, note that we pass a union of Nothing and Float64 because there are some nodes
-# without a `Length` attribute:
-ancestors(leaf_node, :Length, type = Union{Nothing,Float64})
+ancestors(leaf_node, :Length)
 
 # Filter by scale:
-ancestors(leaf_node, :XX, scale = 1, type = Float64)
-ancestors(leaf_node, :Length, scale = 3, type = Float64)
+ancestors(leaf_node, :XX, scale = 1)
+ancestors(leaf_node, :Length, scale = 3, ignore_nothing=true)
 
 # Filter by symbol:
 ancestors(leaf_node, :Length, symbol = :Internode)
@@ -73,6 +62,7 @@ function ancestors(
     type::Union{Union,DataType}=Any)
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
+    _maybe_depwarn_traversal_type_kw(:ancestors, type)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -81,12 +71,14 @@ function ancestors(
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
 
-    val = Array{type,1}()
+    out_type = type === Any ? infer_columnar_attr_type(node, Symbol(key), symbol, ignore_nothing) : type
+    val = Array{out_type,1}()
+    key_plan = build_columnar_query_plan(node, Symbol(key))
     # Put the recursivity level into an array so it is mutable in-place:
 
     if self
         if use_no_filter || is_filtered(node, scale, symbol, link, filter_fun_)
-            val_ = unsafe_getindex(node, key)
+            val_ = unsafe_getindex(node, key, key_plan)
             push!(val, val_)
         elseif !all
             # We don't keep the value and we have to stop at the first filtered-out value
@@ -95,15 +87,15 @@ function ancestors(
     end
 
     if use_no_filter
-        ancestors_values_no_filter!(node, key, val, recursivity_level)
+        ancestors_values_no_filter!(node, key, val, recursivity_level, key_plan)
     else
-        ancestors_values!(node, key, scale, symbol, link, all, filter_fun_, val, recursivity_level)
+        ancestors_values!(node, key, scale, symbol, link, all, filter_fun_, val, recursivity_level, key_plan)
     end
     return val
 end
 
 
-function ancestors_values!(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level)
+function ancestors_values!(node, key, scale, symbol, link, all, filter_fun, val, recursivity_level, key_plan=nothing)
     current = node
     remaining = recursivity_level
 
@@ -112,7 +104,7 @@ function ancestors_values!(node, key, scale, symbol, link, all, filter_fun, val,
         keep = is_filtered(parent_, scale, symbol, link, filter_fun)
 
         if keep
-            push!(val, unsafe_getindex(parent_, key))
+            push!(val, unsafe_getindex(parent_, key, key_plan))
             # Only decrement the recursivity level when the current node is not filtered-out
             remaining -= 1
         end
@@ -124,13 +116,13 @@ function ancestors_values!(node, key, scale, symbol, link, all, filter_fun, val,
     return val
 end
 
-function ancestors_values_no_filter!(node, key, val, recursivity_level)
+function ancestors_values_no_filter!(node, key, val, recursivity_level, key_plan=nothing)
     current = node
     remaining = recursivity_level
 
     while !isroot(current) && remaining != 0
         parent_ = parent(current)
-        push!(val, unsafe_getindex(parent_, key))
+        push!(val, unsafe_getindex(parent_, key, key_plan))
         remaining -= 1
         current = parent_
     end
@@ -225,23 +217,25 @@ function ancestors!(
 )
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
+    _maybe_depwarn_traversal_type_kw(:ancestors!, type)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
+    key_plan = build_columnar_query_plan(node, Symbol(key))
 
     empty!(out)
     if self
         if use_no_filter || is_filtered(node, scale, symbol, link, filter_fun_)
-            push!(out, unsafe_getindex(node, key))
+            push!(out, unsafe_getindex(node, key, key_plan))
         elseif !all
             return out
         end
     end
 
     if use_no_filter
-        ancestors_values_no_filter!(node, key, out, recursivity_level)
+        ancestors_values_no_filter!(node, key, out, recursivity_level, key_plan)
     else
-        ancestors_values!(node, key, scale, symbol, link, all, filter_fun_, out, recursivity_level)
+        ancestors_values!(node, key, scale, symbol, link, all, filter_fun_, out, recursivity_level, key_plan)
     end
     return out
 end

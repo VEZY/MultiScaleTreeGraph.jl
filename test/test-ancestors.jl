@@ -5,23 +5,24 @@
     # Using a leaf node from the mtg:
     leaf_node = get_node(mtg, 5)
 
-    @test ancestors(leaf_node, :Width; type=Union{Nothing,Float64}) == reverse(width_all[1:4])
+    @test_logs (:warn, r"Keyword argument `type` in `ancestors` is deprecated") ancestors(leaf_node, :Width; type=Union{Nothing,Float64})
     @test ancestors(leaf_node, :Width) == reverse(width_all[1:4])
 
     d = ancestors(leaf_node, :Width, scale=3)
-    @test typeof(d) == Vector{Any}
+    @test typeof(d) == Vector{Union{Nothing,Float64}}
     @test length(d) == 1
     @test d[1] == width_all[4]
-    d_typed = ancestors(leaf_node, :Width, type=Union{Nothing,Float64})
-    @test typeof(d_typed) == Vector{Union{Nothing,Float64}}
-    @test ancestors(leaf_node, :Width, symbol=("Leaf", "Internode")) == width_all[[4]]
+    @test typeof(ancestors(leaf_node, :Width)) == Vector{Union{Nothing,Float64}}
+    d_symbol = ancestors(leaf_node, :Width, symbol=("Leaf", "Internode"))
+    @test d_symbol == width_all[[4]]
+    @test typeof(d_symbol) == Vector{Union{Nothing,Float64}}
+    @test typeof(ancestors(leaf_node, :Width, ignore_nothing=true)) == Vector{Float64}
 
     @test ancestors(leaf_node, :Width, symbol=("Leaf", "Internode"), self=true) ==
           width_all[end:-1:end-1]
 
     buf_vals = Union{Nothing,Float64}[]
-    @test ancestors!(buf_vals, leaf_node, :Width; type=Union{Nothing,Float64}) ==
-          reverse(width_all[1:4])
+    @test ancestors!(buf_vals, leaf_node, :Width) == reverse(width_all[1:4])
     @test ancestors!(buf_vals, leaf_node, :Width, symbol=("Leaf", "Internode"), self=true) ==
           width_all[end:-1:end-1]
 

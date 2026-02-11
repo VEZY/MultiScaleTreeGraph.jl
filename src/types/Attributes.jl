@@ -29,6 +29,11 @@ mutable struct MTGAttributeStore
     node_row::Vector{Int}
 end
 
+struct ColumnarQueryPlan
+    key::Symbol
+    col_idx_by_bucket::Vector{Int}
+end
+
 function MTGAttributeStore()
     MTGAttributeStore(Dict{Symbol,Int}(), SymbolBucket[], Int[], Int[])
 end
@@ -240,6 +245,94 @@ end
 function _store_for_node_attrs(attrs::ColumnarAttrs)
     _isbound(attrs) || return nothing
     attrs.ref.store
+end
+
+@inline function _columnar_store(node)
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs || return nothing
+    _store_for_node_attrs(attrs)
+end
+
+function build_columnar_query_plan(node, key::Symbol)
+    store = _columnar_store(node)
+    store === nothing && return nothing
+    col_idx_by_bucket = Vector{Int}(undef, length(store.buckets))
+    @inbounds for i in eachindex(store.buckets)
+        col_idx_by_bucket[i] = get(store.buckets[i].col_index, key, 0)
+    end
+    ColumnarQueryPlan(key, col_idx_by_bucket)
+end
+
+@inline function _symbol_bucket_ids(store::MTGAttributeStore, symbol_filter)
+    if symbol_filter === nothing
+        return collect(eachindex(store.buckets))
+    elseif symbol_filter isa Symbol
+        bid = get(store.symbol_to_bucket, symbol_filter, 0)
+        return bid == 0 ? Int[] : Int[bid]
+    elseif symbol_filter isa Union{Tuple,AbstractArray}
+        out = Int[]
+        for sym in symbol_filter
+            bid = get(store.symbol_to_bucket, Symbol(sym), 0)
+            bid == 0 || push!(out, bid)
+        end
+        return out
+    else
+        bid = get(store.symbol_to_bucket, Symbol(symbol_filter), 0)
+        return bid == 0 ? Int[] : Int[bid]
+    end
+end
+
+@inline function _remove_nothing_type(T)
+    T === Nothing && return Union{}
+    parts = Base.uniontypes(T)
+    isempty(parts) && return T
+    kept = [p for p in parts if p !== Nothing]
+    if isempty(kept)
+        return Union{}
+    elseif length(kept) == 1
+        return kept[1]
+    end
+    acc = Union{kept[1],kept[2]}
+    @inbounds for i in 3:length(kept)
+        acc = Union{acc,kept[i]}
+    end
+    return acc
+end
+
+function infer_columnar_attr_type(node, key::Symbol, symbol_filter, ignore_nothing::Bool)
+    store = _columnar_store(node)
+    store === nothing && return Any
+    bucket_ids = _symbol_bucket_ids(store, symbol_filter)
+    isempty(bucket_ids) && return Any
+
+    has_any = false
+    missing_in_some = false
+    T = Union{}
+
+    @inbounds for bid in bucket_ids
+        bucket = store.buckets[bid]
+        col_idx = get(bucket.col_index, key, 0)
+        if col_idx == 0
+            missing_in_some = true
+            continue
+        end
+        has_any = true
+        col_T = bucket.col_types[col_idx]
+        T = T === Union{} ? col_T : typejoin(T, col_T)
+    end
+
+    has_any || return Any
+
+    if ignore_nothing
+        Tnn = _remove_nothing_type(T)
+        return Tnn === Union{} ? Any : Tnn
+    end
+
+    if missing_in_some
+        return Union{Nothing,T}
+    end
+
+    return T
 end
 
 function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
