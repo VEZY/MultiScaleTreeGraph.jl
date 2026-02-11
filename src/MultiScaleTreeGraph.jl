@@ -12,11 +12,13 @@ import DataFrames: DataFrame, insertcols!
 import DataFrames: transform!, transform # We define our own version for transforming the MTG
 import DataFrames: select!, select # We define our own version for transforming the MTG
 import DataFrames: rename! # We define our own version for renaming node attributes
+import Tables
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
 import Dates: Date, @dateformat_str, format
 
 include("types/AbstractNodeMTG.jl")
+include("types/Attributes.jl")
 include("types/Node.jl")
 include("read_MTG/read_MTG.jl")
 include("read_MTG/strip_comments.jl")
@@ -35,6 +37,7 @@ include("compute_MTG/check_filters.jl")
 include("compute_MTG/mutation.jl")
 include("compute_MTG/append_attributes.jl")
 include("compute_MTG/traverse.jl")
+include("compute_MTG/columnarize.jl")
 include("compute_MTG/transform.jl")
 include("compute_MTG/select.jl")
 include("compute_MTG/delete_nodes.jl")
@@ -48,6 +51,7 @@ include("compute_MTG/nleaves.jl")
 include("compute_MTG/pipe_model.jl")
 include("compute_MTG/get_node.jl")
 include("conversion/DataFrame.jl")
+include("conversion/Tables.jl")
 include("conversion/MetaGraph.jl")
 
 export read_mtg
@@ -91,6 +95,12 @@ export names, scales, symbols, components
 export node_id, node_mtg, node_attributes
 export symbol, scale, index, link
 export symbol!, scale!, index!, link!
+export ColumnarStore
+export Column, SymbolBucket, MTGAttributeStore, NodeAttrRef
+export attribute, attribute!, attributes, attribute_names
+export add_column!, drop_column!, rename_column!
+export columnarize!
+export symbol_table, mtg_table
 export list_nodes
 export get_classes
 export get_description

@@ -1,12 +1,12 @@
 """
-    read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name = nothing)
+    read_mtg(file, attr_type = ColumnarStore, mtg_type = MutableNodeMTG; sheet_name = nothing)
 
 Read an MTG file
 
 # Arguments
 
 - `file::String`: The path to the MTG file.
-- `attr_type::DataType = Dict`: the type used to hold the attribute values for each node.
+- `attr_type::DataType = ColumnarStore`: the type used to hold the attribute values for each node.
 - `mtg_type = MutableNodeMTG`: the type used to hold the mtg encoding for each node (*i.e.*
 link, symbol, index, scale). See details section below.
 - `sheet_name = nothing`: the sheet name in case you're reading an `xlsx` or `xlsm` file. It
@@ -51,7 +51,7 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","tr
 mtg = read_mtg(file)
 ```
 """
-function read_mtg(file, attr_type=Dict, mtg_type=MutableNodeMTG; sheet_name=nothing)
+function read_mtg(file, attr_type=ColumnarStore, mtg_type=MutableNodeMTG; sheet_name=nothing)
     file_extension = splitext(basename(file))[2]
 
     if file_extension == ".xlsx" || file_extension == ".xlsm"

@@ -15,6 +15,10 @@ end
     include("test-nodes.jl")
 end
 
+@testset "columnar backend" begin
+    include("test-columnar.jl")
+end
+
 @testset "descendants()" begin
     include("test-descendants.jl")
 end

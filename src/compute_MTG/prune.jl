@@ -23,6 +23,11 @@ function prune!(node)
     else
         parent_node = parent(node)
 
+        traverse!(node) do n
+            attrs = node_attributes(n)
+            attrs isa ColumnarAttrs && remove_columnar_node!(attrs)
+        end
+
         # Delete the node as child of his parent:
         deleteat!(children(parent_node), findfirst(x -> node_id(x) == node_id(node), children(parent_node)))
     end

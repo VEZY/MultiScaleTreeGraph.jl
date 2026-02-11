@@ -237,6 +237,14 @@ function parse_node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{Ab
     Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)), values(node_attr)))
 end
 
+function parse_node_attributes(::Type{ColumnarStore}, node_attr)
+    ColumnarAttrs(Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)), values(node_attr))))
+end
+
+function parse_node_attributes(::Type{ColumnarAttrs}, node_attr)
+    ColumnarAttrs(Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)), values(node_attr))))
+end
+
 # node_attributes for DataFrame
 function parse_node_attributes(::Type{DataFrame}, node_attr)
     DataFrame(node_attr)
@@ -249,6 +257,9 @@ end
 function init_empty_attr(attr_type::Type{T}) where {T<:Union{AbstractDict}}
     attr_type{Symbol,Any}()
 end
+
+init_empty_attr(::Type{ColumnarStore}) = ColumnarAttrs()
+init_empty_attr(::Type{ColumnarAttrs}) = ColumnarAttrs()
 
 
 """

@@ -71,6 +71,14 @@ function Node(id::Int, MTG::T, attributes::A) where {T<:AbstractNodeMTG,A}
     Node(id, nothing, Vector{Node{T,A}}(), MTG, attributes, Dict{String,Vector{Node{T,A}}}())
 end
 
+function Node(id::Int, MTG::T, attributes::ColumnarAttrs) where {T<:AbstractNodeMTG}
+    node = Node{T,ColumnarAttrs}(
+        id, nothing, Vector{Node{T,ColumnarAttrs}}(), MTG, attributes, Dict{String,Vector{Node{T,ColumnarAttrs}}}()
+    )
+    init_columnar_root!(attributes, id, getfield(MTG, :symbol))
+    return node
+end
+
 # If the id is not given, it is the root node, so we use 1
 Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
 # Not attributes given, by default we use Dict:
@@ -93,6 +101,43 @@ function Node(id::Int, parent::Node{M,A}, MTG::M, attributes::A) where {M<:Abstr
     node = Node(id, parent, Vector{Node{M,A}}(), MTG, attributes, Dict{String,Vector{Node{M,A}}}())
     addchild!(parent, node)
     return node
+end
+
+function _to_columnar_attrs(attributes::ColumnarAttrs)
+    attributes
+end
+
+function _to_columnar_attrs(attributes::AbstractDict)
+    ColumnarAttrs(attributes)
+end
+
+function _to_columnar_attrs(attributes::NamedTuple)
+    ColumnarAttrs(Dict{Symbol,Any}(pairs(attributes)))
+end
+
+function _to_columnar_attrs(attributes::MutableNamedTuple)
+    ColumnarAttrs(Dict{Symbol,Any}(pairs(attributes)))
+end
+
+function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::ColumnarAttrs) where {M<:AbstractNodeMTG}
+    node = Node{M,ColumnarAttrs}(
+        id, parent, Vector{Node{M,ColumnarAttrs}}(), MTG, attributes, Dict{String,Vector{Node{M,ColumnarAttrs}}}()
+    )
+    addchild!(parent, node)
+    bind_columnar_child!(node_attributes(parent), attributes, id, getfield(MTG, :symbol))
+    return node
+end
+
+function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::AbstractDict) where {M<:AbstractNodeMTG}
+    Node(id, parent, MTG, _to_columnar_attrs(attributes))
+end
+
+function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::NamedTuple) where {M<:AbstractNodeMTG}
+    Node(id, parent, MTG, _to_columnar_attrs(attributes))
+end
+
+function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::MutableNamedTuple) where {M<:AbstractNodeMTG}
+    Node(id, parent, MTG, _to_columnar_attrs(attributes))
 end
 
 function Node(id::Int, parent::Node{M,A}, MTG::T, attributes::A) where {M<:AbstractNodeMTG,A,T<:AbstractNodeMTG}
@@ -346,6 +391,94 @@ Set the attributes of a node, *i.e.* replace the whole structure by another. Thi
 and should not be used directly. Use *e.g.* `node.key = value` to set a single attribute of the node.
 """
 node_attributes!(node::Node{T,A}, attributes::A) where {T,A} = setfield!(node, :attributes, attributes)
+
+"""
+    attribute(node::Node, key::Symbol; default=nothing)
+
+Get one attribute from a node.
+"""
+attribute(node::Node, key::Symbol; default=nothing) = get(node_attributes(node), key, default)
+attribute(node::Node, key; default=nothing) = attribute(node, Symbol(key), default=default)
+
+"""
+    attribute!(node::Node, key::Symbol, value)
+
+Set one attribute on a node.
+"""
+function attribute!(node::Node, key::Symbol, value)
+    node_attributes(node)[key] = value
+    return value
+end
+attribute!(node::Node, key, value) = attribute!(node, Symbol(key), value)
+
+"""
+    attributes(node::Node; format=:namedtuple)
+
+Get all attributes from a node as a snapshot.
+"""
+function attributes(node::Node; format=:namedtuple)
+    attrs = node_attributes(node)
+    if format == :dict
+        return Dict{Symbol,Any}(pairs(attrs))
+    elseif format == :namedtuple
+        k = collect(keys(attrs))
+        vals = map(key -> get(attrs, key, nothing), k)
+        return NamedTuple{Tuple(k)}(Tuple(vals))
+    else
+        error("Unknown format $(format). Expected :namedtuple or :dict.")
+    end
+end
+
+"""
+    attribute_names(node::Node)
+
+Return the attribute names available for this node.
+"""
+attribute_names(node::Node) = collect(keys(node_attributes(node)))
+
+function _node_store(node::Node)
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs || error("This operation requires a columnar attribute backend.")
+    store = _store_for_node_attrs(attrs)
+    store === nothing && error("Node is not bound to a columnar attribute store.")
+    return store
+end
+
+function add_column!(node::Node, symbol::Symbol, key::Symbol, ::Type{T}; default::T) where {T}
+    add_column!(_node_store(node), symbol, key, T, default=default)
+end
+
+function add_column!(node::Node, symbols::AbstractVector{Symbol}, key::Symbol, ::Type{T}; default::T) where {T}
+    store = _node_store(node)
+    for sym in symbols
+        add_column!(store, sym, key, T, default=default)
+    end
+    return node
+end
+
+function drop_column!(node::Node, symbol::Symbol, key::Symbol)
+    drop_column!(_node_store(node), symbol, key)
+end
+
+function drop_column!(node::Node, symbols::AbstractVector{Symbol}, key::Symbol)
+    store = _node_store(node)
+    for sym in symbols
+        drop_column!(store, sym, key)
+    end
+    return node
+end
+
+function rename_column!(node::Node, symbol::Symbol, from::Symbol, to::Symbol)
+    rename_column!(_node_store(node), symbol, from, to)
+end
+
+function rename_column!(node::Node, symbols::AbstractVector{Symbol}, from::Symbol, to::Symbol)
+    store = _node_store(node)
+    for sym in symbols
+        rename_column!(store, sym, from, to)
+    end
+    return node
+end
 
 """
     get_attributes(mtg)
