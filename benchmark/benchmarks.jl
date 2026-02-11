@@ -1,8 +1,3 @@
-using Pkg
-Pkg.activate(dirname(@__FILE__))
-Pkg.develop(PackageSpec(path=dirname(@__DIR__)))
-Pkg.instantiate()
-
 using BenchmarkTools
 using MultiScaleTreeGraph
 using Random
@@ -294,7 +289,7 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
             data_ = synthetic_mtg(n_nodes=3_000, seed=666)
             mtg_ = data_.root
             f = tempname() * ".mtg"
-            write_mtg(mtg_, f)
+            write_mtg(f, mtg_)
             rm(f, force=true)
         end
     end
