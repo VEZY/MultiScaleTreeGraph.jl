@@ -9,6 +9,8 @@ using Random
 using Tables
 
 const SUITE = BenchmarkGroup()
+const HAS_EXPLICIT_ATTRIBUTE_API = isdefined(MultiScaleTreeGraph, :attribute) && isdefined(MultiScaleTreeGraph, :attribute!)
+const HAS_TABLE_VIEWS_API = isdefined(MultiScaleTreeGraph, :symbol_table) && isdefined(MultiScaleTreeGraph, :mtg_table)
 
 const SIZE_TIERS = (
     small=10_000,
@@ -22,11 +24,11 @@ function synthetic_mtg(; n_nodes::Int=10_000, seed::Int=42)
     root = Node(
         1,
         MutableNodeMTG(:/, :Plant, 1, 1),
-        MultiScaleTreeGraph.ColumnarAttrs(Dict{Symbol,Any}(
+        Dict{Symbol,Any}(
             :mass => rand(rng),
             :height => rand(rng),
             :temperature => 20.0,
-        )),
+        ),
     )
 
     candidates = Node[root]
@@ -84,6 +86,21 @@ function synthetic_mtg(; n_nodes::Int=10_000, seed::Int=42)
     sample_leaves = isempty(leaves) ? sample_nodes : rand(rng, leaves, min(512, length(leaves)))
 
     return (root=root, leaves=leaves, internodes=internodes, all_nodes=all_nodes, sample_nodes=sample_nodes, sample_leaves=sample_leaves)
+end
+
+@inline function _attr_get(node, key::Symbol; default=nothing)
+    if HAS_EXPLICIT_ATTRIBUTE_API
+        return attribute(node, key, default=default)
+    end
+    return get(node_attributes(node), key, default)
+end
+
+@inline function _attr_set!(node, key::Symbol, value)
+    if HAS_EXPLICIT_ATTRIBUTE_API
+        return attribute!(node, key, value)
+    end
+    node[key] = value
+    return value
 end
 
 function children_workload(nodes, reps::Int)
@@ -159,27 +176,27 @@ end
 
 function traverse_update_one!(root)
     traverse!(root) do node
-        m = attribute(node, :mass, default=0.0)
-        attribute!(node, :mass, m + 0.1)
+        m = _attr_get(node, :mass, default=0.0)
+        _attr_set!(node, :mass, m + 0.1)
     end
     return nothing
 end
 
 function traverse_update_multi_leaf!(root)
     traverse!(root, symbol=:Leaf) do node
-        width = attribute(node, :Width, default=0.0)
-        area = attribute(node, :Area, default=0.0)
-        attribute!(node, :Width, width * 1.001)
-        attribute!(node, :Area, area + width)
+        width = _attr_get(node, :Width, default=0.0)
+        area = _attr_get(node, :Area, default=0.0)
+        _attr_set!(node, :Width, width * 1.001)
+        _attr_set!(node, :Area, area + width)
     end
     return nothing
 end
 
 function traverse_update_multi_mixed!(root)
     traverse!(root, symbol=(:Leaf, :Internode)) do node
-        m = attribute(node, :mass, default=0.0)
-        attribute!(node, :mass, m * 0.999 + 0.0001)
-        attribute!(node, :update_counter, attribute(node, :update_counter, default=0) + 1)
+        m = _attr_get(node, :mass, default=0.0)
+        _attr_set!(node, :mass, m * 0.999 + 0.0001)
+        _attr_set!(node, :update_counter, _attr_get(node, :update_counter, default=0) + 1)
     end
     return nothing
 end
@@ -268,8 +285,10 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
             select!(mtg_, :mass, :Length, ignore_nothing=true)
         end
 
-        tier["api_surface_small_only"]["tables_symbol"] = @benchmarkable symbol_table($root, :Leaf)
-        tier["api_surface_small_only"]["tables_unified"] = @benchmarkable mtg_table($root)
+        if HAS_TABLE_VIEWS_API
+            tier["api_surface_small_only"]["tables_symbol"] = @benchmarkable symbol_table($root, :Leaf)
+            tier["api_surface_small_only"]["tables_unified"] = @benchmarkable mtg_table($root)
+        end
 
         tier["api_surface_small_only"]["write_mtg"] = @benchmarkable begin
             data_ = synthetic_mtg(n_nodes=3_000, seed=666)

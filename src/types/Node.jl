@@ -66,11 +66,6 @@ end
 @deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple} Node(id, parent, MTG, attributes)
 @deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple} Node(id, parent, MTG, attributes)
 
-# For the root:
-function Node(id::Int, MTG::T, attributes::A) where {T<:AbstractNodeMTG,A}
-    Node(id, nothing, Vector{Node{T,A}}(), MTG, attributes, Dict{String,Vector{Node{T,A}}}())
-end
-
 function Node(id::Int, MTG::T, attributes::ColumnarAttrs) where {T<:AbstractNodeMTG}
     node = Node{T,ColumnarAttrs}(
         id, nothing, Vector{Node{T,ColumnarAttrs}}(), MTG, attributes, Dict{String,Vector{Node{T,ColumnarAttrs}}}()
@@ -80,28 +75,9 @@ function Node(id::Int, MTG::T, attributes::ColumnarAttrs) where {T<:AbstractNode
 end
 
 # If the id is not given, it is the root node, so we use 1
-Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
-# Not attributes given, by default we use Dict:
-Node(id::Int, MTG::T) where {T<:AbstractNodeMTG} = Node(id, MTG, Dict{Symbol,Any}())
-
-# Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
-# can't mutate attributes, i.e. we get somthing like
-# Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
-# Node{NodeMTG,MutableNamedTuple}
-function Node(id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    Node{M,MutableNamedTuple}(id, nothing, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
-end
-
-function Node(id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    Node{M,NamedTuple}(id, nothing, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
-end
-
-# Add a node as a child of another node:
-function Node(id::Int, parent::Node{M,A}, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A}
-    node = Node(id, parent, Vector{Node{M,A}}(), MTG, attributes, Dict{String,Vector{Node{M,A}}}())
-    addchild!(parent, node)
-    return node
-end
+Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, _to_columnar_attrs(attributes))
+Node(id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(id, MTG, _to_columnar_attrs(attributes))
+Node(id::Int, MTG::T) where {T<:AbstractNodeMTG} = Node(id, MTG, ColumnarAttrs())
 
 function _to_columnar_attrs(attributes::ColumnarAttrs)
     attributes
@@ -119,6 +95,10 @@ function _to_columnar_attrs(attributes::MutableNamedTuple)
     ColumnarAttrs(Dict{Symbol,Any}(pairs(attributes)))
 end
 
+function _to_columnar_attrs(attributes)
+    throw(ArgumentError("Unsupported attribute container type $(typeof(attributes)); use ColumnarAttrs, AbstractDict, or NamedTuple-like values."))
+end
+
 function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::ColumnarAttrs) where {M<:AbstractNodeMTG}
     node = Node{M,ColumnarAttrs}(
         id, parent, Vector{Node{M,ColumnarAttrs}}(), MTG, attributes, Dict{String,Vector{Node{M,ColumnarAttrs}}}()
@@ -128,17 +108,8 @@ function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::Column
     return node
 end
 
-function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::AbstractDict) where {M<:AbstractNodeMTG}
+Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes) where {M<:AbstractNodeMTG} =
     Node(id, parent, MTG, _to_columnar_attrs(attributes))
-end
-
-function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::NamedTuple) where {M<:AbstractNodeMTG}
-    Node(id, parent, MTG, _to_columnar_attrs(attributes))
-end
-
-function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::MutableNamedTuple) where {M<:AbstractNodeMTG}
-    Node(id, parent, MTG, _to_columnar_attrs(attributes))
-end
 
 function Node(id::Int, parent::Node{M,A}, MTG::T, attributes::A) where {M<:AbstractNodeMTG,A,T<:AbstractNodeMTG}
     error(
@@ -147,27 +118,16 @@ function Node(id::Int, parent::Node{M,A}, MTG::T, attributes::A) where {M<:Abstr
     )
 end
 
-# Special case for NamedTuple here:
-function Node(id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    node = Node{M,NamedTuple}(id, parent, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,NamedTuple}}}())
-    addchild!(parent, node)
-    return node
-end
-
-# Idem for MutableNamedTuple here:
-function Node(id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    node = Node{M,MutableNamedTuple}(id, parent, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
-    addchild!(parent, node)
-    return node
-end
+Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M) where {M<:AbstractNodeMTG} =
+    Node(id, parent, MTG, ColumnarAttrs())
 
 # If the id is not given, it is the root node, so we use 1
 function Node(parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG}
     Node(new_id(get_root(parent)), parent, MTG, attributes)
 end
 
-# Only the MTG is given, by default we use Dict as attributes:
-Node(MTG::T) where {T<:AbstractNodeMTG} = Node(1, MTG, Dict{Symbol,Any}())
+# Only the MTG is given, by default we use ColumnarAttrs as attributes:
+Node(MTG::T) where {T<:AbstractNodeMTG} = Node(1, MTG, ColumnarAttrs())
 
 # Only the ID, MTG and parent are given, by default we use the parent attribute type:
 function Node(id::Int, parent::Node{N,A}, MTG::T) where {N<:AbstractNodeMTG,A,T<:AbstractNodeMTG}

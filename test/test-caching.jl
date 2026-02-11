@@ -1,7 +1,7 @@
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", "simple_plant.mtg")
 
 @testset "caching" begin
-    mtg = read_mtg(file, Dict)
+    mtg = read_mtg(file)
 
     # Cache all leaf nodes:
     cache_nodes!(mtg, symbol=:Leaf)

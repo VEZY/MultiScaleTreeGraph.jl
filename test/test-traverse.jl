@@ -1,5 +1,5 @@
 @testset "traverse!" begin
-    mtg = read_mtg("files/simple_plant.mtg", Dict)
+    mtg = read_mtg("files/simple_plant.mtg")
     # Add a new attributes, x based on node field, y based on x and z using a function:
     traverse!(mtg, x -> x[:x] = length(node_id(x)))
     @test mtg[:x] == 1
@@ -11,7 +11,7 @@
 end
 
 @testset "traverse" begin
-    mtg = read_mtg("files/simple_plant.mtg", Dict)
+    mtg = read_mtg("files/simple_plant.mtg")
     # Add a new attributes, x based on node field, y based on x and z using a function:
     node_ids = traverse(mtg, x -> node_id(x))
     @test node_ids == collect(1:length(mtg))
@@ -24,7 +24,7 @@ end
 end
 
 @testset "traverse + filters" begin
-    mtg = read_mtg("files/simple_plant.mtg", Dict)
+    mtg = read_mtg("files/simple_plant.mtg")
     # Add a new attributes, x based on node field, y based on x and z using a function:
     @test traverse(mtg, x -> x, symbol="Internode") == [get_node(mtg, 4), get_node(mtg, 6)]
     @test traverse(mtg, x -> x, symbol=:Internode) == [get_node(mtg, 4), get_node(mtg, 6)]
