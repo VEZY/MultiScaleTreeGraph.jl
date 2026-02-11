@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Multi-scale Tree Graph -or MTG for short- is a data structure for describing a tree-alike object at one or several scales.
+The Multi-scale Tree Graph (MTG) is a format for describing a plant-like branching object at one or several scales.
 
 Let's take a grass plant as an example:
 
@@ -20,7 +20,7 @@ If we get closer again, each axis can be described with more details, and we can
 
 *Fig. 2. A grass plant described at three different scales: (a) the plant, (b) the axis and (c) the phytomer. The corresponding MTG graph (mono-scale) is shown on the right of each description.*
 
-Figure 2 shows a different graph for each scale used for the description, but we can join all scales into a single MTG instead. In the MTG, all scales live together in the same data structure. The elementary object is called a node. The nodes are denoted by the little circles in Figure 2. There is one node for the plant scale (Fig. 2a), two nodes for the axis because there are two tillers (Fig. 2b), and six nodes for the phytomers, one for each (Fig. 2c).
+Figure 2 shows a different graph for each scale, but we can also merge all scales into one MTG. In an MTG, all scales live together in one structure. The basic element is a **node** (the circles in Figure 2). There is one node for the plant scale (Fig. 2a), two nodes for axes because there are two tillers (Fig. 2b), and six nodes for phytomers, one for each (Fig. 2c).
 
 The resulting MTG describing all scales at once in the same graph can be represented as follows:
 
