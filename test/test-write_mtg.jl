@@ -18,12 +18,12 @@ mtg[:description] = nothing
 end
 
 
-mtg = read_mtg("files/simple_plant.mtg", NamedTuple, NodeMTG)
+mtg = read_mtg("files/simple_plant.mtg", NodeMTG)
 
-@testset "Test write / read again: simple plant + NamedTuple" begin
+@testset "Test write / read again: simple plant + NodeMTG" begin
     mtg2 = mktemp() do f, io
         write_mtg(f, mtg)
-        mtg2 = read_mtg(f, NamedTuple, NodeMTG)
+        mtg2 = read_mtg(f, NodeMTG)
         return mtg2
     end
 

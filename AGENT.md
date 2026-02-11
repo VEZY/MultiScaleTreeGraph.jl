@@ -21,6 +21,7 @@
 - `src/compute_MTG/indexing.jl`
 - `src/compute_MTG/check_filters.jl`
 - `src/types/Node.jl`
+- `src/types/Attributes.jl`
 - `src/compute_MTG/node_funs.jl`
 
 ## Practical Optimization Rules
@@ -30,4 +31,14 @@
   - `descendants!(buffer, node, key; ...)`
 - Keep filter checks branch-light when no filters are provided.
 - Keep key access on typed attribute containers (`NamedTuple`, `MutableNamedTuple`, typed dicts) in specialized methods when possible.
+- Prefer explicit attribute APIs:
+  - `attribute(node, key)`
+  - `attribute!(node, key, value)`
+  - `attributes(node; format=:namedtuple|:dict)`
+  - `add_column!` / `drop_column!` / `rename_column!`
 - Preserve API behavior and add tests for every optimization that changes internals.
+
+## Benchmark Tiers
+- `small` (~10k nodes): full matrix including API-surface benchmarks
+- `medium` (~100k nodes): hot-path matrix
+- `large` (~300k nodes): critical hot paths only

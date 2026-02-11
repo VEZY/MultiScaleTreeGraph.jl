@@ -1,27 +1,101 @@
-function collect_descendant_values!(node, key, scale, symbol, link, filter_fun, all, val, recursivity_level)
+@inline function _maybe_depwarn_traversal_type_kw(fname::Symbol, type)
+    type === Any && return nothing
+    Base.depwarn(
+        "Keyword argument `type` in `$fname` is deprecated and will be removed in a future release. " *
+        "Return types are inferred automatically from the columnar attribute store; remove `type` " *
+        "and use `ignore_nothing=true` when you want `nothing` values filtered out.",
+        fname,
+    )
+    return nothing
+end
+
+@inline function _descendants_index_compatible(scale, link, all::Bool, filter_fun, recursivity_level)
+    scale === nothing || return false
+    link === nothing || return false
+    all || return false
+    filter_fun === nothing || return false
+    return isinf(recursivity_level) || recursivity_level < 0
+end
+
+@inline function _bucket_allow_mask(store::MTGAttributeStore, symbol_filter)
+    symbol_filter === nothing && return nothing
+    mask = falses(length(store.buckets))
+    for bid in _symbol_bucket_ids(store, symbol_filter)
+        mask[bid] = true
+    end
+    return mask
+end
+
+function _collect_descendant_values_indexed!(
+    out::AbstractVector,
+    node,
+    key::Symbol,
+    key_plan::ColumnarQueryPlan,
+    symbol_filter,
+    self::Bool,
+    ignore_nothing::Bool,
+)
+    store = _columnar_store(node)
+    store === nothing && return false
+    _prepare_subtree_index!(store, get_root(node)) || return false
+    idx = store.subtree_index
+
+    nid0 = node_id(node)
+    nid0 > length(idx.tin) && return false
+    left = idx.tin[nid0]
+    right = idx.tout[nid0]
+    left == 0 && return false
+    self || (left += 1)
+    left > right && return true
+
+    allow_mask = _bucket_allow_mask(store, symbol_filter)
+
+    @inbounds for i in left:right
+        nid = idx.dfs_order[i]
+        bid = store.node_bucket[nid]
+        bid == 0 && continue
+        allow_mask === nothing || allow_mask[bid] || continue
+
+        col_idx = key_plan.col_idx_by_bucket[bid]
+        if col_idx == 0
+            ignore_nothing && continue
+            push!(out, nothing)
+            continue
+        end
+
+        row = store.node_row[nid]
+        v = store.buckets[bid].columns[col_idx].data[row]
+        ignore_nothing && v === nothing && continue
+        push!(out, v)
+    end
+
+    return true
+end
+
+function collect_descendant_values!(node, key, scale, symbol, link, filter_fun, all, val, recursivity_level, key_plan=nothing)
     recursivity_level == 0 && return val
     recursivity_level -= 1
 
     keep = is_filtered(node, scale, symbol, link, filter_fun)
     if keep
-        push!(val, unsafe_getindex(node, key))
+        push!(val, unsafe_getindex(node, key, key_plan))
     elseif !all
         return val
     end
 
     @inbounds for chnode in children(node)
-        collect_descendant_values!(chnode, key, scale, symbol, link, filter_fun, all, val, recursivity_level)
+        collect_descendant_values!(chnode, key, scale, symbol, link, filter_fun, all, val, recursivity_level, key_plan)
     end
     return val
 end
 
-function collect_descendant_values_no_filter!(node, key, val, recursivity_level)
+function collect_descendant_values_no_filter!(node, key, val, recursivity_level, key_plan=nothing)
     recursivity_level == 0 && return val
     recursivity_level -= 1
 
-    push!(val, unsafe_getindex(node, key))
+    push!(val, unsafe_getindex(node, key, key_plan))
     @inbounds for chnode in children(node)
-        collect_descendant_values_no_filter!(chnode, key, val, recursivity_level)
+        collect_descendant_values_no_filter!(chnode, key, val, recursivity_level, key_plan)
     end
     return val
 end
@@ -67,29 +141,39 @@ function descendants(
     type::Union{Union,DataType}=Any)
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
+    _maybe_depwarn_traversal_type_kw(:descendants, type)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
 
-    # Change the filtering function if we also want to remove nodes with nothing values:
-    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
+    key_ = Symbol(key)
+    out_type = type === Any ? infer_columnar_attr_type(node, key_, symbol, ignore_nothing) : type
+    val = Array{out_type,1}()
+    key_plan = build_columnar_query_plan(node, key_)
 
-    val = Array{type,1}()
+    if key_plan isa ColumnarQueryPlan &&
+       _descendants_index_compatible(scale, link, all, filter_fun, recursivity_level) &&
+       _collect_descendant_values_indexed!(val, node, key_, key_plan, symbol, self, ignore_nothing)
+        return val
+    end
+
+    # Change the filtering function if we also want to remove nodes with nothing values:
+    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key_)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
 
     if self
         if use_no_filter
-            collect_descendant_values_no_filter!(node, key, val, recursivity_level)
+            collect_descendant_values_no_filter!(node, key_, val, recursivity_level, key_plan)
         else
-            collect_descendant_values!(node, key, scale, symbol, link, filter_fun_, all, val, recursivity_level)
+            collect_descendant_values!(node, key_, scale, symbol, link, filter_fun_, all, val, recursivity_level, key_plan)
         end
     else
         # If we don't want to include the value of the current node, we apply the traversal to its children directly:
         for chnode in children(node)
             if use_no_filter
-                collect_descendant_values_no_filter!(chnode, key, val, recursivity_level)
+                collect_descendant_values_no_filter!(chnode, key_, val, recursivity_level, key_plan)
             else
-                collect_descendant_values!(chnode, key, scale, symbol, link, filter_fun_, all, val, recursivity_level)
+                collect_descendant_values!(chnode, key_, scale, symbol, link, filter_fun_, all, val, recursivity_level, key_plan)
             end
         end
     end
@@ -152,23 +236,33 @@ function descendants!(
 )
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
+    _maybe_depwarn_traversal_type_kw(:descendants!, type)
     check_filters(node, scale=scale, symbol=symbol, link=link)
-    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
-    use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
+    key_ = Symbol(key)
+    key_plan = build_columnar_query_plan(node, key_)
 
     empty!(out)
+    if key_plan isa ColumnarQueryPlan &&
+       _descendants_index_compatible(scale, link, all, filter_fun, recursivity_level) &&
+       _collect_descendant_values_indexed!(out, node, key_, key_plan, symbol, self, ignore_nothing)
+        return out
+    end
+
+    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key_)
+    use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
+
     if self
         if use_no_filter
-            collect_descendant_values_no_filter!(node, key, out, recursivity_level)
+            collect_descendant_values_no_filter!(node, key_, out, recursivity_level, key_plan)
         else
-            collect_descendant_values!(node, key, scale, symbol, link, filter_fun_, all, out, recursivity_level)
+            collect_descendant_values!(node, key_, scale, symbol, link, filter_fun_, all, out, recursivity_level, key_plan)
         end
     else
         for chnode in children(node)
             if use_no_filter
-                collect_descendant_values_no_filter!(chnode, key, out, recursivity_level)
+                collect_descendant_values_no_filter!(chnode, key_, out, recursivity_level, key_plan)
             else
-                collect_descendant_values!(chnode, key, scale, symbol, link, filter_fun_, all, out, recursivity_level)
+                collect_descendant_values!(chnode, key_, scale, symbol, link, filter_fun_, all, out, recursivity_level, key_plan)
             end
         end
     end
@@ -224,6 +318,7 @@ function descendants!(
     type::Union{Union,DataType}=Any) where {N,A<:AbstractDict}
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
+    _maybe_depwarn_traversal_type_kw(:descendants!, type)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -323,20 +418,13 @@ is filtered out (`false`).
 grand-children: `recursivity_level = 2`. If `Inf` (the default) or a negative value is provided, there is no 
 recursion limitation.
 - `ignore_nothing = false`: filter-out the nodes with `nothing` values for the given `key`
-- `type::Union{Union,DataType}`: The type of the attribute. Can make the function run much
-faster if provided (*e.g.* ≈4x faster).
+- `type::Union{Union,DataType}`: Deprecated. Return types are inferred automatically.
 
 
 # Tips
 
 To get the values of the leaves use [`isleaf`](@ref) as the filtering function, e.g.:
 `descendants(mtg, :Width; filter_fun = isleaf)`.
-
-# Note
-
-In most cases, the `type` argument should be given as a union of `Nothing` and the data type
-of the attribute to manage missing or inexistant data, e.g. measurements made at one scale
-only. See examples for more details.
 
 # Examples
 
@@ -345,15 +433,11 @@ only. See examples for more details.
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
-descendants(mtg, :Length) # Short to write, but slower to execute
-
-# Fast version, note that we pass a union of Nothing and Float64 because there are some nodes
-# without a `Length` attribute:
-descendants(mtg, :Length, type = Union{Nothing,Float64})
+descendants(mtg, :Length)
 
 # Filter by scale:
-descendants(mtg, :XEuler, scale = 3, type = Union{Nothing, Float64})
-descendants(mtg, :Length, scale = 3, type = Float64) # No `nothing` value here, no need of a union type
+descendants(mtg, :XEuler, scale = 3)
+descendants(mtg, :Length, scale = 3, ignore_nothing=true) # No `nothing` in output
 
 # Filter by symbol:
 descendants(mtg, :Length, symbol = :Leaf)

@@ -64,6 +64,24 @@ function unsafe_getindex(node::Node{M,T} where {M<:AbstractNodeMTG,T<:AbstractDi
     unsafe_getindex(node, Symbol(key))
 end
 
+@inline function unsafe_getindex(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, key::Symbol, plan::ColumnarQueryPlan)
+    attrs = node_attributes(node)
+    store = attrs.ref.store
+    store === nothing && return nothing
+    nodeid = node_id(node)
+    nodeid > length(store.node_bucket) && return nothing
+    bid = store.node_bucket[nodeid]
+    bid == 0 && return nothing
+    col_idx = plan.col_idx_by_bucket[bid]
+    col_idx == 0 && return nothing
+    row = store.node_row[nodeid]
+    col = store.buckets[bid].columns[col_idx]
+    return col.data[row]
+end
+
+@inline unsafe_getindex(node::Node, key::Symbol, plan) = unsafe_getindex(node, key)
+@inline unsafe_getindex(node::Node, key, plan) = unsafe_getindex(node, Symbol(key), plan)
+
 """
 Returns the length of the subtree below the node (including it)
 """

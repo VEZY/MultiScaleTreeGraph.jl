@@ -66,34 +66,50 @@ end
 @deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple} Node(id, parent, MTG, attributes)
 @deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple} Node(id, parent, MTG, attributes)
 
-# For the root:
-function Node(id::Int, MTG::T, attributes::A) where {T<:AbstractNodeMTG,A}
-    Node(id, nothing, Vector{Node{T,A}}(), MTG, attributes, Dict{String,Vector{Node{T,A}}}())
+function Node(id::Int, MTG::T, attributes::ColumnarAttrs) where {T<:AbstractNodeMTG}
+    node = Node{T,ColumnarAttrs}(
+        id, nothing, Vector{Node{T,ColumnarAttrs}}(), MTG, attributes, Dict{String,Vector{Node{T,ColumnarAttrs}}}()
+    )
+    init_columnar_root!(attributes, id, getfield(MTG, :symbol))
+    return node
 end
 
 # If the id is not given, it is the root node, so we use 1
-Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, attributes)
-# Not attributes given, by default we use Dict:
-Node(id::Int, MTG::T) where {T<:AbstractNodeMTG} = Node(id, MTG, Dict{Symbol,Any}())
+Node(MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(1, MTG, _to_columnar_attrs(attributes))
+Node(id::Int, MTG::T, attributes) where {T<:AbstractNodeMTG} = Node(id, MTG, _to_columnar_attrs(attributes))
+Node(id::Int, MTG::T) where {T<:AbstractNodeMTG} = Node(id, MTG, ColumnarAttrs())
 
-# Special case for the NamedTuple and MutableNamedTuple, else it overspecializes and we
-# can't mutate attributes, i.e. we get somthing like
-# Node{NodeMTG,MutableNamedTuple{(:a,), Tuple{Base.RefValue{Int64}}}} instead of just:
-# Node{NodeMTG,MutableNamedTuple}
-function Node(id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    Node{M,MutableNamedTuple}(id, nothing, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
+function _to_columnar_attrs(attributes::ColumnarAttrs)
+    attributes
 end
 
-function Node(id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    Node{M,NamedTuple}(id, nothing, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
+function _to_columnar_attrs(attributes::AbstractDict)
+    ColumnarAttrs(attributes)
 end
 
-# Add a node as a child of another node:
-function Node(id::Int, parent::Node{M,A}, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A}
-    node = Node(id, parent, Vector{Node{M,A}}(), MTG, attributes, Dict{String,Vector{Node{M,A}}}())
+function _to_columnar_attrs(attributes::NamedTuple)
+    ColumnarAttrs(Dict{Symbol,Any}(pairs(attributes)))
+end
+
+function _to_columnar_attrs(attributes::MutableNamedTuple)
+    ColumnarAttrs(Dict{Symbol,Any}(pairs(attributes)))
+end
+
+function _to_columnar_attrs(attributes)
+    throw(ArgumentError("Unsupported attribute container type $(typeof(attributes)); use ColumnarAttrs, AbstractDict, or NamedTuple-like values."))
+end
+
+function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::ColumnarAttrs) where {M<:AbstractNodeMTG}
+    node = Node{M,ColumnarAttrs}(
+        id, parent, Vector{Node{M,ColumnarAttrs}}(), MTG, attributes, Dict{String,Vector{Node{M,ColumnarAttrs}}}()
+    )
     addchild!(parent, node)
+    bind_columnar_child!(node_attributes(parent), attributes, id, getfield(MTG, :symbol))
     return node
 end
+
+Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes) where {M<:AbstractNodeMTG} =
+    Node(id, parent, MTG, _to_columnar_attrs(attributes))
 
 function Node(id::Int, parent::Node{M,A}, MTG::T, attributes::A) where {M<:AbstractNodeMTG,A,T<:AbstractNodeMTG}
     error(
@@ -102,27 +118,16 @@ function Node(id::Int, parent::Node{M,A}, MTG::T, attributes::A) where {M<:Abstr
     )
 end
 
-# Special case for NamedTuple here:
-function Node(id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple}
-    node = Node{M,NamedTuple}(id, parent, Vector{Node{M,NamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,NamedTuple}}}())
-    addchild!(parent, node)
-    return node
-end
-
-# Idem for MutableNamedTuple here:
-function Node(id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
-    node = Node{M,MutableNamedTuple}(id, parent, Vector{Node{M,MutableNamedTuple}}(), MTG, attributes, Dict{String,Vector{Node{M,MutableNamedTuple}}}())
-    addchild!(parent, node)
-    return node
-end
+Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M) where {M<:AbstractNodeMTG} =
+    Node(id, parent, MTG, ColumnarAttrs())
 
 # If the id is not given, it is the root node, so we use 1
 function Node(parent::Node, MTG::T, attributes) where {T<:AbstractNodeMTG}
     Node(new_id(get_root(parent)), parent, MTG, attributes)
 end
 
-# Only the MTG is given, by default we use Dict as attributes:
-Node(MTG::T) where {T<:AbstractNodeMTG} = Node(1, MTG, Dict{Symbol,Any}())
+# Only the MTG is given, by default we use ColumnarAttrs as attributes:
+Node(MTG::T) where {T<:AbstractNodeMTG} = Node(1, MTG, ColumnarAttrs())
 
 # Only the ID, MTG and parent are given, by default we use the parent attribute type:
 function Node(id::Int, parent::Node{N,A}, MTG::T) where {N<:AbstractNodeMTG,A,T<:AbstractNodeMTG}
@@ -175,14 +180,23 @@ AbstractTrees.childtype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
 
 Set the parent of the node.
 """
-reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,A}}} where {T,A} = setfield!(node, :parent, p)
+function reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,A}}} where {T,A}
+    setfield!(node, :parent, p)
+    _mark_structure_mutation!(node)
+    p === nothing || _mark_structure_mutation!(p)
+    return p
+end
 
 """
     rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
 
 Set the children of the node.
 """
-rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A} = setfield!(node, :children, chnodes)
+function rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
+    setfield!(node, :children, chnodes)
+    _mark_structure_mutation!(node)
+    return chnodes
+end
 # AbstractTrees.childstatetype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
 
 # Set the traits for Node:
@@ -346,6 +360,130 @@ Set the attributes of a node, *i.e.* replace the whole structure by another. Thi
 and should not be used directly. Use *e.g.* `node.key = value` to set a single attribute of the node.
 """
 node_attributes!(node::Node{T,A}, attributes::A) where {T,A} = setfield!(node, :attributes, attributes)
+
+"""
+    attribute(node::Node, key::Symbol; default=nothing)
+
+Get one attribute from a node.
+"""
+attribute(node::Node, key::Symbol; default=nothing) = get(node_attributes(node), key, default)
+attribute(node::Node, key; default=nothing) = attribute(node, Symbol(key), default=default)
+
+"""
+    attribute!(node::Node, key::Symbol, value)
+
+Set one attribute on a node.
+"""
+function attribute!(node::Node, key::Symbol, value)
+    node_attributes(node)[key] = value
+    return value
+end
+attribute!(node::Node, key, value) = attribute!(node, Symbol(key), value)
+
+"""
+    attributes(node::Node; format=:namedtuple)
+
+Get all attributes from a node as a snapshot.
+"""
+function attributes(node::Node; format=:namedtuple)
+    attrs = node_attributes(node)
+    if format == :dict
+        return Dict{Symbol,Any}(pairs(attrs))
+    elseif format == :namedtuple
+        k = collect(keys(attrs))
+        vals = map(key -> get(attrs, key, nothing), k)
+        return NamedTuple{Tuple(k)}(Tuple(vals))
+    else
+        error("Unknown format $(format). Expected :namedtuple or :dict.")
+    end
+end
+
+"""
+    attribute_names(node::Node)
+
+Return the attribute names available for this node.
+"""
+attribute_names(node::Node) = collect(keys(node_attributes(node)))
+
+function _node_store(node::Node)
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs || error("This operation requires a columnar attribute backend.")
+    store = _store_for_node_attrs(attrs)
+    store === nothing && error("Node is not bound to a columnar attribute store.")
+    return store
+end
+
+@inline function _mark_structure_mutation!(node::Node)
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs || return nothing
+    store = _store_for_node_attrs(attrs)
+    store === nothing && return nothing
+    _mark_subtree_index_mutation!(store)
+    return nothing
+end
+
+function add_column!(node::Node, symbol::Symbol, key::Symbol, ::Type{T}; default::T) where {T}
+    add_column!(_node_store(node), symbol, key, T, default=default)
+end
+
+function add_column!(node::Node, symbols::AbstractVector{Symbol}, key::Symbol, ::Type{T}; default::T) where {T}
+    store = _node_store(node)
+    for sym in symbols
+        add_column!(store, sym, key, T, default=default)
+    end
+    return node
+end
+
+function drop_column!(node::Node, symbol::Symbol, key::Symbol)
+    drop_column!(_node_store(node), symbol, key)
+end
+
+function drop_column!(node::Node, symbols::AbstractVector{Symbol}, key::Symbol)
+    store = _node_store(node)
+    for sym in symbols
+        drop_column!(store, sym, key)
+    end
+    return node
+end
+
+function rename_column!(node::Node, symbol::Symbol, from::Symbol, to::Symbol)
+    rename_column!(_node_store(node), symbol, from, to)
+end
+
+function rename_column!(node::Node, symbols::AbstractVector{Symbol}, from::Symbol, to::Symbol)
+    store = _node_store(node)
+    for sym in symbols
+        rename_column!(store, sym, from, to)
+    end
+    return node
+end
+
+"""
+    descendants_strategy(node::Node)
+    descendants_strategy!(node::Node, strategy::Symbol)
+
+Get or set how `descendants(node, key, ...)` is computed for columnar MTGs.
+
+- `:auto` (default): choose automatically based on workload.
+- `:pointer`: always follow parent/children links directly in the graph.
+- `:indexed`: use a precomputed index for descendant lookups.
+
+The index is based on a Depth-First Search (DFS) visit order (visit a branch deeply, then the
+next branch). It can speed up repeated descendant requests on mostly stable trees, while
+`:pointer` is often better when the tree structure changes very frequently.
+"""
+function descendants_strategy(node::Node)
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs || return :pointer
+    store = _store_for_node_attrs(attrs)
+    store === nothing && return :pointer
+    return descendants_strategy(store)
+end
+
+function descendants_strategy!(node::Node, strategy::Symbol)
+    descendants_strategy!(_node_store(node), strategy)
+    return node
+end
 
 """
     get_attributes(mtg)

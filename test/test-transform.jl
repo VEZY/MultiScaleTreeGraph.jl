@@ -1,5 +1,5 @@
 @testset "transform!" begin
-    mtg = read_mtg("files/simple_plant.mtg", Dict)
+    mtg = read_mtg("files/simple_plant.mtg")
 
     # Test `function` form:
     transform!(mtg, x -> x[:x] = node_id(x))

@@ -150,6 +150,8 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
     end
 
     # Clean the old deleted node (isolate it, no parent, no children):
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs && remove_columnar_node!(attrs)
     reparent!(node, nothing)
     rechildren!(node, Node{N,A}[])
 

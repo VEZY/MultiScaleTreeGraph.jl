@@ -266,6 +266,23 @@ insert_parent!(
 """
 insert_parent!, insert_generation!, insert_child!, insert_sibling!
 
+@inline function _coerce_insert_attrs(::Type{A}, attrs) where {A}
+    attrs
+end
+
+@inline function _coerce_insert_attrs(::Type{ColumnarAttrs}, attrs)
+    _to_columnar_attrs(attrs)
+end
+
+@inline function _bind_inserted_columnar!(::Type{A}, parent_for_store::Node, inserted::Node) where {A}
+    nothing
+end
+
+function _bind_inserted_columnar!(::Type{ColumnarAttrs}, parent_for_store::Node, inserted::Node)
+    bind_columnar_child!(node_attributes(parent_for_store), node_attributes(inserted), node_id(inserted), symbol(inserted))
+    return nothing
+end
+
 function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
 
     maxid[1] += 1
@@ -277,9 +294,10 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
             nothing,
             Node{N,A}[node],
             new_node_MTG(node, template),
-            copy(attr_fun(node)),
+            _coerce_insert_attrs(A, copy(attr_fun(node))),
             Dict{String,Vector{Node{N,A}}}()
         )
+        _bind_inserted_columnar!(A, node, new_node)
 
         # Add to the new root the mandatory root attributes:
         root_attrs = Dict(
@@ -298,9 +316,10 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
             parent(node),
             Node{N,A}[node],
             new_node_MTG(node, template),
-            copy(attr_fun(node)),
+            _coerce_insert_attrs(A, copy(attr_fun(node))),
             Dict{String,Vector{Node{N,A}}}()
         )
+        _bind_inserted_columnar!(A, parent(node), new_node)
 
         # Add the new node to the parent:
         deleteat!(children(parent(node)), findfirst(x -> node_id(x) == node_id(node), children(parent(node))))
@@ -336,9 +355,10 @@ function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=
         parent(node),
         Vector{Node{N,A}}(),
         new_node_MTG(node, template),
-        copy(attr_fun(node)),
+        _coerce_insert_attrs(A, copy(attr_fun(node))),
         Dict{String,Vector{Node{N,A}}}()
     )
+    _bind_inserted_columnar!(A, parent(node), new_node)
 
     # Add the new node to the children of the parent node:
     push!(children(parent(node)), new_node)
@@ -355,9 +375,10 @@ function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), max
         node,
         children(node),
         new_node_MTG(node, template),
-        copy(attr_fun(node)),
+        _coerce_insert_attrs(A, copy(attr_fun(node))),
         Dict{String,Vector{Node{N,A}}}()
     )
+    _bind_inserted_columnar!(A, node, new_node)
 
     # Add the new node as the only child of the node:
     rechildren!(node, Node{N,A}[new_node])

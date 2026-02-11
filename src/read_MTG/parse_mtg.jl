@@ -19,7 +19,7 @@ The buffered IO stream (`f`) should start at the line of the section.
 
 The parsed MTG section
 """
-function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
+function parse_mtg!(f, classes, features, line, l, mtg_type)
     l[1] = next_line!(f, line)
 
     if length(l[1]) == 0
@@ -78,7 +78,7 @@ function parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
         while !eof(f)
             l[1] = next_line!(f, line; whitespace=false)
             length(l[1]) == 0 && continue # ignore empty line
-            parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type, features, classes)
+            parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, mtg_type, features, classes)
         end
     catch e
         error(
@@ -132,7 +132,6 @@ Parse MTG node attributes names, values and type
 
 # Arguments
 - `node_data::String`: A splitted mtg node data (attributes)
-- `attr_type::DataType`: the type of the structure used to hold the attributes
 - `features::DataFrame`: The features data.frame
 - `attr_column_start::Integer`: The index of the column of the first attribute
 - `line::Integer`: The current line of the mtg file
@@ -143,10 +142,10 @@ Parse MTG node attributes names, values and type
 A list of attributes
 
 """
-function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, line; force=false)
+function parse_MTG_node_attr(node_data, features, attr_column_start, line; force=false)
 
     if length(node_data) < attr_column_start
-        return init_empty_attr(attr_type)
+        return init_empty_attr()
     end
 
     node_data_attr = node_data[attr_column_start:end]
@@ -217,47 +216,26 @@ function parse_MTG_node_attr(node_data, attr_type, features, attr_column_start, 
         end
     end
 
-    parse_node_attributes(attr_type, node_attr)
+    parse_node_attributes(node_attr)
 end
 
 """
-
-Instantiate a `attr_type` struct with `node_attr` keys and values
-
-# Arguments
-
-- `attr_type::DataType`: the type of the structure used to hold the attributes
-- `node_attr::String`: The node attributes as a `Dict`
+Instantiate a `ColumnarAttrs` struct with `node_attr` keys and values.
 """
-function parse_node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{NamedTuple,MutableNamedTuple}}
-    attr_type{tuple(Symbol.(keys(node_attr))...)}(tuple(values(node_attr)...))
+function parse_node_attributes(node_attr)
+    ColumnarAttrs(Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)), values(node_attr))))
 end
 
-function parse_node_attributes(attr_type::Type{T}, node_attr) where {T<:Union{AbstractDict}}
-    Dict{Symbol,Any}(zip(Symbol.(keys(node_attr)), values(node_attr)))
-end
-
-# node_attributes for DataFrame
-function parse_node_attributes(::Type{DataFrame}, node_attr)
-    DataFrame(node_attr)
-end
-
-function init_empty_attr(attr_type)
-    attr_type()
-end
-
-function init_empty_attr(attr_type::Type{T}) where {T<:Union{AbstractDict}}
-    attr_type{Symbol,Any}()
-end
+init_empty_attr() = ColumnarAttrs()
 
 
 """
-    parse_line_to_node!(tree_dict, l, line, attr_column_start, node_id, attr_type, mtg_type, features,classes)
+    parse_line_to_node!(tree_dict, l, line, attr_column_start, node_id, mtg_type, features,classes)
 
 Parse a line of the MTG file to a node and add it to the tree dictionary.
 It may also add several nodes if the line contains several MTG elements.
 """
-function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, attr_type, mtg_type, features, classes)
+function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, mtg_type, features, classes)
 
     splitted_MTG = split(l[1], "\t")
     node_column = findfirst(x -> length(x) > 0, splitted_MTG)
@@ -281,10 +259,10 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
 
     # Get node attributes:
     if features !== nothing
-        node_attr = parse_MTG_node_attr(node_data, attr_type, features, node_attr_column_start, line)
+        node_attr = parse_MTG_node_attr(node_data, features, node_attr_column_start, line)
     else
         # if there are no attribute in the MTG, we create an empty attribute:
-        node_attr = init_empty_attr(attr_type)
+        node_attr = init_empty_attr()
     end
 
     if node[1] == "^"
@@ -329,7 +307,7 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
         if k == length(node) || findfirst(x -> x == k, shared) !== nothing
             node_k_attr = node_attr
         else
-            node_k_attr = init_empty_attr(attr_type)
+            node_k_attr = init_empty_attr()
         end
 
         if k == minimum(building_nodes)

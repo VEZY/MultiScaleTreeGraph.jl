@@ -9,9 +9,12 @@ mtg = read_mtg(file)
 node_6 = get_node(mtg, 6)
 ```
 
-In this package, the MTG is represented as a [tree data structure](https://en.wikipedia.org/wiki/Tree_%28data_structure%29).
+In this package, the MTG is represented as a tree (nodes linked by parent/children relationships).
 
-The tree is built from a series of nodes with different fields that describe the topology (*i.e.* how nodes are connected together) and the attributes of the node.
+The tree is built from nodes. Each node stores:
+
+- how it is connected to other nodes (its topology)
+- its own measured or computed attributes
 
 !!! note
     The package use terms from computer science rather than plant biology. So we use words such as "root" in an MTG, which is not the plant root, but the first node in the tree, *i.e.* the one without any parent. Similarly a leaf node is not a leaf from a plant but a node without any children.
@@ -24,37 +27,39 @@ The nodes have their own data type called [`Node`](@ref). A [`Node`](@ref) has s
 fieldnames(Node)
 ```
 
-Here is a little description of each field:
+Here is a simple description of each field:
 
 - `id`: The unique integer identifier of the node. It can be set by the user but is usually set automatically.
 - `parent`: The parent node of the curent node. If the curent node is the root node, it will return `nothing`. You can test whether a node is a root node sing the [`isroot`](@ref) function.
-- children: a dictionary of the children nodes with their `id` as key, or `nothing` if none;
+- `children`: the child nodes.
 - `MTG`: The MTG encoding of the node (see below, or [`NodeMTG`](@ref))
-- `attributes`: the node attributes. Usually a `NamedTuple`, a `MutableNamedTuple` or a `Dict` or similar (e.g. `OrderedDict`), but the type is optional. The choice of the data structure depends mainly on how much you plan to change the attributes and their values. Attributes include for example the length or diameter of a node, its colour, 3d position...
-- `traversal_cache`: a cache for the traversal, used by *e.g.* [`traverse`](@ref) to traverse more efficiently particular nodes in the MTG
+- `attributes`: node values (for example length, diameter, color, 3D position).
+- `traversal_cache`: saved traversal results used to speed up repeated operations.
 
-The value of tee fields are accessed using accessor functions: [`node_id`](@ref), [`parent`](@ref), [`children`](@ref), [`node_mtg`](@ref), [`node_attributes`](@ref), and the last one `get_traversal_cache` which is not exported because users shouldn't use it directly.
+The values of these fields are accessed with helper functions such as [`node_id`](@ref), [`parent`](@ref), [`children`](@ref), [`node_mtg`](@ref), and [`node_attributes`](@ref).
 
-The MTG field of a node describes the topology encoding of the node: its type of link with its parent (decompose: `/`, follow: `<`, and branch: `+`), its symbol, index, and scale (see [Node MTG and attributes](@ref) and [The MTG section](@ref) for more details). The MTG field must be encoded in a data structure called [`NodeMTG`](@ref) or in a [`MutableNodeMTG`](@ref). They have four fields corresponding to the topology encoding:
+The MTG field of a node describes how the node is positioned in the graph: link with parent (`/`, `<`, `+`), symbol, index, and scale (see [Node MTG and attributes](@ref) and [The MTG section](@ref) for more details). It is stored as [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref). These types have four fields:
 
 ```@example usepkg
 fieldnames(NodeMTG)
 ```
 
-Creating a [`NodeMTG`](@ref) is very simple, just pass the arguments by position. For example if we have an Axis that decomposes its parent node ("/"), with an index 0 and a scale of 1, we would declare it as follows:
+Creating a [`NodeMTG`](@ref) is simple: pass the four values in order. For example, an Axis that decomposes its parent (`"/"`), with index `0` and scale `1`:
 
 ```@example usepkg
 axis_mtg_encoding = NodeMTG("/", "Axis", 0, 1)
 ```
 
-The we can access the data using the dot syntax:
+Then we can access data using dot syntax:
 
 ```@example usepkg
 axis_mtg_encoding.symbol
 ```
 
 !!! note
-    [`NodeMTG`](@ref) is the immutable data type, meaning that information cannot be changed once read. By default the package the mutable equivalent called [`MutableNodeMTG`](@ref). Accessing the information of a mutable data structure is slower, but it is more convenient if we need to change its values.
+    [`NodeMTG`](@ref) is immutable (cannot be changed after creation).  
+    [`MutableNodeMTG`](@ref) can be changed.  
+    Use mutable if you plan to edit node topology fields.
 
 ## Learning by example
 
@@ -79,7 +84,7 @@ typeof(mtg)
 ```
 
 !!! note
-    The [`Node`](@ref) is a parametric type, that's why `typeof(mtg)` also returns the type used for the MTG data in the node (`MutableNodeMTG`) and the type used for the attributes (`Dict{Symbol, Any}`). But this is not important here.
+    `typeof(mtg)` shows extra type details (including MTG encoding type and attribute container type). You usually do not need to worry about these details to use the package.
 
 We can access the fields of the node using the accessor functions:
 
