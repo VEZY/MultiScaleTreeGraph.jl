@@ -41,7 +41,7 @@ when traversing using [`traverse!`](@ref) or [`transform!`](@ref).
 
 ```julia
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", "simple_plant.mtg")
-mtg = read_mtg(file, Dict)
+mtg = read_mtg(file)
 
 # Cache all leaf nodes:
 cache_nodes!(mtg, symbol=:Leaf)

@@ -1,12 +1,11 @@
 """
-    read_mtg(file, attr_type = Dict, mtg_type = MutableNodeMTG; sheet_name = nothing)
+    read_mtg(file, mtg_type = MutableNodeMTG; sheet_name = nothing)
 
 Read an MTG file
 
 # Arguments
 
 - `file::String`: The path to the MTG file.
-- `attr_type::DataType = Dict`: the type used to hold the attribute values for each node.
 - `mtg_type = MutableNodeMTG`: the type used to hold the mtg encoding for each node (*i.e.*
 link, symbol, index, scale). See details section below.
 - `sheet_name = nothing`: the sheet name in case you're reading an `xlsx` or `xlsm` file. It
@@ -14,14 +13,8 @@ reads the first sheet if `nothing` (default behavior).
 
 # Details
 
-`attr_type` should be:
-
-- `NamedTuple` if you don't plan to modify the attributes of the mtg, *e.g.* to use them for
-plotting or computing statistics...
-- `MutableNamedTuple` if you plan to modify the attributes values but not adding new attributes
-very often, *e.g.* recompute an attribute value...
-- `Dict` or similar (*e.g.* `OrderedDict`) if you plan to heavily modify the attributes, *e.g.*
-adding/removing attributes a lot
+Attributes are always stored as `ColumnarAttrs` (typed columnar backend).
+Input values from the file are converted automatically.
 
 The `MultiScaleTreeGraph` package provides two types for `mtg_type`, one immutable ([`NodeMTG`](@ref)), and
 one mutable ([`MutableNodeMTG`](@ref)). If you're planning on modifying the mtg encoding of
@@ -43,15 +36,12 @@ The MTG root node.
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","simple_plant.mtg")
 mtg = read_mtg(file)
 
-# Or using another `MutableNamedTuple` for the attributes to be able to add one if needed:
-mtg = read_mtg(file,Dict);
-
 # We can also read an mtg directly from an excel file from the field:
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))),"test","files","tree3h.xlsx")
 mtg = read_mtg(file)
 ```
 """
-function read_mtg(file, attr_type=Dict, mtg_type=MutableNodeMTG; sheet_name=nothing)
+function read_mtg(file, mtg_type=MutableNodeMTG; sheet_name=nothing)
     file_extension = splitext(basename(file))[2]
 
     if file_extension == ".xlsx" || file_extension == ".xlsm"
@@ -66,14 +56,14 @@ function read_mtg(file, attr_type=Dict, mtg_type=MutableNodeMTG; sheet_name=noth
         DelimitedFiles.writedlm(f, xlsx_data)
         seekstart(f)
         # test = String(take!(io))
-        mtg, classes, description, features = parse_mtg_file(f, attr_type, mtg_type)
+        mtg, classes, description, features = parse_mtg_file(f, mtg_type)
         close(f)
     else
         # read the mtg file
         # f = open(file, "r")
         mtg, classes, description, features =
             open(file, "r") do f
-                parse_mtg_file(f, attr_type, mtg_type)
+                parse_mtg_file(f, mtg_type)
             end
     end
 
@@ -83,7 +73,7 @@ function read_mtg(file, attr_type=Dict, mtg_type=MutableNodeMTG; sheet_name=noth
     return mtg
 end
 
-function parse_mtg_file(f, attr_type, mtg_type)
+function parse_mtg_file(f, mtg_type)
     line = [0]
     l = [""]
     l[1] = next_line!(f, line)
@@ -132,7 +122,7 @@ function parse_mtg_file(f, attr_type, mtg_type)
 
         # Parse the mtg FEATURES section:
         if issection(l[1], "MTG")
-            global mtg = parse_mtg!(f, classes, features, line, l, attr_type, mtg_type)
+            global mtg = parse_mtg!(f, classes, features, line, l, mtg_type)
             continue
         end
 

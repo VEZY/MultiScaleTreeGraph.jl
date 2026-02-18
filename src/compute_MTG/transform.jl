@@ -142,6 +142,19 @@ DataFrame(mtg, [:mass, :mass_beared])
 """
 transform!, transform
 
+@inline function _transform_keys(col_idx)
+    out = Vector{Symbol}(undef, length(col_idx))
+    @inbounds for i in eachindex(col_idx)
+        out[i] = Symbol(col_idx[i])
+    end
+    return out
+end
+
+@inline function _transform_call(fun, node, keys::Vector{Symbol})
+    vals = ntuple(i -> unsafe_getindex(node, keys[i]), length(keys))
+    return fun(vals...)
+end
+
 function transform!(
     mtg::Node,
     args...;
@@ -183,24 +196,28 @@ function transform!(
             if !isa(col_idx, Vector) && !isa(col_idx, Tuple)
                 col_idx = [col_idx]
             end
+            col_idx_sym = _transform_keys(col_idx)
+            newname_ = Symbol(newname)
 
-            fun_ = x -> x[newname] = fun([x[i] for i in col_idx]...)
+            fun_ = x -> unsafe_setindex!(x, newname_, _transform_call(fun, x, col_idx_sym))
 
             # Add a filter to the filtering function: checks if the node has the attributes
             # and if not, filter-out the node (in case ignore_nothing == true)
-            filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, col_idx)
+            filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, col_idx_sym)
         else
             # `Name => function` form, i.e. :x => sqrt
             # ?NOTE: Here the function takes one or more attributes as input
             col_idx, fun = nc
 
             newname, col_idx = col_name_from_call(col_idx, fun)
+            col_idx_sym = _transform_keys(col_idx)
+            newname_ = Symbol(newname)
 
-            fun_ = x -> x[newname] = fun([x[i] for i in col_idx]...)
+            fun_ = x -> unsafe_setindex!(x, newname_, _transform_call(fun, x, col_idx_sym))
 
             # Add a filter to the filtering function: checks if the node has the attributes
             # and if not, filter-out the node (in case ignore_nothing == true)
-            filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, col_idx)
+            filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, col_idx_sym)
         end
 
 

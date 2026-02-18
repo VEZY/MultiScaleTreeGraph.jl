@@ -78,7 +78,8 @@ end
     @test length(mtg) == length_before + 1
     @test node_mtg(mtg[1][1]) == template
     @test node_id(mtg[1][1]) == 8
-    @test node_attributes(mtg[1][1]) == Dict{Symbol,Any}(:Total_Length => 0.6)
+    @test node_attributes(mtg[1][1]) isa MultiScaleTreeGraph.ColumnarAttrs
+    @test mtg[1][1][:Total_Length] == 0.6
 end
 
 

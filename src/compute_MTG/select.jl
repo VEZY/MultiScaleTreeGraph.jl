@@ -32,20 +32,20 @@ function select!(
 
     check_filters(mtg, scale=scale, symbol=symbol, link=link)
 
-    keep_var = []
+    keep_var = Set{Symbol}()
 
     for nc in args
 
         if nc isa Symbol || nc isa String
             # `new name` form, i.e. just selecting the variable
-            push!(keep_var, nc)
+            push!(keep_var, Symbol(nc))
         elseif last(nc) isa Symbol
             # `function => new name` form, i.e. `node -> sum(descendants(node, :var)) => :newvar`.
             # or `Name => new name` form, i.e. :x => :y.
-            push!(keep_var, last(nc))
+            push!(keep_var, Symbol(last(nc)))
         elseif last(nc) isa Pair && (last(last(nc)) isa Symbol || last(last(nc)) isa String)
             # `Name => function => new name` form, i.e. :x => sqrt => :x_sq
-            push!(keep_var, last(last(nc)))
+            push!(keep_var, Symbol(last(last(nc))))
         elseif nc isa Base.Callable
             # If we provide just a function, it is just a transformation to apply on the node
             # directly. No need to handle this here (it is handled by transform!)
@@ -55,7 +55,7 @@ function select!(
             # ?NOTE: Here the function takes one or more attributes as input
             col_idx, fun = nc
             newname, col_idx = col_name_from_call(col_idx, fun)
-            push!(keep_var, newname)
+            push!(keep_var, Symbol(newname))
         end
     end
 
@@ -73,7 +73,11 @@ function select!(
     # Remove all un-selected attributes from the MTG:
     traverse!(
         mtg,
-        node -> [pop!(node, attr) for attr in setdiff(keys(node_attributes(node)), keep_var)]
+        node -> begin
+            for attr in keys(node_attributes(node))
+                attr in keep_var || pop!(node, attr)
+            end
+        end
     )
 
 end

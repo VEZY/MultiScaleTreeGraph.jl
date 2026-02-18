@@ -1,4 +1,4 @@
-mtg = read_mtg("files/simple_plant.mtg", Dict);
+mtg = read_mtg("files/simple_plant.mtg");
 
 @testset "DataFrame" begin
     df_mtg = DataFrame(mtg, [:scales, :Length])

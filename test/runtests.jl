@@ -1,6 +1,6 @@
 using Test
 using MultiScaleTreeGraph
-using DataFrames, Dates, MutableNamedTuples
+using DataFrames, Dates
 using Graphs, AbstractTrees
 
 @testset "read_mtg" begin
@@ -13,6 +13,10 @@ end
 
 @testset "simple node functions" begin
     include("test-nodes.jl")
+end
+
+@testset "columnar backend" begin
+    include("test-columnar.jl")
 end
 
 @testset "descendants()" begin

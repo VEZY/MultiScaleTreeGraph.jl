@@ -20,6 +20,13 @@ function Base.append!(node::Node{M,T}, attr::T) where {M<:AbstractNodeMTG,T<:Abs
     merge!(node_attributes(node), attr)
 end
 
+function Base.append!(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, attr)
+    for (k, v) in pairs(attr)
+        attribute!(node, k, v)
+    end
+    return node
+end
+
 # And ensure compatibility between both so a script wouldn't be broken if we just change the
 # type of the attributes:
 function Base.append!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, attr)
@@ -46,6 +53,10 @@ function Base.pop!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, key)
     return poped_value
 end
 
+function Base.pop!(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, key)
+    pop!(node_attributes(node), key, nothing)
+end
+
 # Renaming attributes:
 function rename!(node::Node{M,T}, old_new) where {M<:AbstractNodeMTG,T<:MutableNamedTuple}
     attr_keys = replace([i for i in keys(node_attributes(node))], old_new)
@@ -62,4 +73,8 @@ function rename!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, old_new)
     replace!(attrs) do kv
         first(kv) == first(old_new) ? last(old_new) => last(kv) : kv
     end
+end
+
+function rename!(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, old_new)
+    rename_column!(node, symbol(node), Symbol(first(old_new)), Symbol(last(old_new)))
 end
