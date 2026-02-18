@@ -23,13 +23,21 @@ function prune!(node)
     else
         parent_node = parent(node)
 
-        traverse!(node) do n
+        stack = Node[node]
+        while !isempty(stack)
+            n = pop!(stack)
             attrs = node_attributes(n)
             attrs isa ColumnarAttrs && remove_columnar_node!(attrs)
+            ch = children(n)
+            @inbounds for i in eachindex(ch)
+                push!(stack, ch[i])
+            end
         end
 
         # Delete the node as child of his parent:
-        deleteat!(children(parent_node), findfirst(x -> node_id(x) == node_id(node), children(parent_node)))
+        parent_children = children(parent_node)
+        idx = _child_index_by_id(parent_children, node_id(node))
+        idx === nothing || deleteat!(parent_children, idx)
     end
 
     # Delete the links to the parent:

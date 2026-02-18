@@ -63,22 +63,23 @@ function ancestors(
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
     _maybe_depwarn_traversal_type_kw(:ancestors, type)
+    key_ = Symbol(key)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
 
     # Change the filtering function if we also want to remove nodes with nothing values.
-    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
+    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key_)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
 
-    out_type = type === Any ? infer_columnar_attr_type(node, Symbol(key), symbol, ignore_nothing) : type
+    out_type = type === Any ? infer_columnar_attr_type(node, key_, symbol, ignore_nothing) : type
     val = Array{out_type,1}()
-    key_plan = build_columnar_query_plan(node, Symbol(key))
+    key_plan = nothing
     # Put the recursivity level into an array so it is mutable in-place:
 
     if self
         if use_no_filter || is_filtered(node, scale, symbol, link, filter_fun_)
-            val_ = unsafe_getindex(node, key, key_plan)
+            val_ = unsafe_getindex(node, key_, key_plan)
             push!(val, val_)
         elseif !all
             # We don't keep the value and we have to stop at the first filtered-out value
@@ -87,9 +88,9 @@ function ancestors(
     end
 
     if use_no_filter
-        ancestors_values_no_filter!(node, key, val, recursivity_level, key_plan)
+        ancestors_values_no_filter!(node, key_, val, recursivity_level, key_plan)
     else
-        ancestors_values!(node, key, scale, symbol, link, all, filter_fun_, val, recursivity_level, key_plan)
+        ancestors_values!(node, key_, scale, symbol, link, all, filter_fun_, val, recursivity_level, key_plan)
     end
     return val
 end
@@ -218,24 +219,25 @@ function ancestors!(
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
     _maybe_depwarn_traversal_type_kw(:ancestors!, type)
+    key_ = Symbol(key)
     check_filters(node, scale=scale, symbol=symbol, link=link)
-    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key)
+    filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key_)
     use_no_filter = no_node_filters(scale, symbol, link, filter_fun_)
-    key_plan = build_columnar_query_plan(node, Symbol(key))
+    key_plan = nothing
 
     empty!(out)
     if self
         if use_no_filter || is_filtered(node, scale, symbol, link, filter_fun_)
-            push!(out, unsafe_getindex(node, key, key_plan))
+            push!(out, unsafe_getindex(node, key_, key_plan))
         elseif !all
             return out
         end
     end
 
     if use_no_filter
-        ancestors_values_no_filter!(node, key, out, recursivity_level, key_plan)
+        ancestors_values_no_filter!(node, key_, out, recursivity_level, key_plan)
     else
-        ancestors_values!(node, key, scale, symbol, link, all, filter_fun_, out, recursivity_level, key_plan)
+        ancestors_values!(node, key_, scale, symbol, link, all, filter_fun_, out, recursivity_level, key_plan)
     end
     return out
 end

@@ -80,7 +80,7 @@ end
 
 @inline function _descendants_should_rebuild_auto(idx::SubtreeIndexCache)
     # Keep pointer traversal for mutation-heavy periods; switch when queries dominate.
-    idx.query_count >= max(8, 4 * idx.mutation_count)
+    idx.query_count >= max(4, 2 * idx.mutation_count)
 end
 
 function _rebuild_subtree_index!(store::MTGAttributeStore, root)

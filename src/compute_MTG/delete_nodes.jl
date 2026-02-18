@@ -47,6 +47,13 @@ delete_nodes!(mtg, :Leaf)
 delete_nodes!(mtg, symbol = (:Leaf,:Internode))
 ```
 """
+@inline function _child_index_by_id(chnodes, target_id::Int)
+    @inbounds for i in eachindex(chnodes)
+        node_id(chnodes[i]) == target_id && return i
+    end
+    return nothing
+end
+
 function delete_nodes!(
     node;
     scale=nothing,
@@ -79,9 +86,8 @@ function delete_nodes!_(node, scale, symbol, link, all, filter_fun, child_link_f
     if !isleaf(node)
         # First we apply the algorithm recursively on the children:
         chnodes = children(node)
-        nchildren = length(chnodes)
-        #? Note: we don't use `for chnode in chnodes` because it may delete dynamically during traversal, so we forget to traverse some nodes
-        for chnode in chnodes[1:nchildren]
+        # We traverse a stable snapshot because deletion can mutate `children(node)` in-place.
+        for chnode in copy(chnodes)
             delete_nodes!_(chnode, scale, symbol, link, all, filter_fun, child_link_fun)
         end
     end
@@ -145,7 +151,9 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
         end
 
         # Delete the node as child of his parent:
-        deleteat!(children(parent_node), findfirst(x -> node_id(x) == node_id(node), children(parent_node)))
+        parent_children = children(parent_node)
+        idx = _child_index_by_id(parent_children, node_id(node))
+        idx === nothing || deleteat!(parent_children, idx)
         node_return = parent_node
     end
 

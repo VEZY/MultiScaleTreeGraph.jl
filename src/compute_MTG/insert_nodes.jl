@@ -160,8 +160,8 @@ function insert_nodes!_(node, template, fn, attr_fun, max_node_id, scale, symbol
         chnodes = children(node)
         nchildren = length(chnodes)
         #? Note: we don't use `for chnode in chnodes` because it may grow dynamically during traversal, *e.g.* when inserting siblings
-        for chnode in chnodes[1:nchildren]
-            insert_nodes!_(chnode, template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
+        @inbounds for i in 1:nchildren
+            insert_nodes!_(chnodes[i], template, fn, attr_fun, max_node_id, scale, symbol, link, all, filter_fun)
         end
     end
 
@@ -322,11 +322,13 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
         _bind_inserted_columnar!(A, parent(node), new_node)
 
         # Add the new node to the parent:
-        deleteat!(children(parent(node)), findfirst(x -> node_id(x) == node_id(node), children(parent(node))))
+        parent_children = children(parent(node))
+        idx = _child_index_by_id(parent_children, node_id(node))
+        idx === nothing || deleteat!(parent_children, idx)
         #? There is also popat! that is equivalent in computation time (I benchmarked it) but 
         #? it requires julia >= v1.5
 
-        push!(children(parent(node)), new_node)
+        push!(parent_children, new_node)
 
         # Add the new node as the parent of the previous one:
         reparent!(node, new_node)

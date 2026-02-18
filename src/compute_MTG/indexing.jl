@@ -24,6 +24,10 @@ end
 
 unsafe_getindex(node::Node, key) = unsafe_getindex(node, Symbol(key))
 
+@inline function unsafe_getindex(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, key::Symbol)
+    get(node_attributes(node), key, nothing)
+end
+
 @inline function unsafe_getindex(node::Node{M,NamedTuple}, key::Symbol) where {M<:AbstractNodeMTG}
     attrs = node_attributes(node)
     hasproperty(attrs, key) ? getproperty(attrs, key) : nothing
@@ -81,6 +85,17 @@ end
 
 @inline unsafe_getindex(node::Node, key::Symbol, plan) = unsafe_getindex(node, key)
 @inline unsafe_getindex(node::Node, key, plan) = unsafe_getindex(node, Symbol(key), plan)
+
+@inline function unsafe_setindex!(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, key::Symbol, value)
+    attrs = node_attributes(node)
+    attrs[key] = value
+    return value
+end
+
+@inline function unsafe_setindex!(node::Node, key::Symbol, value)
+    node[key] = value
+    return value
+end
 
 """
 Returns the length of the subtree below the node (including it)

@@ -49,6 +49,7 @@ function _collect_descendant_values_indexed!(
     left > right && return true
 
     allow_mask = _bucket_allow_mask(store, symbol_filter)
+    sizehint!(out, length(out) + (right - left + 1))
 
     @inbounds for i in left:right
         nid = idx.dfs_order[i]
@@ -67,6 +68,78 @@ function _collect_descendant_values_indexed!(
         v = store.buckets[bid].columns[col_idx].data[row]
         ignore_nothing && v === nothing && continue
         push!(out, v)
+    end
+
+    return true
+end
+
+@inline function _normalize_descendant_keys(keys::Union{AbstractVector,Tuple})
+    out = Vector{Symbol}(undef, length(keys))
+    @inbounds for i in eachindex(keys)
+        out[i] = Symbol(keys[i])
+    end
+    return out
+end
+
+@inline function _descendant_row_values(node, keys::Vector{Symbol}, key_plans::Vector)
+    vals = Vector{Any}(undef, length(keys))
+    has_nothing = false
+    @inbounds for i in eachindex(keys)
+        v = unsafe_getindex(node, keys[i], key_plans[i])
+        vals[i] = v
+        has_nothing |= v === nothing
+    end
+    return Tuple(vals), has_nothing
+end
+
+function _collect_descendant_multi_values_indexed!(
+    out::AbstractVector,
+    node,
+    keys::Vector{Symbol},
+    key_plans::Vector{ColumnarQueryPlan},
+    symbol_filter,
+    self::Bool,
+    ignore_nothing::Bool,
+)
+    store = _columnar_store(node)
+    store === nothing && return false
+    _prepare_subtree_index!(store, get_root(node)) || return false
+    idx = store.subtree_index
+
+    nid0 = node_id(node)
+    nid0 > length(idx.tin) && return false
+    left = idx.tin[nid0]
+    right = idx.tout[nid0]
+    left == 0 && return false
+    self || (left += 1)
+    left > right && return true
+
+    allow_mask = _bucket_allow_mask(store, symbol_filter)
+    nkeys = length(keys)
+    row_vals = Vector{Any}(undef, nkeys)
+    sizehint!(out, length(out) + (right - left + 1))
+
+    @inbounds for i in left:right
+        nid = idx.dfs_order[i]
+        bid = store.node_bucket[nid]
+        bid == 0 && continue
+        allow_mask === nothing || allow_mask[bid] || continue
+
+        row = store.node_row[nid]
+        row_has_nothing = false
+        for j in 1:nkeys
+            col_idx = key_plans[j].col_idx_by_bucket[bid]
+            if col_idx == 0
+                row_vals[j] = nothing
+                row_has_nothing = true
+            else
+                v = store.buckets[bid].columns[col_idx].data[row]
+                row_vals[j] = v
+                row_has_nothing |= v === nothing
+            end
+        end
+        ignore_nothing && row_has_nothing && continue
+        push!(out, Tuple(row_vals))
     end
 
     return true
@@ -98,6 +171,74 @@ function collect_descendant_values_no_filter!(node, key, val, recursivity_level,
         collect_descendant_values_no_filter!(chnode, key, val, recursivity_level, key_plan)
     end
     return val
+end
+
+function _collect_descendant_multi_values!(
+    node,
+    keys::Vector{Symbol},
+    key_plans::Vector,
+    scale,
+    symbol,
+    link,
+    filter_fun,
+    all,
+    out,
+    recursivity_level,
+    ignore_nothing::Bool,
+)
+    recursivity_level == 0 && return out
+    recursivity_level -= 1
+
+    keep = is_filtered(node, scale, symbol, link, filter_fun)
+    if keep
+        row, has_nothing = _descendant_row_values(node, keys, key_plans)
+        (ignore_nothing && has_nothing) || push!(out, row)
+    elseif !all
+        return out
+    end
+
+    @inbounds for chnode in children(node)
+        _collect_descendant_multi_values!(
+            chnode,
+            keys,
+            key_plans,
+            scale,
+            symbol,
+            link,
+            filter_fun,
+            all,
+            out,
+            recursivity_level,
+            ignore_nothing,
+        )
+    end
+    return out
+end
+
+function _collect_descendant_multi_values_no_filter!(
+    node,
+    keys::Vector{Symbol},
+    key_plans::Vector,
+    out,
+    recursivity_level,
+    ignore_nothing::Bool,
+)
+    recursivity_level == 0 && return out
+    recursivity_level -= 1
+
+    row, has_nothing = _descendant_row_values(node, keys, key_plans)
+    (ignore_nothing && has_nothing) || push!(out, row)
+    @inbounds for chnode in children(node)
+        _collect_descendant_multi_values_no_filter!(
+            chnode,
+            keys,
+            key_plans,
+            out,
+            recursivity_level,
+            ignore_nothing,
+        )
+    end
+    return out
 end
 
 function collect_descendant_nodes!(node, scale, symbol, link, filter_fun, all, val, recursivity_level)
@@ -179,6 +320,79 @@ function descendants(
     end
 
     return val
+end
+
+function descendants(
+    node,
+    key::Union{Tuple,AbstractVector};
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true,
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=Inf,
+    ignore_nothing::Bool=false,
+    type::Union{Union,DataType}=Any,
+)
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
+    _maybe_depwarn_traversal_type_kw(:descendants, type)
+    check_filters(node, scale=scale, symbol=symbol, link=link)
+
+    keys = _normalize_descendant_keys(key)
+    out = Any[]
+    isempty(keys) && return out
+
+    key_plans = [build_columnar_query_plan(node, k) for k in keys]
+    if Base.all(kp -> kp isa ColumnarQueryPlan, key_plans) &&
+       _descendants_index_compatible(scale, link, all, filter_fun, recursivity_level) &&
+       _collect_descendant_multi_values_indexed!(out, node, keys, key_plans, symbol, self, ignore_nothing)
+        return out
+    end
+
+    use_no_filter = no_node_filters(scale, symbol, link, filter_fun)
+    if self
+        if use_no_filter
+            _collect_descendant_multi_values_no_filter!(node, keys, key_plans, out, recursivity_level, ignore_nothing)
+        else
+            _collect_descendant_multi_values!(
+                node,
+                keys,
+                key_plans,
+                scale,
+                symbol,
+                link,
+                filter_fun,
+                all,
+                out,
+                recursivity_level,
+                ignore_nothing,
+            )
+        end
+    else
+        @inbounds for chnode in children(node)
+            if use_no_filter
+                _collect_descendant_multi_values_no_filter!(chnode, keys, key_plans, out, recursivity_level, ignore_nothing)
+            else
+                _collect_descendant_multi_values!(
+                    chnode,
+                    keys,
+                    key_plans,
+                    scale,
+                    symbol,
+                    link,
+                    filter_fun,
+                    all,
+                    out,
+                    recursivity_level,
+                    ignore_nothing,
+                )
+            end
+        end
+    end
+
+    return out
 end
 
 # Same as above, but without the `key` argument (we want the nodes themselves):
@@ -263,6 +477,79 @@ function descendants!(
                 collect_descendant_values_no_filter!(chnode, key_, out, recursivity_level, key_plan)
             else
                 collect_descendant_values!(chnode, key_, scale, symbol, link, filter_fun_, all, out, recursivity_level, key_plan)
+            end
+        end
+    end
+    return out
+end
+
+function descendants!(
+    out::AbstractVector,
+    node,
+    key::Union{Tuple,AbstractVector};
+    scale=nothing,
+    symbol=nothing,
+    link=nothing,
+    all::Bool=true,
+    self=false,
+    filter_fun=nothing,
+    recursivity_level=Inf,
+    ignore_nothing::Bool=false,
+    type::Union{Union,DataType}=Any,
+)
+    symbol = normalize_symbol_filter(symbol)
+    link = normalize_link_filter(link)
+    _maybe_depwarn_traversal_type_kw(:descendants!, type)
+    check_filters(node, scale=scale, symbol=symbol, link=link)
+
+    keys = _normalize_descendant_keys(key)
+    empty!(out)
+    isempty(keys) && return out
+    key_plans = [build_columnar_query_plan(node, k) for k in keys]
+
+    if Base.all(kp -> kp isa ColumnarQueryPlan, key_plans) &&
+       _descendants_index_compatible(scale, link, all, filter_fun, recursivity_level) &&
+       _collect_descendant_multi_values_indexed!(out, node, keys, key_plans, symbol, self, ignore_nothing)
+        return out
+    end
+
+    use_no_filter = no_node_filters(scale, symbol, link, filter_fun)
+    if self
+        if use_no_filter
+            _collect_descendant_multi_values_no_filter!(node, keys, key_plans, out, recursivity_level, ignore_nothing)
+        else
+            _collect_descendant_multi_values!(
+                node,
+                keys,
+                key_plans,
+                scale,
+                symbol,
+                link,
+                filter_fun,
+                all,
+                out,
+                recursivity_level,
+                ignore_nothing,
+            )
+        end
+    else
+        @inbounds for chnode in children(node)
+            if use_no_filter
+                _collect_descendant_multi_values_no_filter!(chnode, keys, key_plans, out, recursivity_level, ignore_nothing)
+            else
+                _collect_descendant_multi_values!(
+                    chnode,
+                    keys,
+                    key_plans,
+                    scale,
+                    symbol,
+                    link,
+                    filter_fun,
+                    all,
+                    out,
+                    recursivity_level,
+                    ignore_nothing,
+                )
             end
         end
     end

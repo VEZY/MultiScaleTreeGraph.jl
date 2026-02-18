@@ -12,9 +12,9 @@ Workloads currently covered:
 
 - tiered datasets: `small` (~10k nodes), `medium` (~100k), `large` (~300k)
 - full-tree traversal and traversal updates
-  - one attribute update on all nodes
-  - multi-attribute update on one symbol (`:Leaf`)
-  - multi-attribute update on mixed symbols (`[:Leaf, :Internode]`)
+  - one/multi-attribute updates using node indexing (`node[:k]`)
+  - one/multi-attribute updates using explicit API (`attribute`/`attribute!`)
+  - one symbol (`:Leaf`) and mixed symbols (`[:Leaf, :Internode]`)
 - descendants queries
   - one/many attributes, one symbol
   - one/many attributes, mixed symbols

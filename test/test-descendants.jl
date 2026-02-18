@@ -30,6 +30,22 @@
       @test descendants!(mtg2, :Width, symbol=(:Leaf, :Internode), self=true) ==
             width_all[end-1:end]
 
+      # Multi-key descendants must return grouped rows in key order.
+      rows_leaf = descendants(mtg, [:Length, :Width], symbol=:Leaf, ignore_nothing=true)
+      @test !isempty(rows_leaf)
+      @test all(length(row) == 2 for row in rows_leaf)
+      @test all(!isnothing(row[1]) && !isnothing(row[2]) for row in rows_leaf)
+
+      rows_mixed_keep = descendants(mtg, [:Length, :dateDeath], symbol=(:Leaf, :Internode), ignore_nothing=false)
+      rows_mixed_drop = descendants(mtg, [:Length, :dateDeath], symbol=(:Leaf, :Internode), ignore_nothing=true)
+      @test !isempty(rows_mixed_keep)
+      @test all(length(row) == 2 for row in rows_mixed_keep)
+      @test any(any(isnothing, row) for row in rows_mixed_keep)
+      @test all(!any(isnothing, row) for row in rows_mixed_drop)
+
+      out_rows = Any[]
+      @test descendants!(out_rows, mtg, [:Length, :Width], symbol=:Leaf, ignore_nothing=true) == rows_leaf
+
       clean_cache!(mtg)
       # Get the leaves values:
       @test descendants(mtg, :Width; filter_fun=isleaf) == width_all[[end - 2, end]]

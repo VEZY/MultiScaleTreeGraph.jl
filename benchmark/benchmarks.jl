@@ -83,19 +83,12 @@ function synthetic_mtg(; n_nodes::Int=10_000, seed::Int=42)
     return (root=root, leaves=leaves, internodes=internodes, all_nodes=all_nodes, sample_nodes=sample_nodes, sample_leaves=sample_leaves)
 end
 
-@inline function _attr_get(node, key::Symbol; default=nothing)
-    if HAS_EXPLICIT_ATTRIBUTE_API
-        return attribute(node, key, default=default)
+@inline function _assert_descendants_matrix(vals, ncols::Int)
+    isempty(vals) && error("descendants returned no rows; benchmark input invalid.")
+    @inbounds for row in vals
+        length(row) == ncols || error("descendants row does not match expected width $(ncols).")
     end
-    return get(node_attributes(node), key, default)
-end
-
-@inline function _attr_set!(node, key::Symbol, value)
-    if HAS_EXPLICIT_ATTRIBUTE_API
-        return attribute!(node, key, value)
-    end
-    node[key] = value
-    return value
+    return vals
 end
 
 function children_workload(nodes, reps::Int)
@@ -169,37 +162,85 @@ function descendants_repeated_workload_inplace(root, reps::Int)
     return s
 end
 
-function traverse_update_one!(root)
+function traverse_update_one_node_indexing!(root)
     traverse!(root) do node
-        m = _attr_get(node, :mass, default=0.0)
-        _attr_set!(node, :mass, m + 0.1)
+        m = node[:mass]
+        m === nothing && (m = 0.0)
+        node[:mass] = m + 0.1
     end
     return nothing
 end
 
-function traverse_update_multi_leaf!(root)
+function traverse_update_one_explicit_api!(root)
+    traverse!(root) do node
+        m = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, :mass, default=0.0) : node[:mass]
+        m === nothing && (m = 0.0)
+        HAS_EXPLICIT_ATTRIBUTE_API ? attribute!(node, :mass, m + 0.1) : (node[:mass] = m + 0.1)
+    end
+    return nothing
+end
+
+function traverse_update_multi_leaf_node_indexing!(root)
     traverse!(root, symbol=:Leaf) do node
-        width = _attr_get(node, :Width, default=0.0)
-        area = _attr_get(node, :Area, default=0.0)
-        _attr_set!(node, :Width, width * 1.001)
-        _attr_set!(node, :Area, area + width)
+        width = node[:Width]
+        area = node[:Area]
+        width === nothing && (width = 0.0)
+        area === nothing && (area = 0.0)
+        node[:Width] = width * 1.001
+        node[:Area] = area + width
     end
     return nothing
 end
 
-function traverse_update_multi_mixed!(root)
+function traverse_update_multi_leaf_explicit_api!(root)
+    traverse!(root, symbol=:Leaf) do node
+        width = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, :Width, default=0.0) : node[:Width]
+        area = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, :Area, default=0.0) : node[:Area]
+        width === nothing && (width = 0.0)
+        area === nothing && (area = 0.0)
+        if HAS_EXPLICIT_ATTRIBUTE_API
+            attribute!(node, :Width, width * 1.001)
+            attribute!(node, :Area, area + width)
+        else
+            node[:Width] = width * 1.001
+            node[:Area] = area + width
+        end
+    end
+    return nothing
+end
+
+function traverse_update_multi_mixed_node_indexing!(root)
     traverse!(root, symbol=(:Leaf, :Internode)) do node
-        m = _attr_get(node, :mass, default=0.0)
-        _attr_set!(node, :mass, m * 0.999 + 0.0001)
-        counter = _attr_get(node, :update_counter, default=0)
+        m = node[:mass]
+        m === nothing && (m = 0.0)
+        node[:mass] = m * 0.999 + 0.0001
+        counter = node[:update_counter]
         isnothing(counter) && (counter = 0)
-        _attr_set!(node, :update_counter, counter + 1)
+        node[:update_counter] = counter + 1
+    end
+    return nothing
+end
+
+function traverse_update_multi_mixed_explicit_api!(root)
+    traverse!(root, symbol=(:Leaf, :Internode)) do node
+        m = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, :mass, default=0.0) : node[:mass]
+        m === nothing && (m = 0.0)
+        counter = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, :update_counter, default=0) : node[:update_counter]
+        isnothing(counter) && (counter = 0)
+        if HAS_EXPLICIT_ATTRIBUTE_API
+            attribute!(node, :mass, m * 0.999 + 0.0001)
+            attribute!(node, :update_counter, counter + 1)
+        else
+            node[:mass] = m * 0.999 + 0.0001
+            node[:update_counter] = counter + 1
+        end
     end
     return nothing
 end
 
 function descendants_tuple_workload(root)
     vals = descendants(root, [:Length, :mass], symbol=:Internode, ignore_nothing=true)
+    _assert_descendants_matrix(vals, 2)
     s = 0.0
     for v in vals
         s += v[1] + v[2]
@@ -212,7 +253,9 @@ function descendants_mixed_one(root; ignore_nothing::Bool)
 end
 
 function descendants_mixed_many(root; ignore_nothing::Bool)
-    descendants(root, [:Length, :Area], symbol=(:Leaf, :Internode), ignore_nothing=ignore_nothing)
+    vals = descendants(root, [:Length, :Area], symbol=(:Leaf, :Internode), ignore_nothing=ignore_nothing)
+    _assert_descendants_matrix(vals, 2)
+    return vals
 end
 
 function build_tier!(suite, tier_name::String, n_nodes::Int)
@@ -227,9 +270,12 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
 
     tier["traverse"]["full_tree_nodes"] = @benchmarkable traverse!($root, _ -> nothing)
 
-    tier["traverse_update"]["one_attr_all_nodes"] = @benchmarkable traverse_update_one!($root)
-    tier["traverse_update"]["multi_attr_leaf_only"] = @benchmarkable traverse_update_multi_leaf!($root)
-    tier["traverse_update"]["multi_attr_leaf_internode"] = @benchmarkable traverse_update_multi_mixed!($root)
+    tier["traverse_update"]["one_attr_all_nodes_node_indexing"] = @benchmarkable traverse_update_one_node_indexing!($root)
+    tier["traverse_update"]["one_attr_all_nodes_explicit_api"] = @benchmarkable traverse_update_one_explicit_api!($root)
+    tier["traverse_update"]["multi_attr_leaf_only_node_indexing"] = @benchmarkable traverse_update_multi_leaf_node_indexing!($root)
+    tier["traverse_update"]["multi_attr_leaf_only_explicit_api"] = @benchmarkable traverse_update_multi_leaf_explicit_api!($root)
+    tier["traverse_update"]["multi_attr_leaf_internode_node_indexing"] = @benchmarkable traverse_update_multi_mixed_node_indexing!($root)
+    tier["traverse_update"]["multi_attr_leaf_internode_explicit_api"] = @benchmarkable traverse_update_multi_mixed_explicit_api!($root)
 
     tier["descendants_query"]["one_attr_one_symbol"] = @benchmarkable descendants($root, :Length, symbol=:Internode, ignore_nothing=true)
     tier["descendants_query"]["many_attr_one_symbol"] = @benchmarkable descendants_tuple_workload($root)
@@ -251,49 +297,22 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
     tier["many_queries"]["descendants_repeated_inplace"] = @benchmarkable descendants_repeated_workload_inplace($root, 30)
 
     if tier_name == "small"
-        tier["api_surface_small_only"]["insert_child"] = @benchmarkable begin
-            data_ = synthetic_mtg(n_nodes=8_000, seed=111)
-            mtg_ = data_.root
-            insert_child!(mtg_[1], MutableNodeMTG(:<, :Internode, 1, 2), x -> Dict{Symbol,Any}(:mass => 0.1), [max_id(mtg_)])
-        end
+        tier["api_surface_small_only"]["insert_child"] = @benchmarkable insert_child!(mtg_[1], MutableNodeMTG(:<, :Internode, 1, 2), x -> Dict{Symbol,Any}(:mass => 0.1), max_id_) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=111); mtg_=data_.root; max_id_=[max_id(mtg_)])
 
-        tier["api_surface_small_only"]["delete_node"] = @benchmarkable begin
-            data_ = synthetic_mtg(n_nodes=8_000, seed=222)
-            mtg_ = data_.root
-            target = get_node(mtg_, node_id(mtg_[1]))
-            delete_node!(target)
-        end
+        tier["api_surface_small_only"]["delete_node"] = @benchmarkable delete_node!(target_) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=222); mtg_=data_.root; target_=get_node(mtg_, node_id(mtg_[1])))
 
-        tier["api_surface_small_only"]["prune_subtree"] = @benchmarkable begin
-            data_ = synthetic_mtg(n_nodes=8_000, seed=333)
-            mtg_ = data_.root
-            prune!(mtg_[1])
-        end
+        tier["api_surface_small_only"]["prune_subtree"] = @benchmarkable prune!(target_) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=333); mtg_=data_.root; target_=mtg_[1])
 
-        tier["api_surface_small_only"]["transform"] = @benchmarkable begin
-            data_ = synthetic_mtg(n_nodes=8_000, seed=444)
-            mtg_ = data_.root
-            transform!(mtg_, :mass => (x -> x + 1.0) => :mass2, ignore_nothing=true)
-        end
+        tier["api_surface_small_only"]["transform"] = @benchmarkable transform!(mtg_, :mass => (x -> x + 1.0) => :mass2, ignore_nothing=true) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=444); mtg_=data_.root)
 
-        tier["api_surface_small_only"]["select"] = @benchmarkable begin
-            data_ = synthetic_mtg(n_nodes=8_000, seed=555)
-            mtg_ = data_.root
-            select!(mtg_, :mass, :Length, ignore_nothing=true)
-        end
+        tier["api_surface_small_only"]["select"] = @benchmarkable select!(mtg_, :mass, :Length, ignore_nothing=true) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=555); mtg_=data_.root)
 
         if HAS_TABLE_VIEWS_API
             tier["api_surface_small_only"]["tables_symbol"] = @benchmarkable symbol_table($root, :Leaf)
             tier["api_surface_small_only"]["tables_unified"] = @benchmarkable mtg_table($root)
         end
 
-        tier["api_surface_small_only"]["write_mtg"] = @benchmarkable begin
-            data_ = synthetic_mtg(n_nodes=3_000, seed=666)
-            mtg_ = data_.root
-            f = tempname() * ".mtg"
-            write_mtg(f, mtg_)
-            rm(f, force=true)
-        end
+        tier["api_surface_small_only"]["write_mtg"] = @benchmarkable write_mtg(f_, mtg_) setup=(data_=synthetic_mtg(n_nodes=3_000, seed=666); mtg_=data_.root; f_=tempname() * ".mtg") teardown=(isfile(f_) && rm(f_, force=true))
     end
 end
 
