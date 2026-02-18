@@ -269,7 +269,7 @@ function traverse_update_multi_mixed_explicit_api!(root, key_mass, key_counter, 
     return nothing
 end
 
-function descendants_tuple_workload(root, keys, symbol_internode)
+function descendants_vec_workload(root, keys, symbol_internode)
     vals = descendants(root, keys, symbol=symbol_internode, ignore_nothing=true)
     _assert_descendants_matrix(vals, 2)
     s = 0.0
@@ -321,11 +321,11 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
     tier["traverse_update"]["multi_attr_leaf_internode_explicit_api"] = @benchmarkable traverse_update_multi_mixed_explicit_api!($root, $key_mass, $key_counter, $symbol_leaf_internode)
 
     tier["descendants_query"]["one_attr_one_symbol"] = @benchmarkable descendants($root, $key_length, symbol=$symbol_internode, ignore_nothing=true)
-    tier["descendants_query"]["many_attr_one_symbol"] = @benchmarkable descendants_tuple_workload($root, ($key_length, $key_mass), $symbol_internode)
+    tier["descendants_query"]["many_attr_one_symbol"] = @benchmarkable descendants_vec_workload($root, [$key_length, $key_mass], $symbol_internode)
     tier["descendants_query"]["one_attr_mixed_keep_nothing"] = @benchmarkable descendants_mixed_one($root, $key_length, $symbol_leaf_internode, ignore_nothing=false)
     tier["descendants_query"]["one_attr_mixed_ignore_nothing"] = @benchmarkable descendants_mixed_one($root, $key_length, $symbol_leaf_internode, ignore_nothing=true)
-    tier["descendants_query"]["many_attr_mixed_keep_nothing"] = @benchmarkable descendants_mixed_many($root, ($key_length, $key_mass), $symbol_leaf_internode, ignore_nothing=false)
-    tier["descendants_query"]["many_attr_mixed_ignore_nothing"] = @benchmarkable descendants_mixed_many($root, ($key_length, $key_mass), $symbol_leaf_internode, ignore_nothing=true)
+    tier["descendants_query"]["many_attr_mixed_keep_nothing"] = @benchmarkable descendants_mixed_many($root, [$key_length, $key_mass], $symbol_leaf_internode, ignore_nothing=false)
+    tier["descendants_query"]["many_attr_mixed_ignore_nothing"] = @benchmarkable descendants_mixed_many($root, [$key_length, $key_mass], $symbol_leaf_internode, ignore_nothing=true)
 
     tier["descendants_query"]["one_attr_one_symbol_inplace"] = @benchmarkable begin
         buf = Float64[]
