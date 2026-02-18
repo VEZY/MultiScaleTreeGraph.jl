@@ -1,3 +1,10 @@
+@inline function _child_index_by_id(chnodes, target_id::Int)
+    @inbounds for i in eachindex(chnodes)
+        node_id(chnodes[i]) == target_id && return i
+    end
+    return nothing
+end
+
 """
 delete_nodes!(mtg::Node,<keyword arguments>)
 
@@ -47,13 +54,6 @@ delete_nodes!(mtg, :Leaf)
 delete_nodes!(mtg, symbol = (:Leaf,:Internode))
 ```
 """
-@inline function _child_index_by_id(chnodes, target_id::Int)
-    @inbounds for i in eachindex(chnodes)
-        node_id(chnodes[i]) == target_id && return i
-    end
-    return nothing
-end
-
 function delete_nodes!(
     node;
     scale=nothing,
