@@ -6,7 +6,7 @@ using Tables
 const SUITE = BenchmarkGroup()
 const HAS_EXPLICIT_ATTRIBUTE_API = isdefined(MultiScaleTreeGraph, :attribute) && isdefined(MultiScaleTreeGraph, :attribute!)
 const HAS_TABLE_VIEWS_API = isdefined(MultiScaleTreeGraph, :symbol_table) && isdefined(MultiScaleTreeGraph, :mtg_table)
-const DEFAULT_ATTR_KEY_IS_SYMBOL = HAS_EXPLICIT_ATTRIBUTE_API
+const DEFAULT_ATTR_KEY_IS_SYMBOL = true # always true
 
 const SIZE_TIERS = (
     small=10_000,
@@ -340,22 +340,22 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
     tier["many_queries"]["descendants_repeated_inplace"] = @benchmarkable descendants_repeated_workload_inplace($root, 30, $key_length, $symbol_internode)
 
     if tier_name == "small"
-        tier["api_surface_small_only"]["insert_child"] = @benchmarkable insert_child!(mtg_[1], MutableNodeMTG(:<, :Internode, 1, 2), x -> Dict{Any,Any}(mass_key_ => 0.1), max_id_) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=111); mtg_=data_.root; max_id_=[max_id(mtg_)]; mass_key_=_attr_key(_is_symbol_attr_store(mtg_), :mass))
+        tier["api_surface_small_only"]["insert_child"] = @benchmarkable insert_child!(mtg_[1], MutableNodeMTG(:<, :Internode, 1, 2), x -> Dict{Any,Any}(mass_key_ => 0.1), max_id_) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=111); mtg_ = data_.root; max_id_ = [max_id(mtg_)]; mass_key_ = _attr_key(_is_symbol_attr_store(mtg_), :mass))
 
-        tier["api_surface_small_only"]["delete_node"] = @benchmarkable delete_node!(target_) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=222); mtg_=data_.root; target_=get_node(mtg_, node_id(mtg_[1])))
+        tier["api_surface_small_only"]["delete_node"] = @benchmarkable delete_node!(target_) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=222); mtg_ = data_.root; target_ = get_node(mtg_, node_id(mtg_[1])))
 
-        tier["api_surface_small_only"]["prune_subtree"] = @benchmarkable prune!(target_) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=333); mtg_=data_.root; target_=mtg_[1])
+        tier["api_surface_small_only"]["prune_subtree"] = @benchmarkable prune!(target_) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=333); mtg_ = data_.root; target_ = mtg_[1])
 
-        tier["api_surface_small_only"]["transform"] = @benchmarkable transform!(mtg_, in_ => (x -> x + 1.0) => out_, ignore_nothing=true) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=444); mtg_=data_.root; symattrs_=_is_symbol_attr_store(mtg_); in_=_attr_key(symattrs_, :mass); out_=_attr_key(symattrs_, :mass2))
+        tier["api_surface_small_only"]["transform"] = @benchmarkable transform!(mtg_, in_ => (x -> x + 1.0) => out_, ignore_nothing=true) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=444); mtg_ = data_.root; symattrs_ = _is_symbol_attr_store(mtg_); in_ = _attr_key(symattrs_, :mass); out_ = _attr_key(symattrs_, :mass2))
 
-        tier["api_surface_small_only"]["select"] = @benchmarkable select!(mtg_, key1_, key2_, ignore_nothing=true) setup=(data_=synthetic_mtg(n_nodes=8_000, seed=555); mtg_=data_.root; symattrs_=_is_symbol_attr_store(mtg_); key1_=_attr_key(symattrs_, :mass); key2_=_attr_key(symattrs_, :Length))
+        tier["api_surface_small_only"]["select"] = @benchmarkable select!(mtg_, key1_, key2_, ignore_nothing=true) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=555); mtg_ = data_.root; symattrs_ = _is_symbol_attr_store(mtg_); key1_ = _attr_key(symattrs_, :mass); key2_ = _attr_key(symattrs_, :Length))
 
         if HAS_TABLE_VIEWS_API
             tier["api_surface_small_only"]["tables_symbol"] = @benchmarkable symbol_table($root, :Leaf)
             tier["api_surface_small_only"]["tables_unified"] = @benchmarkable mtg_table($root)
         end
 
-        tier["api_surface_small_only"]["write_mtg"] = @benchmarkable write_mtg(f_, mtg_) setup=(data_=synthetic_mtg(n_nodes=3_000, seed=666); mtg_=data_.root; f_=tempname() * ".mtg") teardown=(isfile(f_) && rm(f_, force=true))
+        tier["api_surface_small_only"]["write_mtg"] = @benchmarkable write_mtg(f_, mtg_) setup = (data_ = synthetic_mtg(n_nodes=3_000, seed=666); mtg_ = data_.root; f_ = tempname() * ".mtg") teardown = (isfile(f_) && rm(f_, force=true))
     end
 end
 
