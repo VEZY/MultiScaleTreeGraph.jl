@@ -191,7 +191,9 @@ function traverse_update_multi_mixed!(root)
     traverse!(root, symbol=(:Leaf, :Internode)) do node
         m = _attr_get(node, :mass, default=0.0)
         _attr_set!(node, :mass, m * 0.999 + 0.0001)
-        _attr_set!(node, :update_counter, _attr_get(node, :update_counter, default=0) + 1)
+        counter = _attr_get(node, :update_counter, default=0)
+        isnothing(counter) && (counter = 0)
+        _attr_set!(node, :update_counter, counter + 1)
     end
     return nothing
 end
