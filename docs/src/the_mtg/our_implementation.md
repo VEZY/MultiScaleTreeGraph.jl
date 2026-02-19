@@ -36,7 +36,7 @@ Here is a simple description of each field:
 - `attributes`: node values (for example length, diameter, color, 3D position).
 - `traversal_cache`: saved traversal results used to speed up repeated operations.
 
-The values of these fields are accessed with helper functions such as [`node_id`](@ref), [`parent`](@ref), [`children`](@ref), [`node_mtg`](@ref), and [`node_attributes`](@ref).
+The values of these fields are accessed with helper functions such as [`node_id`](@ref), [`parent`](@ref), [`children`](@ref), [`node_mtg`](@ref), [`attribute`](@ref), and [`attributes`](@ref).
 
 The MTG field of a node describes how the node is positioned in the graph: link with parent (`/`, `<`, `+`), symbol, index, and scale (see [Node MTG and attributes](@ref) and [The MTG section](@ref) for more details). It is stored as [`NodeMTG`](@ref) or [`MutableNodeMTG`](@ref). These types have four fields:
 
@@ -112,7 +112,7 @@ node_mtg(mtg)
 ```
 
 ```@example usepkg
-node_attributes(mtg)
+attributes(mtg, format=:dict)
 ```
 
 The package also provide helper functions to access the MTG encoding of the node directly:
