@@ -1,6 +1,7 @@
 using Test
 using MultiScaleTreeGraph
-using DataFrames, Dates
+using Dates
+import DataFrames: DataFrame, names, nrow
 using Graphs, AbstractTrees
 
 @testset "read_mtg" begin

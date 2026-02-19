@@ -6,13 +6,24 @@ Compute the mtg classes based on its content. Usefull after having mutating the 
 function get_classes(mtg)
     attributes = traverse(mtg, node -> (SYMBOL=symbol(node), SCALE=scale(node)), type=@NamedTuple{SYMBOL::Symbol, SCALE::Int64})
     attributes = unique(attributes)
-    df = DataFrame(attributes)
+    n = length(attributes)
+    symbols_ = Vector{Symbol}(undef, n)
+    scales_ = Vector{Int}(undef, n)
+    @inbounds for i in eachindex(attributes)
+        symbols_[i] = attributes[i].SYMBOL
+        scales_[i] = attributes[i].SCALE
+    end
 
-    # Make everything to default values:
-    df[!, :DECOMPOSITION] .= "FREE"
-    df[!, :INDEXATION] .= "FREE"
-    df[!, :DEFINITION] .= "IMPLICIT"
-    return df
+    ColumnTable(
+        Symbol[:SYMBOL, :SCALE, :DECOMPOSITION, :INDEXATION, :DEFINITION],
+        AbstractVector[
+            symbols_,
+            scales_,
+            fill("FREE", n),
+            fill("FREE", n),
+            fill("IMPLICIT", n)
+        ]
+    )
 end
 
 """
@@ -31,53 +42,40 @@ Compute the mtg features section based on its attributes. Usefull after having c
 in the mtg.
 """
 function get_features(mtg)
-    attributes = traverse(
-        mtg,
-        node -> (collect(keys(node_attributes(node))), [typeof(i) for i in values(node_attributes(node))]), type=Tuple{Vector{Symbol},Vector{DataType}}
-    ) |> unique
+    names_ = Symbol[]
+    types_ = String[]
+    seen = Set{Tuple{Symbol,String}}()
 
-    df = DataFrame(
-        :NAME => vcat([i[1] for i in attributes]...),
-        :TYPE => vcat([i[2] for i in attributes]...)
-    )
+    traverse!(mtg) do node
+        for (name, value) in pairs(node_attributes(node))
+            T = typeof(value)
+            if (T <: AbstractVector) || (T <: Nothing) || (name in (:description, :symbols, :scales))
+                continue
+            end
 
-    # filter-out the attributes that have more than one value inside them (not compatible with
-    # the mtg format yet):
-    filter!(
-        x -> !(x.TYPE <: Vector) &&
-                 !(x.TYPE <: Nothing) &&
-                 !in(x.NAME, [:description, :symbols, :scales]),
-        df
-    )
+            typ =
+                if T <: AbstractFloat
+                    "REAL"
+                elseif T <: Bool
+                    "BOOLEAN"
+                elseif T <: Integer
+                    "INT"
+                elseif T <: Date
+                    "DD/MM/YY"
+                else
+                    "STRING"
+                end
 
-    # Remove repeated rows:
-    unique!(df)
-
-    new_type = fill("", size(df)[1])
-    for (index, value) in enumerate(df.TYPE)
-        if value <: AbstractFloat
-            new_type[index] = "REAL"
-        elseif value <: Bool
-            # we test booleans before integers because Bool <: Integer
-            new_type[index] = "BOOLEAN"
-        elseif value <: Integer
-            new_type[index] = "INT"
-            # elseif df.NAME[i] in () # Put reserved keywords here if needed in the future
-            # new_type[index] = "ALPHA"
-        elseif value <: Date
-            new_type[index] = "DD/MM/YY"
-        else
-            # All others are parsed as string
-            new_type[index] = "STRING"
+            row = (Symbol(name), typ)
+            if !(row in seen)
+                push!(seen, row)
+                push!(names_, row[1])
+                push!(types_, row[2])
+            end
         end
     end
 
-    df.TYPE = new_type
-
-    # Remove repeated rows again after having changed the type (can have String and SubString for the same variable before): 
-    unique!(df)
-
-    return df
+    ColumnTable(Symbol[:NAME, :TYPE], AbstractVector[names_, types_])
 end
 
 """

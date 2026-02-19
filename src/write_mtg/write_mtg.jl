@@ -53,11 +53,13 @@ function write_mtg(file, mtg, classes, description, features)
         # Classes section:
         writedlm(io, [""])
         writedlm(io, ["CLASSES:"])
-        writedlm(io, reshape(names(classes), (1, :)))
+        writedlm(io, reshape(String.(names(classes)), (1, :)))
         # Handle special case of Scene class, which is written as "$" in the mtg file:
         classes_scene = copy(classes)
-        replace!(classes_scene.SYMBOL, "Scene" => "\$")
-        writedlm(io, eachrow(classes_scene))
+        symbols_ = String.(classes_scene.SYMBOL)
+        replace!(symbols_, "Scene" => "\$")
+        classes_scene.SYMBOL = symbols_
+        _write_table_rows(io, classes_scene)
 
         # Description section:
         writedlm(io, [""])
@@ -65,17 +67,16 @@ function write_mtg(file, mtg, classes, description, features)
 
         # Description is optional
         if description !== nothing
+            description_print = copy(description)
             # Reformat the RIGHT column to match how it is written in an MTG
-            right = fill("", size(description)[1])
-
-            for i in eachindex(description.RIGHT)
-                right = join(description.RIGHT[i], ",")
+            right = Vector{String}(undef, length(description_print.RIGHT))
+            @inbounds for i in eachindex(description_print.RIGHT)
+                right[i] = join(string.(description_print.RIGHT[i]), ",")
             end
-            description[!, :RIGHT] .= right
+            description_print.RIGHT = right
 
-            writedlm(io, reshape(names(description), (1, :)))
-
-            writedlm(io, eachrow(description))
+            writedlm(io, reshape(String.(names(description_print)), (1, :)))
+            _write_table_rows(io, description_print)
         else
             writedlm(io, ["LEFT" "RIGHT" "RELTYPE" "MAX"])
         end
@@ -83,8 +84,8 @@ function write_mtg(file, mtg, classes, description, features)
         # Features section:
         writedlm(io, [""])
         writedlm(io, ["FEATURES:"])
-        writedlm(io, reshape(names(features), (1, :)))
-        writedlm(io, eachrow(features))
+        writedlm(io, reshape(String.(names(features)), (1, :)))
+        _write_table_rows(io, features)
 
         # MTG section:
         writedlm(io, [""])
@@ -95,6 +96,15 @@ function write_mtg(file, mtg, classes, description, features)
             writedlm(io, reshape([mtg_df[k][i] for k in keys(mtg_df)], (1, :)), quotes=false)
         end
     end
+end
+
+function _write_table_rows(io, table)
+    nrows, ncols = size(table)
+    for i in 1:nrows
+        row = Any[table[i, j] for j in 1:ncols]
+        writedlm(io, reshape(row, (1, :)))
+    end
+    return nothing
 end
 
 function paste_node_mtg(mtg, features)
@@ -126,11 +136,14 @@ function paste_node_mtg(mtg, features)
     end
 
     # Build the "ENTITY-CODE" column with necessary "^", leading and trailing tabs
+    feature_type = Dict{String,String}()
+    @inbounds for i in eachindex(features.NAME)
+        feature_type[string(features.NAME[i])] = string(features.TYPE[i])
+    end
+
     for (key, val) in attributes
         # If the attribute is a date, write it in the day/month/year format:
-        attr_feature = filter(x -> string(x.NAME) == key, features)
-
-        if size(attr_feature)[1] == 1 && attr_feature[1, 2] == "DD/MM/YY"
+        if get(feature_type, key, "") == "DD/MM/YY"
             replace!(x -> isnothing(x) ? x : format(x, dateformat"d/m/Y"), val)
         end
 

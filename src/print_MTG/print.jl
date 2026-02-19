@@ -31,7 +31,22 @@ function Base.print(node::Node; leading::AbstractString="", io::IO=stdout, limit
 end
 
 function Base.print(node::Node, vars; leading::AbstractString="", io::IO=stdout)
-    DataFrame(node, vars)
+    table = mtg_table(node)
+    vars_ = vars isa Union{Tuple,AbstractVector} ? Symbol.(vars) : Symbol[Symbol(vars)]
+    keep = Symbol[:node_id, :symbol, :scale, :index, :link, :parent_id]
+    append!(keep, vars_)
+
+    out_names = Symbol[]
+    out_cols = AbstractVector[]
+    for name in keep
+        idx = get(table.name_to_idx, name, 0)
+        if idx != 0
+            push!(out_names, name)
+            push!(out_cols, table.cols[idx])
+        end
+    end
+
+    show(io, MIME"text/plain"(), Tables.columntable(ColumnTable(out_names, out_cols)))
 end
 
 function Base.show(io::IO, node::Node)

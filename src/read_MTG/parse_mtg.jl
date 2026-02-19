@@ -132,7 +132,7 @@ Parse MTG node attributes names, values and type
 
 # Arguments
 - `node_data::String`: A splitted mtg node data (attributes)
-- `features::DataFrame`: The features data.frame
+- `features::ColumnTable`: The parsed features table
 - `attr_column_start::Integer`: The index of the column of the first attribute
 - `line::Integer`: The current line of the mtg file
 - `force::Bool`: force data reading even if errors are met during conversion ?

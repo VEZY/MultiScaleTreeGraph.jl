@@ -7,7 +7,7 @@ end
 
 @testset "test classes" begin
     classes = get_classes(mtg)
-    @test typeof(classes) == DataFrame
+    @test classes isa MultiScaleTreeGraph.ColumnTable
     @test size(classes) == (5, 5)
     @test classes.SYMBOL == [:Scene, :Individual, :Axis, :Internode, :Leaf]
     @test classes.SCALE == [0, 1, 2, 3, 3]
@@ -18,7 +18,7 @@ end
 
 @testset "test description" begin
     @test get_description(mtg) === nothing
-    @test typeof(mtg[:description]) == DataFrame
+    @test mtg[:description] isa MultiScaleTreeGraph.ColumnTable
     @test size(mtg[:description]) == (2, 4)
     @test mtg[:description].LEFT == ["Internode", "Internode"]
     @test mtg[:description].RELTYPE == ["+", "<"]
@@ -27,7 +27,7 @@ end
 
 @testset "test features" begin
     features = sort!(get_features(mtg), :NAME)
-    @test typeof(features) == DataFrame
+    @test features isa MultiScaleTreeGraph.ColumnTable
     @test size(features) == (5, 2)
     @test features.NAME == [:Length, :Width, :XEuler, :dateDeath, :isAlive]
     @test features.TYPE == ["REAL", "REAL", "REAL", "DD/MM/YY", "BOOLEAN"]

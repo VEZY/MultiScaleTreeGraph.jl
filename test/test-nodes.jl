@@ -92,7 +92,7 @@ mtg = read_mtg(file)
 @testset "names" begin
     @test sort!(get_attributes(mtg)) == [:Length, :Width, :XEuler, :dateDeath, :description, :isAlive, :scales, :symbols]
     @test names(mtg) == get_attributes(mtg)
-    @test names(DataFrame(mtg))[8:end] == string.(names(mtg))
+    @test sort(names(DataFrame(mtg))[7:end]) == sort(string.(names(mtg)))
 end
 
 

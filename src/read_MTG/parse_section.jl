@@ -76,5 +76,14 @@ function parse_section!(f, header, section, line, l; allow_empty=false)
         append!(classes, [section_l])
     end
 
-    DataFrame([classes[x][y] for x = eachindex(classes), y = eachindex(l_header)], l_header)
+    nrows = length(classes)
+    ncols = length(l_header)
+    cols = AbstractVector[Vector{String}(undef, nrows) for _ in 1:ncols]
+    @inbounds for i in 1:nrows
+        row = classes[i]
+        for j in 1:ncols
+            cols[j][i] = row[j]
+        end
+    end
+    ColumnTable(Symbol.(l_header), cols)
 end

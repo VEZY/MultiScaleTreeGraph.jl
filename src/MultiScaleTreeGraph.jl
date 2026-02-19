@@ -8,10 +8,6 @@ using OrderedCollections
 import XLSX: readxlsx, sheetnames
 import SHA: sha1 # for naming the cache variable
 import Base
-import DataFrames: DataFrame, insertcols!
-import DataFrames: transform!, transform # We define our own version for transforming the MTG
-import DataFrames: select!, select # We define our own version for transforming the MTG
-import DataFrames: rename! # We define our own version for renaming node attributes
 import Tables
 import MetaGraphsNext: MetaGraph, code_for, add_edge! # Transform to MetaGraph
 import Graphs.DiGraph
@@ -19,6 +15,7 @@ import Dates: Date, @dateformat_str, format
 
 include("types/AbstractNodeMTG.jl")
 include("types/Attributes.jl")
+include("types/ColumnTable.jl")
 include("types/Node.jl")
 include("read_MTG/read_MTG.jl")
 include("read_MTG/strip_comments.jl")
@@ -50,7 +47,6 @@ include("compute_MTG/mutation_helpers.jl")
 include("compute_MTG/nleaves.jl")
 include("compute_MTG/pipe_model.jl")
 include("compute_MTG/get_node.jl")
-include("conversion/DataFrame.jl")
 include("conversion/Tables.jl")
 include("conversion/MetaGraph.jl")
 
@@ -68,7 +64,6 @@ export nextsibling, prevsibling, lastsibling
 export print
 export show
 export length
-export DataFrame
 export MetaGraph
 export iterate
 export siblings
@@ -102,6 +97,7 @@ export add_column!, drop_column!, rename_column!
 export descendants_strategy, descendants_strategy!
 export columnarize!
 export symbol_table, mtg_table
+export to_table
 export list_nodes
 export get_classes
 export get_description

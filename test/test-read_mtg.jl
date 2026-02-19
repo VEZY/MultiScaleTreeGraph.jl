@@ -3,14 +3,14 @@ classes = get_classes(mtg)
 features = get_features(mtg)
 
 @testset "test classes" begin
-    @test typeof(classes) == DataFrame
+    @test classes isa MultiScaleTreeGraph.ColumnTable
     @test size(classes) == (5, 5)
     @test String.(classes.SYMBOL) == ["Scene", "Individual", "Axis", "Internode", "Leaf"]
     @test classes.SCALE == [0, 1, 2, 3, 3]
 end
 
 @testset "test features" begin
-    @test typeof(features) == DataFrame
+    @test features isa MultiScaleTreeGraph.ColumnTable
     @test size(features) == (5, 2)
     @test sort(collect(features.NAME)) == sort([:Length, :Width, :XEuler, :dateDeath, :isAlive])
 end

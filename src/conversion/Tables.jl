@@ -1,24 +1,95 @@
-struct MTGTableView
-    names::Vector{Symbol}
-    name_to_idx::Dict{Symbol,Int}
-    cols::Vector{AbstractVector}
+struct MTGAttrColumnView{N,T} <: AbstractVector{T}
+    nodes::Vector{N}
+    key::Symbol
 end
 
-function MTGTableView(names::Vector{Symbol}, cols::Vector{AbstractVector})
-    idx = Dict{Symbol,Int}()
-    @inbounds for i in eachindex(names)
-        idx[names[i]] = i
+Base.IndexStyle(::Type{<:MTGAttrColumnView}) = IndexLinear()
+Base.size(col::MTGAttrColumnView) = (length(col.nodes),)
+Base.length(col::MTGAttrColumnView) = length(col.nodes)
+
+@inline function Base.getindex(col::MTGAttrColumnView{N,T}, i::Int) where {N,T}
+    v = attribute(col.nodes[i], col.key, nothing)
+    return v === nothing ? (missing::T) : (v::T)
+end
+
+@inline _to_table_key(key::Symbol) = key
+@inline _to_table_key(key) = Symbol(key)
+
+@inline function _table_attr_type_from_store(store::MTGAttributeStore, key::Symbol)
+    has_any = false
+    has_missing = false
+    T = Union{}
+
+    @inbounds for bucket in store.buckets
+        col_idx = get(bucket.col_index, key, 0)
+        if col_idx == 0
+            has_missing = true
+            continue
+        end
+
+        has_any = true
+        col_T = bucket.col_types[col_idx]
+        col_T_no_nothing = _remove_nothing_type(col_T)
+        if col_T_no_nothing === Union{}
+            has_missing = true
+        else
+            if col_T_no_nothing !== col_T
+                has_missing = true
+            end
+            T = T === Union{} ? col_T_no_nothing : typejoin(T, col_T_no_nothing)
+        end
     end
-    MTGTableView(names, idx, cols)
+
+    has_any || return Missing
+    has_missing ? Union{Missing,T} : T
 end
 
-Tables.istable(::Type{MTGTableView}) = true
-Tables.columnaccess(::Type{MTGTableView}) = true
-Tables.columns(t::MTGTableView) = t
-Tables.columnnames(t::MTGTableView) = Tuple(t.names)
-Tables.getcolumn(t::MTGTableView, i::Int) = t.cols[i]
-Tables.getcolumn(t::MTGTableView, name::Symbol) = t.cols[t.name_to_idx[name]]
-Tables.schema(t::MTGTableView) = Tables.Schema(Tuple(t.names), Tuple(eltype.(t.cols)))
+function _collect_attr_names_from_store(store::MTGAttributeStore)
+    out = Symbol[]
+    seen = Set{Symbol}()
+    for bucket in store.buckets
+        for col in bucket.columns
+            name = col.name
+            if !(name in seen)
+                push!(seen, name)
+                push!(out, name)
+            end
+        end
+    end
+    return out
+end
+
+function _collect_attr_names_from_nodes(nodes)
+    out = Symbol[]
+    seen = Set{Symbol}()
+    for n in nodes
+        for key in attribute_names(n)
+            if !(key in seen)
+                push!(seen, key)
+                push!(out, key)
+            end
+        end
+    end
+    out
+end
+
+function _build_attr_columns(nodes, attr_names)
+    cols = AbstractVector[]
+    for key in attr_names
+        values = Vector{Any}(undef, length(nodes))
+        @inbounds for i in eachindex(nodes)
+            v = attribute(nodes[i], key, default=nothing)
+            values[i] = v === nothing ? missing : v
+        end
+        T = _value_type_or_missing(values)
+        typed = Vector{T}(undef, length(values))
+        @inbounds for i in eachindex(values)
+            typed[i] = values[i]
+        end
+        push!(cols, typed)
+    end
+    cols
+end
 
 @inline function _value_type_or_missing(values::Vector{Any})
     T = Union{}
@@ -37,78 +108,99 @@ Tables.schema(t::MTGTableView) = Tables.Schema(Tuple(t.names), Tuple(eltype.(t.c
     return has_missing ? Union{Missing,T} : T
 end
 
-function _typed_column(values::Vector{Any})
-    T = _value_type_or_missing(values)
-    out = Vector{T}(undef, length(values))
-    @inbounds for i in eachindex(values)
-        out[i] = values[i]
-    end
-    out
-end
+"""
+    symbol_table(mtg::Node, symbol)
 
-function _collect_attr_names(nodes)
-    out = Symbol[]
-    seen = Set{Symbol}()
-    for n in nodes
-        for key in attribute_names(n)
-            if !(key in seen)
-                push!(seen, key)
-                push!(out, key)
+Return a per-symbol column table view (Tables.jl-compatible).
+"""
+function symbol_table(mtg::Node, symbol)
+    symbol_ = _to_table_key(symbol)
+    attrs = node_attributes(get_root(mtg))
+    if attrs isa ColumnarAttrs
+        store = _store_for_node_attrs(attrs)
+        if store !== nothing
+            bid = get(store.symbol_to_bucket, symbol_, 0)
+            if bid == 0
+                return ColumnTable(Symbol[:node_id], AbstractVector[Int[]])
             end
+            bucket = store.buckets[bid]
+            names_ = Symbol[:node_id]
+            cols_ = AbstractVector[bucket.row_to_node]
+            for col in bucket.columns
+                push!(names_, col.name)
+                push!(cols_, col.data)
+            end
+            return ColumnTable(names_, cols_)
         end
     end
-    out
-end
 
-function _build_attr_columns(nodes, attr_names)
-    cols = Vector{AbstractVector}(undef, length(attr_names))
-    @inbounds for i in eachindex(attr_names)
-        key = attr_names[i]
-        values = Vector{Any}(undef, length(nodes))
-        for j in eachindex(nodes)
-            v = attribute(nodes[j], key, default=nothing)
-            values[j] = v === nothing ? missing : v
-        end
-        cols[i] = _typed_column(values)
-    end
-    cols
-end
-
-function symbol_table(mtg::Node, symbol::Symbol)
-    nodes = traverse(mtg, node -> node, symbol=symbol, type=typeof(mtg))
-    attr_names = _collect_attr_names(nodes)
+    nodes = traverse(mtg, node -> node, symbol=symbol_, type=typeof(mtg))
+    attr_names = _collect_attr_names_from_nodes(nodes)
     attr_cols = _build_attr_columns(nodes, attr_names)
 
-    names = Symbol[:node_id]
-    cols = Vector{AbstractVector}(undef, 1 + length(attr_cols))
-    cols[1] = [node_id(n) for n in nodes]
-
+    names_ = Symbol[:node_id]
+    cols_ = AbstractVector[[node_id(n) for n in nodes]]
     @inbounds for i in eachindex(attr_names)
-        push!(names, attr_names[i])
-        cols[i+1] = attr_cols[i]
+        push!(names_, attr_names[i])
+        push!(cols_, attr_cols[i])
     end
-
-    MTGTableView(names, cols)
+    ColumnTable(names_, cols_)
 end
 
+"""
+    mtg_table(mtg::Node)
+
+Return a unified traversal-ordered table view of an MTG (Tables.jl-compatible).
+Absent attributes are represented as `missing`.
+"""
 function mtg_table(mtg::Node)
     nodes = traverse(mtg, node -> node, type=typeof(mtg))
-    attr_names = _collect_attr_names(nodes)
-    attr_cols = _build_attr_columns(nodes, attr_names)
 
-    names = Symbol[:node_id, :symbol, :scale, :index, :link, :parent_id]
-    cols = Vector{AbstractVector}(undef, 6 + length(attr_cols))
-    cols[1] = [node_id(n) for n in nodes]
-    cols[2] = [symbol(n) for n in nodes]
-    cols[3] = [scale(n) for n in nodes]
-    cols[4] = [index(n) for n in nodes]
-    cols[5] = [link(n) for n in nodes]
-    cols[6] = [isroot(n) ? missing : node_id(parent(n)) for n in nodes]
+    names_ = Symbol[:node_id, :symbol, :scale, :index, :link, :parent_id]
+    cols_ = AbstractVector[
+        [node_id(n) for n in nodes],
+        [symbol(n) for n in nodes],
+        [scale(n) for n in nodes],
+        [index(n) for n in nodes],
+        [link(n) for n in nodes],
+        [isroot(n) ? missing : node_id(parent(n)) for n in nodes]
+    ]
 
-    @inbounds for i in eachindex(attr_names)
-        push!(names, attr_names[i])
-        cols[i+6] = attr_cols[i]
+    attrs = node_attributes(get_root(mtg))
+    if attrs isa ColumnarAttrs
+        store = _store_for_node_attrs(attrs)
+        if store !== nothing
+            attr_names = _collect_attr_names_from_store(store)
+            for key in attr_names
+                push!(names_, key)
+                T = _table_attr_type_from_store(store, key)
+                push!(cols_, MTGAttrColumnView{typeof(nodes[1]),T}(nodes, key))
+            end
+            return ColumnTable(names_, cols_)
+        end
     end
 
-    MTGTableView(names, cols)
+    attr_names = _collect_attr_names_from_nodes(nodes)
+    attr_cols = _build_attr_columns(nodes, attr_names)
+    @inbounds for i in eachindex(attr_names)
+        push!(names_, attr_names[i])
+        push!(cols_, attr_cols[i])
+    end
+
+    ColumnTable(names_, cols_)
 end
+
+"""
+    to_table(mtg::Node; symbol=nothing)
+
+Convenience helper to get a Tables.jl-compatible view from an MTG.
+- `symbol=nothing`: unified traversal-ordered table (`mtg_table`)
+- `symbol=<symbol>`: per-symbol table (`symbol_table`)
+"""
+function to_table(mtg::Node; symbol=nothing)
+    symbol === nothing ? mtg_table(mtg) : symbol_table(mtg, symbol)
+end
+
+Tables.istable(::Type{<:Node}) = true
+Tables.columnaccess(::Type{<:Node}) = true
+Tables.columns(mtg::Node) = mtg_table(mtg)

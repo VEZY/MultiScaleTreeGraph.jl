@@ -53,11 +53,14 @@ write_mtg("test.mtg",mtg)
 
 ## 3. Conversion
 
-You can convert an MTG into a DataFrame and select the variables you need:
+You can expose an MTG as a `Tables.jl` source:
 
 ```julia
-DataFrame(mtg, [:length_mm, :XX])
+mtg_table(mtg)
+symbol_table(mtg, :Leaf)
 ```
+
+If you use `DataFrames.jl`, `DataFrame(mtg)` works out of the box through the `Tables.jl` interface.
 
 Or convert it to a [MetaGraph](https://juliagraphs.org/MetaGraphsNext.jl/dev/):
 

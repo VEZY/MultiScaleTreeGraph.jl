@@ -1,7 +1,7 @@
-mtg = read_mtg("files/simple_plant.mtg");
+mtg = read_mtg("files/simple_plant.mtg")
 
-@testset "DataFrame" begin
-    df_mtg = DataFrame(mtg, [:scales, :Length])
+@testset "Tables/DataFrame interoperability" begin
+    df_mtg = DataFrame(mtg)
     @test df_mtg[1, :scales] == [0, 1, 2, 3, 3]
     @test df_mtg[7, :Length] == 0.2
 end

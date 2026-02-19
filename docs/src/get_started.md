@@ -42,7 +42,7 @@ Then you can compute new variables in the MTG using [`transform!`](@ref):
 transform!(mtg, :Length => (x -> isnothing(x) ? nothing : x * 1000.) => :length_mm)
 ```
 
-The design of [`transform!`](@ref) is heavily inspired from the eponym function from [`DataFrame.jl`](https://dataframes.juliadata.org/stable/), with little tweaks for MTGs.
+The design of [`transform!`](@ref) is heavily inspired from the eponym function from tabular workflows (notably [`DataFrames.jl`](https://dataframes.juliadata.org/stable/)), with little tweaks for MTGs.
 
 You can see the newly-computed attributes using descendants like so:
 
@@ -50,10 +50,16 @@ You can see the newly-computed attributes using descendants like so:
 descendants(mtg, :length_mm)
 ```
 
-Or by transforming your MTG into a DataFrame:
+Or by getting a tabular view of your MTG:
 
 ```@example usepkg
-DataFrame(mtg, :length_mm)
+mtg_table(mtg)
+```
+
+Or directly transforming the MTG into a DataFrame:
+
+```@example usepkg
+DataFrame(mtg)
 ```
 
 Then you can write the MTG back to disk like so:
