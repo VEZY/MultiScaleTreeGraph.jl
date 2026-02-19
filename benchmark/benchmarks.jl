@@ -6,6 +6,8 @@ using Tables
 const SUITE = BenchmarkGroup()
 const HAS_EXPLICIT_ATTRIBUTE_API = isdefined(MultiScaleTreeGraph, :attribute) && isdefined(MultiScaleTreeGraph, :attribute!)
 const HAS_TABLE_VIEWS_API = isdefined(MultiScaleTreeGraph, :symbol_table) && isdefined(MultiScaleTreeGraph, :mtg_table)
+const HAS_ATTRIBUTE_POSITIONAL_DEFAULT = HAS_EXPLICIT_ATTRIBUTE_API &&
+                                         hasmethod(attribute, Tuple{MultiScaleTreeGraph.Node,Symbol,Any})
 const DEFAULT_ATTR_KEY_IS_SYMBOL = true # always true
 
 const SIZE_TIERS = (
@@ -35,6 +37,15 @@ end
 
 @inline function _symbol_filter(sym_is_symbol::Bool, syms::Tuple{Vararg{Symbol}})
     return sym_is_symbol ? syms : Tuple(String(s) for s in syms)
+end
+
+@inline function _attribute_default(node, key, default)
+    HAS_EXPLICIT_ATTRIBUTE_API || return node[key]
+    if HAS_ATTRIBUTE_POSITIONAL_DEFAULT
+        return attribute(node, key, default)
+    else
+        return attribute(node, key; default=default)
+    end
 end
 
 function synthetic_mtg(; n_nodes::Int=10_000, seed::Int=42)
@@ -204,7 +215,7 @@ end
 
 function traverse_update_one_explicit_api!(root, key_mass)
     traverse!(root) do node
-        m = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_mass, default=0.0) : node[key_mass]
+        m = _attribute_default(node, key_mass, 0.0)
         m === nothing && (m = 0.0)
         HAS_EXPLICIT_ATTRIBUTE_API ? attribute!(node, key_mass, m + 0.1) : (node[key_mass] = m + 0.1)
     end
@@ -225,8 +236,8 @@ end
 
 function traverse_update_multi_leaf_explicit_api!(root, key_width, key_area, symbol_leaf)
     traverse!(root, symbol=symbol_leaf) do node
-        width = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_width, default=0.0) : node[key_width]
-        area = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_area, default=0.0) : node[key_area]
+        width = _attribute_default(node, key_width, 0.0)
+        area = _attribute_default(node, key_area, 0.0)
         width === nothing && (width = 0.0)
         area === nothing && (area = 0.0)
         if HAS_EXPLICIT_ATTRIBUTE_API
@@ -254,9 +265,9 @@ end
 
 function traverse_update_multi_mixed_explicit_api!(root, key_mass, key_counter, symbol_leaf_internode)
     traverse!(root, symbol=symbol_leaf_internode) do node
-        m = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_mass, default=0.0) : node[key_mass]
+        m = _attribute_default(node, key_mass, 0.0)
         m === nothing && (m = 0.0)
-        counter = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_counter, default=0) : node[key_counter]
+        counter = _attribute_default(node, key_counter, 0)
         isnothing(counter) && (counter = 0)
         if HAS_EXPLICIT_ATTRIBUTE_API
             attribute!(node, key_mass, m * 0.999 + 0.0001)

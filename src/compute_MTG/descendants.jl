@@ -26,6 +26,33 @@ end
     return mask
 end
 
+@inline function _single_bucket_id(store::MTGAttributeStore, symbol_filter)
+    symbol_filter === nothing && return 0
+    bids = _symbol_bucket_ids(store, symbol_filter)
+    return length(bids) == 1 ? bids[1] : 0
+end
+
+@inline function _collect_descendant_values_indexed_single_bucket!(
+    out::AbstractVector,
+    idx::SubtreeIndexCache,
+    store::MTGAttributeStore,
+    bid::Int,
+    col::Column{T},
+    left::Int,
+    right::Int,
+    ignore_nothing::Bool,
+) where {T}
+    sizehint!(out, length(out) + (right - left + 1))
+    @inbounds for i in left:right
+        nid = idx.dfs_order[i]
+        store.node_bucket[nid] == bid || continue
+        v = col.data[store.node_row[nid]]
+        ignore_nothing && v === nothing && continue
+        push!(out, v)
+    end
+    return true
+end
+
 function _collect_descendant_values_indexed!(
     out::AbstractVector,
     node,
@@ -49,6 +76,34 @@ function _collect_descendant_values_indexed!(
     left > right && return true
 
     allow_mask = _bucket_allow_mask(store, symbol_filter)
+    single_bid = _single_bucket_id(store, symbol_filter)
+
+    if single_bid != 0
+        col_idx = key_plan.col_idx_by_bucket[single_bid]
+        if col_idx == 0
+            ignore_nothing && return true
+            sizehint!(out, length(out) + (right - left + 1))
+            @inbounds for i in left:right
+                nid = idx.dfs_order[i]
+                store.node_bucket[nid] == single_bid || continue
+                push!(out, nothing)
+            end
+            return true
+        end
+
+        col = store.buckets[single_bid].columns[col_idx]
+        return _collect_descendant_values_indexed_single_bucket!(
+            out,
+            idx,
+            store,
+            single_bid,
+            col,
+            left,
+            right,
+            ignore_nothing,
+        )
+    end
+
     sizehint!(out, length(out) + (right - left + 1))
 
     @inbounds for i in left:right
