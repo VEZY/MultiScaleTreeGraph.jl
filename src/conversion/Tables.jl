@@ -3,6 +3,8 @@ struct MTGAttrColumnView{N,T} <: AbstractVector{T}
     key::Symbol
 end
 
+const _TABLE_META_COLUMNS = (:description, :symbols, :scales)
+
 Base.IndexStyle(::Type{<:MTGAttrColumnView}) = IndexLinear()
 Base.size(col::MTGAttrColumnView) = (length(col.nodes),)
 Base.length(col::MTGAttrColumnView) = length(col.nodes)
@@ -61,6 +63,7 @@ function _collect_attr_names_from_store(store::MTGAttributeStore)
     for bucket in store.buckets
         for col in bucket.columns
             name = col.name
+            name in _TABLE_META_COLUMNS && continue
             if !(name in seen)
                 push!(seen, name)
                 push!(out, name)
@@ -75,6 +78,7 @@ function _collect_attr_names_from_nodes(nodes)
     seen = Set{Symbol}()
     for n in nodes
         for key in attribute_names(n)
+            key in _TABLE_META_COLUMNS && continue
             if !(key in seen)
                 push!(seen, key)
                 push!(out, key)
@@ -100,6 +104,24 @@ function _build_attr_columns(nodes, attr_names)
         push!(cols, typed)
     end
     cols
+end
+
+@inline function _filter_meta_columns(vars)
+    out = Symbol[]
+    for v in vars
+        v in _TABLE_META_COLUMNS || push!(out, v)
+    end
+    out
+end
+
+function _table_metadata_from_mtg(mtg::Node)
+    root = get_root(mtg)
+    md = Dict{Symbol,Any}()
+    syms = attribute(root, :symbols, default=nothing)
+    scs = attribute(root, :scales, default=nothing)
+    syms === nothing || (md[:symbols] = syms)
+    scs === nothing || (md[:scales] = scs)
+    return md
 end
 
 @inline function _value_type_or_missing(values::Vector{Any})
@@ -128,6 +150,8 @@ If `vars` is provided (`Symbol`/`String`/vector/tuple), only these attributes ar
 function symbol_table(mtg::Node, symbol, vars=nothing)
     symbol_ = _to_table_key(symbol)
     vars_ = _to_table_vars(vars)
+    vars_ === nothing || (vars_ = _filter_meta_columns(vars_))
+    metadata = _table_metadata_from_mtg(mtg)
     attrs = node_attributes(get_root(mtg))
     if attrs isa ColumnarAttrs
         store = _store_for_node_attrs(attrs)
@@ -142,7 +166,7 @@ function symbol_table(mtg::Node, symbol, vars=nothing)
                         push!(cols_, Missing[])
                     end
                 end
-                return ColumnTable(names_, cols_)
+                return ColumnTable(names_, cols_; metadata=metadata)
             end
             bucket = store.buckets[bid]
             names_ = Symbol[:node_id]
@@ -163,7 +187,7 @@ function symbol_table(mtg::Node, symbol, vars=nothing)
                     end
                 end
             end
-            return ColumnTable(names_, cols_)
+            return ColumnTable(names_, cols_; metadata=metadata)
         end
     end
 
@@ -178,7 +202,7 @@ function symbol_table(mtg::Node, symbol, vars=nothing)
         push!(names_, attr_names[i])
         push!(cols_, attr_cols[i])
     end
-    ColumnTable(names_, cols_)
+    ColumnTable(names_, cols_; metadata=metadata)
 end
 
 """
@@ -191,6 +215,8 @@ If `vars` is provided (`Symbol`/`String`/vector/tuple), only these attributes ar
 function mtg_table(mtg::Node, vars=nothing)
     nodes = traverse(mtg, node -> node, type=typeof(mtg))
     vars_ = _to_table_vars(vars)
+    vars_ === nothing || (vars_ = _filter_meta_columns(vars_))
+    metadata = _table_metadata_from_mtg(mtg)
 
     names_ = Symbol[:node_id, :symbol, :scale, :index, :link, :parent_id]
     cols_ = AbstractVector[
@@ -212,7 +238,7 @@ function mtg_table(mtg::Node, vars=nothing)
                 T = _table_attr_type_from_store(store, key)
                 push!(cols_, MTGAttrColumnView{typeof(nodes[1]),T}(nodes, key))
             end
-            return ColumnTable(names_, cols_)
+            return ColumnTable(names_, cols_; metadata=metadata)
         end
     end
 
@@ -224,7 +250,7 @@ function mtg_table(mtg::Node, vars=nothing)
         push!(cols_, attr_cols[i])
     end
 
-    ColumnTable(names_, cols_)
+    ColumnTable(names_, cols_; metadata=metadata)
 end
 
 @inline function _materialize_table(source, sink)

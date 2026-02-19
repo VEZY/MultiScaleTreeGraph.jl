@@ -92,7 +92,11 @@ mtg = read_mtg(file)
 @testset "names" begin
     @test sort!(get_attributes(mtg)) == [:Length, :Width, :XEuler, :dateDeath, :description, :isAlive, :scales, :symbols]
     @test names(mtg) == get_attributes(mtg)
-    @test sort(names(DataFrame(mtg))[7:end]) == sort(string.(names(mtg)))
+    attrs_no_meta = setdiff(names(mtg), [:description, :symbols, :scales])
+    @test sort(names(DataFrame(mtg))[7:end]) == sort(string.(attrs_no_meta))
+    mtg_print = sprint(show, mtg)
+    @test occursin("Symbols:", mtg_print)
+    @test occursin("Scales:", mtg_print)
 end
 
 

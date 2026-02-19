@@ -2,9 +2,10 @@ mutable struct ColumnTable
     col_names::Vector{Symbol}
     name_to_idx::Dict{Symbol,Int}
     cols::Vector{AbstractVector}
+    metadata::Dict{Symbol,Any}
 end
 
-function ColumnTable(col_names::Vector{Symbol}, cols::Vector{AbstractVector})
+function ColumnTable(col_names::Vector{Symbol}, cols::Vector{AbstractVector}; metadata=Dict{Symbol,Any}())
     length(col_names) == length(cols) || error("Column names and columns must have the same length.")
     nrows = isempty(cols) ? 0 : length(cols[1])
     @inbounds for i in 2:length(cols)
@@ -14,17 +15,17 @@ function ColumnTable(col_names::Vector{Symbol}, cols::Vector{AbstractVector})
     @inbounds for i in eachindex(col_names)
         name_to_idx[col_names[i]] = i
     end
-    ColumnTable(col_names, name_to_idx, cols)
+    ColumnTable(col_names, name_to_idx, cols, Dict{Symbol,Any}(pairs(metadata)))
 end
 
-function ColumnTable(; kwargs...)
+function ColumnTable(; metadata=Dict{Symbol,Any}(), kwargs...)
     names_ = Symbol[]
     cols_ = AbstractVector[]
     for (k, v) in pairs(kwargs)
         push!(names_, k)
         push!(cols_, v)
     end
-    ColumnTable(names_, cols_)
+    ColumnTable(names_, cols_; metadata=metadata)
 end
 
 @inline function _column_idx(table::ColumnTable, name::Symbol)
@@ -39,14 +40,14 @@ Base.size(table::ColumnTable) = (isempty(table.cols) ? 0 : length(table.cols[1])
 Base.length(table::ColumnTable) = first(size(table))
 
 function Base.getproperty(table::ColumnTable, name::Symbol)
-    if name === :col_names || name === :name_to_idx || name === :cols
+    if name === :col_names || name === :name_to_idx || name === :cols || name === :metadata
         return getfield(table, name)
     end
     return table.cols[_column_idx(table, name)]
 end
 
 function Base.setproperty!(table::ColumnTable, name::Symbol, values)
-    if name === :col_names || name === :name_to_idx || name === :cols
+    if name === :col_names || name === :name_to_idx || name === :cols || name === :metadata
         setfield!(table, name, values)
         return values
     end
@@ -75,7 +76,7 @@ Base.getindex(table::ColumnTable, ::Colon, col::Int) = table.cols[col]
 
 function Base.copy(table::ColumnTable)
     new_cols = AbstractVector[copy(col) for col in table.cols]
-    ColumnTable(copy(table.col_names), new_cols)
+    ColumnTable(copy(table.col_names), new_cols; metadata=copy(table.metadata))
 end
 
 function Base.:(==)(a::ColumnTable, b::ColumnTable)
@@ -84,7 +85,8 @@ function Base.:(==)(a::ColumnTable, b::ColumnTable)
     @inbounds for i in eachindex(a.cols)
         a.cols[i] == b.cols[i] || return false
     end
-    return true
+    a.metadata == b.metadata || return false
+    true
 end
 
 function Base.isequal(a::ColumnTable, b::ColumnTable)
@@ -93,7 +95,8 @@ function Base.isequal(a::ColumnTable, b::ColumnTable)
     @inbounds for i in eachindex(a.cols)
         isequal(a.cols[i], b.cols[i]) || return false
     end
-    return true
+    isequal(a.metadata, b.metadata) || return false
+    true
 end
 
 function Base.sort!(table::ColumnTable, by::Symbol; kwargs...)
@@ -112,3 +115,33 @@ Tables.columnnames(table::ColumnTable) = Tuple(table.col_names)
 Tables.getcolumn(table::ColumnTable, i::Int) = table.cols[i]
 Tables.getcolumn(table::ColumnTable, name::Symbol) = table.cols[_column_idx(table, name)]
 Tables.schema(table::ColumnTable) = Tables.Schema(Tuple(table.col_names), Tuple(eltype.(table.cols)))
+
+function Base.show(io::IO, ::MIME"text/plain", table::ColumnTable)
+    nrows, ncols = size(table)
+    title = "ColumnTable($(nrows) x $(ncols))"
+
+    syms = get(table.metadata, :symbols, nothing)
+    scales = get(table.metadata, :scales, nothing)
+    syms === nothing || print(io, "Symbols: ", syms, "\n")
+    scales === nothing || print(io, "Scales: ", scales, "\n")
+
+    if ncols == 0
+        print(io, title)
+        return
+    end
+
+    t_format = PrettyTables.TextTableFormat(
+        borders=PrettyTables.text_table_borders__unicode_rounded
+    )
+
+    PrettyTables.pretty_table(
+        io,
+        table;
+        backend=:text,
+        title=title,
+        table_format=t_format,
+        row_number_column_label="Row",
+        row_labels=1:nrows,
+        vertical_crop_mode=:middle,
+    )
+end

@@ -43,6 +43,9 @@ all_table = to_table(mtg)
 all_df = DataFrame(all_table)
 @test :node_id in Symbol.(names(all_df))
 @test :symbol in Symbol.(names(all_df))
+@test !(:symbols in Symbol.(names(all_df)))
+@test !(:scales in Symbol.(names(all_df)))
+@test !(:description in Symbol.(names(all_df)))
 @test all_df.node_id == list_nodes(mtg)
 @test any(ismissing, all_df.Width)
 
@@ -54,6 +57,13 @@ all_selected_kw = to_table(mtg, vars=[:Width, :Length])
 
 all_df_sink = to_table(mtg, vars=[:Width, :Length], sink=DataFrame)
 @test :Width in Symbol.(names(all_df_sink))
+
+all_table_str = sprint(show, MIME("text/plain"), all_selected_kw)
+@test occursin("ColumnTable", all_table_str)
+@test occursin("node_id", all_table_str)
+@test occursin("Width", all_table_str)
+@test occursin("Symbols:", all_table_str)
+@test occursin("Scales:", all_table_str)
 
 # Hybrid descendants traversal strategy.
 @test descendants_strategy(mtg) == :auto

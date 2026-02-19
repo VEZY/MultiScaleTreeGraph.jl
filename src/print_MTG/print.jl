@@ -22,6 +22,13 @@ mtg
 ```
 """
 function Base.print(node::Node; leading::AbstractString="", io::IO=stdout, limit=true)
+    if isroot(node)
+        syms = attribute(node, :symbols, default=nothing)
+        scs = attribute(node, :scales, default=nothing)
+        syms === nothing || print(io, "Symbols: ", syms, "\n")
+        scs === nothing || print(io, "Scales: ", scs, "\n")
+    end
+
     node_vec = get_printing(node; leading=leading)
 
     for (i, j) in enumerate(node_vec)
