@@ -25,8 +25,7 @@ function Base.print(node::Node; leading::AbstractString="", io::IO=stdout, limit
     if isroot(node)
         syms = attribute(node, :symbols, default=nothing)
         scs = attribute(node, :scales, default=nothing)
-        syms === nothing || print(io, "Symbols: ", syms, "\n")
-        scs === nothing || print(io, "Scales: ", scs, "\n")
+        _print_symbols_scales(io, syms, scs)
     end
 
     node_vec = get_printing(node; leading=leading)

@@ -116,14 +116,65 @@ Tables.getcolumn(table::ColumnTable, i::Int) = table.cols[i]
 Tables.getcolumn(table::ColumnTable, name::Symbol) = table.cols[_column_idx(table, name)]
 Tables.schema(table::ColumnTable) = Tables.Schema(Tuple(table.col_names), Tuple(eltype.(table.cols)))
 
+@inline function _pad_display_text(text::AbstractString, width::Int)
+    pad = width - textwidth(text)
+    return pad > 0 ? text * repeat(" ", pad) : String(text)
+end
+
+@inline function _as_display_vector(x)
+    if x isa AbstractVector
+        return x
+    elseif x isa Tuple
+        return collect(x)
+    else
+        return nothing
+    end
+end
+
+function _print_symbols_scales(io::IO, symbols_meta, scales_meta)
+    if symbols_meta === nothing && scales_meta === nothing
+        return
+    end
+
+    syms = _as_display_vector(symbols_meta)
+    scales = _as_display_vector(scales_meta)
+
+    if syms !== nothing && scales !== nothing && !isempty(syms) && length(syms) == length(scales)
+        n = length(syms)
+        sym_cells = Vector{String}(undef, n)
+        scale_cells = Vector{String}(undef, n)
+        widths = Vector{Int}(undef, n)
+
+        @inbounds for i in eachindex(syms)
+            sym_i = string(syms[i])
+            scale_i = string(scales[i])
+            sym_cells[i] = sym_i
+            scale_cells[i] = scale_i
+            widths[i] = max(textwidth(sym_i), textwidth(scale_i))
+        end
+
+        @inbounds for i in eachindex(widths)
+            sym_cells[i] = _pad_display_text(sym_cells[i], widths[i])
+            scale_cells[i] = _pad_display_text(scale_cells[i], widths[i])
+        end
+
+        label_w = max(textwidth("Symbols:"), textwidth("Scales:"))
+        print(io, _pad_display_text("Symbols:", label_w), " ", join(sym_cells, "  "), "\n")
+        print(io, _pad_display_text("Scales:", label_w), " ", join(scale_cells, "  "), "\n")
+        return
+    end
+
+    symbols_meta === nothing || print(io, "Symbols: ", symbols_meta, "\n")
+    scales_meta === nothing || print(io, "Scales: ", scales_meta, "\n")
+end
+
 function Base.show(io::IO, ::MIME"text/plain", table::ColumnTable)
     nrows, ncols = size(table)
-    title = "ColumnTable($(nrows) x $(ncols))"
+    title = "Attributes Table ($(nrows) x $(ncols))"
 
     syms = get(table.metadata, :symbols, nothing)
     scales = get(table.metadata, :scales, nothing)
-    syms === nothing || print(io, "Symbols: ", syms, "\n")
-    scales === nothing || print(io, "Scales: ", scales, "\n")
+    _print_symbols_scales(io, syms, scales)
 
     if ncols == 0
         print(io, title)
