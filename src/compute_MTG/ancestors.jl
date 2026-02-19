@@ -49,6 +49,50 @@ ancestors(leaf_node, :Length, symbol = :Internode)
 ancestors(leaf_node, :Length, symbol = (:Axis,:Internode))
 ```
 """
+@inline function _ancestors_values_no_filter_ignore!(node, key::Symbol, val, recursivity_level, ignore_nothing::Bool)
+    current = node
+    remaining = recursivity_level
+
+    while !isroot(current) && remaining != 0
+        parent_ = parent(current)
+        v = unsafe_getindex(parent_, key)
+        ignore_nothing && v === nothing || push!(val, v)
+        remaining -= 1
+        current = parent_
+    end
+    return val
+end
+
+@inline function _ancestors_values_no_filter_collect(node, key::Symbol, recursivity_level, ignore_nothing::Bool)
+    vals = Any[]
+    current = node
+    remaining = recursivity_level
+
+    while !isroot(current) && remaining != 0
+        parent_ = parent(current)
+        v = unsafe_getindex(parent_, key)
+        ignore_nothing && v === nothing || push!(vals, v)
+        remaining -= 1
+        current = parent_
+    end
+    return vals
+end
+
+@inline function _typed_from_any(vals::Vector{Any}, fallback_type=Any)
+    if isempty(vals)
+        return Array{fallback_type,1}()
+    end
+    T = typeof(vals[1])
+    @inbounds for i in 2:length(vals)
+        T = Union{T,typeof(vals[i])}
+    end
+    out = Vector{T}(undef, length(vals))
+    @inbounds for i in eachindex(vals)
+        out[i] = vals[i]
+    end
+    return out
+end
+
 function ancestors(
     node, key;
     scale=nothing,
@@ -60,6 +104,13 @@ function ancestors(
     recursivity_level=-1,
     ignore_nothing=false,
     type::Union{Union,DataType}=Any)
+    if no_node_filters(scale, symbol, link, filter_fun) && all && !self && type === Any
+        key_ = Symbol(key)
+        vals = _ancestors_values_no_filter_collect(node, key_, recursivity_level, ignore_nothing)
+        fallback_T = infer_columnar_attr_type(node, key_, nothing, ignore_nothing)
+        return _typed_from_any(vals, fallback_T)
+    end
+
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
     _maybe_depwarn_traversal_type_kw(:ancestors, type)
@@ -216,6 +267,13 @@ function ancestors!(
     ignore_nothing=false,
     type::Union{Union,DataType}=Any,
 )
+    if no_node_filters(scale, symbol, link, filter_fun) && all && !self && type === Any
+        key_ = Symbol(key)
+        empty!(out)
+        _ancestors_values_no_filter_ignore!(node, key_, out, recursivity_level, ignore_nothing)
+        return out
+    end
+
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
     _maybe_depwarn_traversal_type_kw(:ancestors!, type)
