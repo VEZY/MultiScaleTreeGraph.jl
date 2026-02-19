@@ -56,9 +56,16 @@ Or by getting a tabular view of your MTG:
 mtg_table(mtg)
 ```
 
-Or directly transforming the MTG into a DataFrame:
+You can also select only a subset of attributes:
 
 ```@example usepkg
+mtg_table(mtg, [:Length, :Width])
+```
+
+Or directly transforming the MTG into a DataFrame:
+
+```julia
+using DataFrames
 DataFrame(mtg)
 ```
 

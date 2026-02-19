@@ -15,6 +15,17 @@ end
 @inline _to_table_key(key::Symbol) = key
 @inline _to_table_key(key) = Symbol(key)
 
+@inline _to_table_vars(vars::Nothing) = nothing
+@inline _to_table_vars(var::Symbol) = Symbol[var]
+@inline _to_table_vars(var::AbstractString) = Symbol[Symbol(var)]
+@inline function _to_table_vars(vars::Union{Tuple,AbstractVector})
+    out = Vector{Symbol}(undef, length(vars))
+    @inbounds for i in eachindex(vars)
+        out[i] = _to_table_key(vars[i])
+    end
+    out
+end
+
 @inline function _table_attr_type_from_store(store::MTGAttributeStore, key::Symbol)
     has_any = false
     has_missing = false
@@ -109,26 +120,48 @@ end
 end
 
 """
-    symbol_table(mtg::Node, symbol)
+    symbol_table(mtg::Node, symbol, vars=nothing)
 
 Return a per-symbol column table view (Tables.jl-compatible).
+If `vars` is provided (`Symbol`/`String`/vector/tuple), only these attributes are included.
 """
-function symbol_table(mtg::Node, symbol)
+function symbol_table(mtg::Node, symbol, vars=nothing)
     symbol_ = _to_table_key(symbol)
+    vars_ = _to_table_vars(vars)
     attrs = node_attributes(get_root(mtg))
     if attrs isa ColumnarAttrs
         store = _store_for_node_attrs(attrs)
         if store !== nothing
             bid = get(store.symbol_to_bucket, symbol_, 0)
             if bid == 0
-                return ColumnTable(Symbol[:node_id], AbstractVector[Int[]])
+                names_ = Symbol[:node_id]
+                cols_ = AbstractVector[Int[]]
+                if vars_ !== nothing
+                    for key in vars_
+                        push!(names_, key)
+                        push!(cols_, Missing[])
+                    end
+                end
+                return ColumnTable(names_, cols_)
             end
             bucket = store.buckets[bid]
             names_ = Symbol[:node_id]
             cols_ = AbstractVector[bucket.row_to_node]
-            for col in bucket.columns
-                push!(names_, col.name)
-                push!(cols_, col.data)
+            if vars_ === nothing
+                for col in bucket.columns
+                    push!(names_, col.name)
+                    push!(cols_, col.data)
+                end
+            else
+                for key in vars_
+                    col_idx = get(bucket.col_index, key, 0)
+                    push!(names_, key)
+                    if col_idx == 0
+                        push!(cols_, fill(missing, length(bucket.row_to_node)))
+                    else
+                        push!(cols_, bucket.columns[col_idx].data)
+                    end
+                end
             end
             return ColumnTable(names_, cols_)
         end
@@ -136,6 +169,7 @@ function symbol_table(mtg::Node, symbol)
 
     nodes = traverse(mtg, node -> node, symbol=symbol_, type=typeof(mtg))
     attr_names = _collect_attr_names_from_nodes(nodes)
+    attr_names = vars_ === nothing ? attr_names : vars_
     attr_cols = _build_attr_columns(nodes, attr_names)
 
     names_ = Symbol[:node_id]
@@ -148,13 +182,15 @@ function symbol_table(mtg::Node, symbol)
 end
 
 """
-    mtg_table(mtg::Node)
+    mtg_table(mtg::Node, vars=nothing)
 
 Return a unified traversal-ordered table view of an MTG (Tables.jl-compatible).
 Absent attributes are represented as `missing`.
+If `vars` is provided (`Symbol`/`String`/vector/tuple), only these attributes are included.
 """
-function mtg_table(mtg::Node)
+function mtg_table(mtg::Node, vars=nothing)
     nodes = traverse(mtg, node -> node, type=typeof(mtg))
+    vars_ = _to_table_vars(vars)
 
     names_ = Symbol[:node_id, :symbol, :scale, :index, :link, :parent_id]
     cols_ = AbstractVector[
@@ -170,7 +206,7 @@ function mtg_table(mtg::Node)
     if attrs isa ColumnarAttrs
         store = _store_for_node_attrs(attrs)
         if store !== nothing
-            attr_names = _collect_attr_names_from_store(store)
+            attr_names = vars_ === nothing ? _collect_attr_names_from_store(store) : vars_
             for key in attr_names
                 push!(names_, key)
                 T = _table_attr_type_from_store(store, key)
@@ -181,6 +217,7 @@ function mtg_table(mtg::Node)
     end
 
     attr_names = _collect_attr_names_from_nodes(nodes)
+    attr_names = vars_ === nothing ? attr_names : vars_
     attr_cols = _build_attr_columns(nodes, attr_names)
     @inbounds for i in eachindex(attr_names)
         push!(names_, attr_names[i])
@@ -191,14 +228,15 @@ function mtg_table(mtg::Node)
 end
 
 """
-    to_table(mtg::Node; symbol=nothing)
+    to_table(mtg::Node; symbol=nothing, vars=nothing)
 
 Convenience helper to get a Tables.jl-compatible view from an MTG.
 - `symbol=nothing`: unified traversal-ordered table (`mtg_table`)
 - `symbol=<symbol>`: per-symbol table (`symbol_table`)
+- `vars`: optional attribute selection (`Symbol`/`String`/vector/tuple)
 """
-function to_table(mtg::Node; symbol=nothing)
-    symbol === nothing ? mtg_table(mtg) : symbol_table(mtg, symbol)
+function to_table(mtg::Node; symbol=nothing, vars=nothing)
+    symbol === nothing ? mtg_table(mtg, vars) : symbol_table(mtg, symbol, vars)
 end
 
 Tables.istable(::Type{<:Node}) = true
