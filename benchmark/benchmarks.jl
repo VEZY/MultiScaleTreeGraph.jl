@@ -204,7 +204,7 @@ end
 
 function traverse_update_one_explicit_api!(root, key_mass)
     traverse!(root) do node
-        m = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_mass, default=0.0) : node[key_mass]
+        m = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_mass, 0.0) : node[key_mass]
         m === nothing && (m = 0.0)
         HAS_EXPLICIT_ATTRIBUTE_API ? attribute!(node, key_mass, m + 0.1) : (node[key_mass] = m + 0.1)
     end
@@ -225,8 +225,8 @@ end
 
 function traverse_update_multi_leaf_explicit_api!(root, key_width, key_area, symbol_leaf)
     traverse!(root, symbol=symbol_leaf) do node
-        width = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_width, default=0.0) : node[key_width]
-        area = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_area, default=0.0) : node[key_area]
+        width = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_width, 0.0) : node[key_width]
+        area = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_area, 0.0) : node[key_area]
         width === nothing && (width = 0.0)
         area === nothing && (area = 0.0)
         if HAS_EXPLICIT_ATTRIBUTE_API
@@ -254,9 +254,9 @@ end
 
 function traverse_update_multi_mixed_explicit_api!(root, key_mass, key_counter, symbol_leaf_internode)
     traverse!(root, symbol=symbol_leaf_internode) do node
-        m = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_mass, default=0.0) : node[key_mass]
+        m = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_mass, 0.0) : node[key_mass]
         m === nothing && (m = 0.0)
-        counter = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_counter, default=0) : node[key_counter]
+        counter = HAS_EXPLICIT_ATTRIBUTE_API ? attribute(node, key_counter, 0) : node[key_counter]
         isnothing(counter) && (counter = 0)
         if HAS_EXPLICIT_ATTRIBUTE_API
             attribute!(node, key_mass, m * 0.999 + 0.0001)

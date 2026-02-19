@@ -366,7 +366,12 @@ node_attributes!(node::Node{T,A}, attributes::A) where {T,A} = setfield!(node, :
 
 Get one attribute from a node.
 """
-attribute(node::Node, key::Symbol; default=nothing) = get(node_attributes(node), key, default)
+@inline attribute(node::Node, key::Symbol, default) = get(node_attributes(node), key, default)
+@inline function attribute(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, key::Symbol, default::T) where {T<:Number}
+    _get_typed_numeric(node_attributes(node), key, default)
+end
+attribute(node::Node, key, default) = attribute(node, Symbol(key), default)
+attribute(node::Node, key::Symbol; default=nothing) = attribute(node, key, default)
 attribute(node::Node, key; default=nothing) = attribute(node, Symbol(key), default=default)
 
 """

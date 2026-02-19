@@ -290,6 +290,14 @@ function _bucket_row(ref::NodeAttrRef)
     return store, bid, row
 end
 
+@inline function _bound_store_bid_row(ref::NodeAttrRef)
+    store = ref.store::MTGAttributeStore
+    node_id = ref.node_id
+    @inbounds bid = store.node_bucket[node_id]
+    @inbounds row = store.node_row[node_id]
+    return store, bid, row
+end
+
 function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
     _mark_subtree_index_mutation!(store)
     _ensure_node_capacity!(store, node_id)
@@ -522,16 +530,16 @@ function Base.length(attrs::ColumnarAttrs)
     if !_isbound(attrs)
         return length(attrs.staged)
     end
-    _, bid, _ = _bucket_row(attrs.ref)
-    return length(attrs.ref.store.buckets[bid].columns)
+    store, bid, _ = _bound_store_bid_row(attrs.ref)
+    return length(store.buckets[bid].columns)
 end
 
 function Base.keys(attrs::ColumnarAttrs)
     if !_isbound(attrs)
         return collect(keys(attrs.staged))
     end
-    _, bid, _ = _bucket_row(attrs.ref)
-    bucket = attrs.ref.store.buckets[bid]
+    store, bid, _ = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
     out = Vector{Symbol}(undef, length(bucket.columns))
     @inbounds for i in eachindex(bucket.columns)
         out[i] = _column(bucket, i).name
@@ -543,8 +551,8 @@ function Base.haskey(attrs::ColumnarAttrs, key::Symbol)
     if !_isbound(attrs)
         return haskey(attrs.staged, key)
     end
-    _, bid, _ = _bucket_row(attrs.ref)
-    haskey(attrs.ref.store.buckets[bid].col_index, key)
+    store, bid, _ = _bound_store_bid_row(attrs.ref)
+    haskey(store.buckets[bid].col_index, key)
 end
 Base.haskey(attrs::ColumnarAttrs, key) = haskey(attrs, _normalize_attr_key(key))
 
@@ -552,7 +560,7 @@ function Base.getindex(attrs::ColumnarAttrs, key::Symbol)
     if !_isbound(attrs)
         return attrs.staged[key]
     end
-    store, bid, row = _bucket_row(attrs.ref)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && throw(KeyError(key))
@@ -560,22 +568,83 @@ function Base.getindex(attrs::ColumnarAttrs, key::Symbol)
 end
 Base.getindex(attrs::ColumnarAttrs, key) = getindex(attrs, _normalize_attr_key(key))
 
-function Base.get(attrs::ColumnarAttrs, key::Symbol, default)
+@inline function _column_matches_exact_type(bucket::SymbolBucket, col_idx::Int, ::Type{T}) where {T}
+    bucket.col_types[col_idx] === T
+end
+
+@inline function _column_matches_nullable_type(bucket::SymbolBucket, col_idx::Int, ::Type{T}) where {T}
+    bucket.col_types[col_idx] === Union{Nothing,T}
+end
+
+@inline function _get_typed_numeric(attrs::ColumnarAttrs, key::Symbol, default::T) where {T<:Number}
+    if !_isbound(attrs)
+        v = get(attrs.staged, key, default)
+        v === nothing && return nothing
+        return v isa T ? v : (convert(T, v)::T)
+    end
+
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
+    col_idx = get(bucket.col_index, key, 0)
+    col_idx == 0 && return default
+
+    if _column_matches_exact_type(bucket, col_idx, T)
+        col = bucket.columns[col_idx]::Column{T}
+        return @inbounds col.data[row]
+    elseif _column_matches_nullable_type(bucket, col_idx, T)
+        col = bucket.columns[col_idx]::Column{Union{Nothing,T}}
+        return @inbounds col.data[row]
+    end
+
+    v = _get_value(bucket, row, key, default)
+    v === nothing && return nothing
+    return v isa T ? v : (convert(T, v)::T)
+end
+
+function Base.get(attrs::ColumnarAttrs, key::Symbol, default::T) where {T}
     if !_isbound(attrs)
         return get(attrs.staged, key, default)
     end
-    store, bid, row = _bucket_row(attrs.ref)
-    return _get_value(store.buckets[bid], row, key, default)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
+    col_idx = get(bucket.col_index, key, 0)
+    col_idx == 0 && return default
+
+    if _column_matches_exact_type(bucket, col_idx, T)
+        col = bucket.columns[col_idx]::Column{T}
+        return @inbounds col.data[row]
+    elseif _column_matches_nullable_type(bucket, col_idx, T)
+        col = bucket.columns[col_idx]::Column{Union{Nothing,T}}
+        return @inbounds col.data[row]
+    end
+
+    return _get_value(bucket, row, key, default)
 end
 Base.get(attrs::ColumnarAttrs, key, default) = get(attrs, _normalize_attr_key(key), default)
 
-function Base.setindex!(attrs::ColumnarAttrs, value, key::Symbol)
+function Base.setindex!(attrs::ColumnarAttrs, value::T, key::Symbol) where {T}
     if !_isbound(attrs)
         attrs.staged[key] = value
         return value
     end
-    store, bid, row = _bucket_row(attrs.ref)
-    _set_value!(store.buckets[bid], row, key, value)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
+    col_idx = get(bucket.col_index, key, 0)
+    if col_idx == 0
+        _set_value!(bucket, row, key, value)
+        return value
+    end
+
+    if _column_matches_exact_type(bucket, col_idx, T)
+        col = bucket.columns[col_idx]::Column{T}
+        @inbounds col.data[row] = value
+    elseif _column_matches_nullable_type(bucket, col_idx, T)
+        col = bucket.columns[col_idx]::Column{Union{Nothing,T}}
+        @inbounds col.data[row] = value
+    else
+        _set_value!(bucket, row, key, value)
+    end
+
     return value
 end
 Base.setindex!(attrs::ColumnarAttrs, value, key) = setindex!(attrs, value, _normalize_attr_key(key))
@@ -597,7 +666,7 @@ function Base.pop!(attrs::ColumnarAttrs, key, default=nothing)
         return pop!(attrs.staged, key_, default)
     end
 
-    store, bid, row = _bucket_row(attrs.ref)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
     col_idx = get(bucket.col_index, key_, 0)
     col_idx == 0 && return default
@@ -616,7 +685,7 @@ function Base.empty!(attrs::ColumnarAttrs)
         empty!(attrs.staged)
         return attrs
     end
-    store, bid, _ = _bucket_row(attrs.ref)
+    store, bid, _ = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
     empty!(bucket.col_index)
     empty!(bucket.columns)
