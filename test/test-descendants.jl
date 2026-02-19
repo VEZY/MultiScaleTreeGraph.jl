@@ -1,7 +1,11 @@
 @testset "descendants" begin
       mtg = read_mtg("files/simple_plant.mtg")
       width_all = [nothing, nothing, 0.02, 0.1, 0.02, 0.1]
-      @test_logs (:warn, r"Keyword argument `type` in `descendants` is deprecated") descendants(mtg, :Width; type=Union{Nothing,Float64})
+      if Base.JLOptions().depwarn == 0
+            @test descendants(mtg, :Width; type=Union{Nothing,Float64}) == width_all
+      else
+            @test_logs (:warn, r"Keyword argument `type` in `descendants` is deprecated") descendants(mtg, :Width; type=Union{Nothing,Float64})
+      end
       @test descendants(mtg, :Width) == width_all
 
       d = descendants(mtg, :Width, scale=1)

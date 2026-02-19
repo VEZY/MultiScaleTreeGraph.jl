@@ -5,7 +5,11 @@
     # Using a leaf node from the mtg:
     leaf_node = get_node(mtg, 5)
 
-    @test_logs (:warn, r"Keyword argument `type` in `ancestors` is deprecated") ancestors(leaf_node, :Width; type=Union{Nothing,Float64})
+    if Base.JLOptions().depwarn == 0
+        @test ancestors(leaf_node, :Width; type=Union{Nothing,Float64}) == reverse(width_all[1:4])
+    else
+        @test_logs (:warn, r"Keyword argument `type` in `ancestors` is deprecated") ancestors(leaf_node, :Width; type=Union{Nothing,Float64})
+    end
     @test ancestors(leaf_node, :Width) == reverse(width_all[1:4])
 
     d = ancestors(leaf_node, :Width, scale=3)
