@@ -23,14 +23,14 @@ makedocs(;
             "Our implementation" => "the_mtg/our_implementation.md"
         ],
         "Tutorials" => [
-            "tutorials/0.read_write.md",
-            "tutorials/1.manipulate_node.md",
-            "tutorials/2.descendants_ancestors_filters.md",
-            "tutorials/3.transform_mtg.md",
-            "tutorials/4.convert_mtg.md",
-            "tutorials/5.plotting.md",
-            "tutorials/6.add_remove_nodes.md",
-            "tutorials/7.performance_considerations.md",
+            "Read and Write MTGs" => "tutorials/0.read_write.md",
+            "Create and Manipulate Nodes" => "tutorials/1.manipulate_node.md",
+            "Traversal, Descendants, Ancestors and Filters" => "tutorials/2.descendants_ancestors_filters.md",
+            "Transform and Select Attributes" => "tutorials/3.transform_mtg.md",
+            "Convert MTGs to Tables and Graphs" => "tutorials/4.convert_mtg.md",
+            "Plot MTGs" => "tutorials/5.plotting.md",
+            "Add and Remove Nodes" => "tutorials/6.add_remove_nodes.md",
+            "Performance Considerations" => "tutorials/7.performance_considerations.md",
         ],
         "API" => "api.md",
     ]

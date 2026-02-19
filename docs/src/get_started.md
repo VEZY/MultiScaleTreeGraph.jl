@@ -4,6 +4,8 @@
 
 This page let's you take a peek at what the package is capable of. If you want a better, more in-depth introduction to the package, take a look at the tutorials, starting from [Read and Write MTGs](@ref). If you don't know what an MTG is, you can read more about starting from [The MTG concept](@ref).
 
+If your main goal is to query trees (children, descendants, ancestors, filters), go directly to [Traversal, descendants, ancestors and filters](@ref).
+
 ## Installation
 
 You must have a working Julia installation on your computer. The version of Julia should be greater than 1.3.
@@ -80,3 +82,11 @@ You can also convert your MTG to a [MetaGraph](https://juliagraphs.org/MetaGraph
 ```@example usepkg
 MetaGraph(mtg)
 ```
+
+## Next step: traversal tutorial
+
+If you are new to MTGs or graph vocabulary, this is usually the best next page:
+
+- [Traversal, descendants, ancestors and filters](@ref)
+
+It explains these words in plain language and gives practical query recipes.
