@@ -56,8 +56,9 @@ write_mtg("test.mtg",mtg)
 You can expose an MTG as a `Tables.jl` source:
 
 ```julia
-mtg_table(mtg)
-symbol_table(mtg, :Leaf)
+to_table(mtg)
+to_table(mtg, symbol=:Leaf)
+to_table(mtg, vars=[:Length, :Width])
 ```
 
 If you use `DataFrames.jl`, `DataFrame(mtg)` works out of the box through the `Tables.jl` interface.

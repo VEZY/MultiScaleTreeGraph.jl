@@ -53,13 +53,13 @@ descendants(mtg, :length_mm)
 Or by getting a tabular view of your MTG:
 
 ```@example usepkg
-mtg_table(mtg)
+to_table(mtg)
 ```
 
 You can also select only a subset of attributes:
 
 ```@example usepkg
-mtg_table(mtg, [:Length, :Width])
+to_table(mtg, vars=[:Length, :Width])
 ```
 
 Or directly transforming the MTG into a DataFrame:

@@ -7,7 +7,7 @@ Notable attribute APIs:
 - `attribute`, `attribute!`, `attributes`, `attribute_names`
 - `add_column!`, `drop_column!`, `rename_column!`
 - `descendants_strategy`, `descendants_strategy!` (choose automatic/direct/indexed descendants retrieval)
-- `to_table`, `symbol_table`, `mtg_table` (`Tables.jl` sources)
+- `to_table` (`Tables.jl` source/sink entry-point)
 
 ```@index
 ```

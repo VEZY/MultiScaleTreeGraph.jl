@@ -29,28 +29,31 @@ add_column!(mtg, :Leaf, :tmpcol, Float64, default=1.0)
 rename_column!(mtg, :Leaf, :tmpcol, :tmpcol2)
 @test attribute(leaf, :tmpcol2) == 1.0
 
-leaf_table = symbol_table(mtg, :Leaf)
+leaf_table = to_table(mtg, symbol=:Leaf)
 leaf_df = DataFrame(leaf_table)
 @test :node_id in Symbol.(names(leaf_df))
 @test :Width in Symbol.(names(leaf_df))
 @test nrow(leaf_df) > 0
 
-leaf_selected = symbol_table(mtg, :Leaf, [:Width, "Length"])
+leaf_selected = to_table(mtg, symbol=:Leaf, vars=[:Width, "Length"])
 @test Tables.columnnames(leaf_selected) == (:node_id, :Width, :Length)
 @test length(Tables.getcolumn(leaf_selected, :Width)) == nrow(leaf_df)
 
-all_table = mtg_table(mtg)
+all_table = to_table(mtg)
 all_df = DataFrame(all_table)
 @test :node_id in Symbol.(names(all_df))
 @test :symbol in Symbol.(names(all_df))
 @test all_df.node_id == list_nodes(mtg)
 @test any(ismissing, all_df.Width)
 
-all_selected = mtg_table(mtg, [:Width, "Length"])
+all_selected = to_table(mtg, vars=[:Width, "Length"])
 @test Tables.columnnames(all_selected) == (:node_id, :symbol, :scale, :index, :link, :parent_id, :Width, :Length)
 
 all_selected_kw = to_table(mtg, vars=[:Width, :Length])
 @test Tables.columnnames(all_selected_kw) == Tables.columnnames(all_selected)
+
+all_df_sink = to_table(mtg, vars=[:Width, :Length], sink=DataFrame)
+@test :Width in Symbol.(names(all_df_sink))
 
 # Hybrid descendants traversal strategy.
 @test descendants_strategy(mtg) == :auto

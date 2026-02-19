@@ -31,7 +31,7 @@ function Base.print(node::Node; leading::AbstractString="", io::IO=stdout, limit
 end
 
 function Base.print(node::Node, vars; leading::AbstractString="", io::IO=stdout)
-    table = mtg_table(node)
+    table = to_table(node)
     vars_ = vars isa Union{Tuple,AbstractVector} ? Symbol.(vars) : Symbol[Symbol(vars)]
     keep = Symbol[:node_id, :symbol, :scale, :index, :link, :parent_id]
     append!(keep, vars_)

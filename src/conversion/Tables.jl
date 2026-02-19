@@ -227,18 +227,45 @@ function mtg_table(mtg::Node, vars=nothing)
     ColumnTable(names_, cols_)
 end
 
-"""
-    to_table(mtg::Node; symbol=nothing, vars=nothing)
+@inline function _materialize_table(source, sink)
+    sink === nothing && return source
 
-Convenience helper to get a Tables.jl-compatible view from an MTG.
-- `symbol=nothing`: unified traversal-ordered table (`mtg_table`)
-- `symbol=<symbol>`: per-symbol table (`symbol_table`)
-- `vars`: optional attribute selection (`Symbol`/`String`/vector/tuple)
+    # Preferred path for Tables-compatible sinks (e.g. DataFrame type/instance).
+    materializer = try
+        Tables.materializer(sink)
+    catch
+        try
+            Tables.materializer(typeof(sink))
+        catch
+            nothing
+        end
+    end
+    materializer !== nothing && return materializer(source)
+
+    # Generic fallback for callable sinks, e.g. sink = x -> MyType(x)
+    applicable(sink, source) && return sink(source)
+
+    error(
+        "Unsupported sink $(sink). ",
+        "Provide a Tables.jl sink (type or instance, e.g. DataFrame) or a callable that accepts a table."
+    )
+end
+
 """
-function to_table(mtg::Node; symbol=nothing, vars=nothing)
-    symbol === nothing ? mtg_table(mtg, vars) : symbol_table(mtg, symbol, vars)
+    to_table(mtg::Node; symbol=nothing, vars=nothing, sink=nothing)
+
+Generic table conversion entry-point.
+
+- `symbol=nothing`: unified traversal-ordered table
+- `symbol=<symbol>`: per-symbol table
+- `vars`: optional attribute selection (`Symbol`/`String`/vector/tuple)
+- `sink`: optional sink materialization (e.g. `sink=DataFrame` if `DataFrames.jl` is loaded)
+"""
+function to_table(mtg::Node; symbol=nothing, vars=nothing, sink=nothing)
+    source = symbol === nothing ? mtg_table(mtg, vars) : symbol_table(mtg, symbol, vars)
+    _materialize_table(source, sink)
 end
 
 Tables.istable(::Type{<:Node}) = true
 Tables.columnaccess(::Type{<:Node}) = true
-Tables.columns(mtg::Node) = mtg_table(mtg)
+Tables.columns(mtg::Node) = to_table(mtg)
