@@ -4,11 +4,6 @@ using Random
 using Tables
 
 const SUITE = BenchmarkGroup()
-const HAS_EXPLICIT_ATTRIBUTE_API = isdefined(MultiScaleTreeGraph, :attribute) && isdefined(MultiScaleTreeGraph, :attribute!)
-const HAS_TABLE_VIEWS_API = isdefined(MultiScaleTreeGraph, :symbol_table) && isdefined(MultiScaleTreeGraph, :mtg_table)
-const HAS_ATTRIBUTE_POSITIONAL_DEFAULT = HAS_EXPLICIT_ATTRIBUTE_API &&
-                                         hasmethod(attribute, Tuple{MultiScaleTreeGraph.Node,Symbol,Any})
-const DEFAULT_ATTR_KEY_IS_SYMBOL = true # always true
 
 const SIZE_TIERS = (
     small=10_000,
@@ -16,55 +11,15 @@ const SIZE_TIERS = (
     large=300_000,
 )
 
-@inline _default_attr_key(key::Symbol) = DEFAULT_ATTR_KEY_IS_SYMBOL ? key : String(key)
-
-@inline function _is_symbol_attr_store(root)
-    try
-        return root[:mass] !== nothing
-    catch
-    end
-    try
-        root["mass"]
-        return false
-    catch
-    end
-    return DEFAULT_ATTR_KEY_IS_SYMBOL
-end
-
-@inline _attr_key(symbol_attrs::Bool, key::Symbol) = symbol_attrs ? key : String(key)
-
-@inline _symbol_filter(sym_is_symbol::Bool, sym::Symbol) = sym_is_symbol ? sym : String(sym)
-
-@inline function _symbol_filter(sym_is_symbol::Bool, syms::Tuple{Vararg{Symbol}})
-    return sym_is_symbol ? syms : Tuple(String(s) for s in syms)
-end
-
-@inline function _attribute_default(node, key, default)
-    HAS_EXPLICIT_ATTRIBUTE_API || return node[key]
-    if HAS_ATTRIBUTE_POSITIONAL_DEFAULT
-        return attribute(node, key, default)
-    else
-        return attribute(node, key; default=default)
-    end
-end
-
 function synthetic_mtg(; n_nodes::Int=10_000, seed::Int=42)
     rng = MersenneTwister(seed)
-    mass_key = _default_attr_key(:mass)
-    height_key = _default_attr_key(:height)
-    temp_key = _default_attr_key(:temperature)
-    length_key = _default_attr_key(:Length)
-    diameter_key = _default_attr_key(:Diameter)
-    width_key = _default_attr_key(:Width)
-    area_key = _default_attr_key(:Area)
-
     root = Node(
         1,
         MutableNodeMTG(:/, :Plant, 1, 1),
-        Dict{Any,Any}(
-            mass_key => rand(rng),
-            height_key => rand(rng),
-            temp_key => 20.0,
+        Dict{Symbol,Any}(
+            :mass => rand(rng),
+            :height => rand(rng),
+            :temperature => 20.0,
         ),
     )
 
@@ -83,27 +38,27 @@ function synthetic_mtg(; n_nodes::Int=10_000, seed::Int=42)
             sym = :Internode
             scale_ = 2
             link_ = :<
-            attrs = Dict{Any,Any}(
-                mass_key => rand(rng),
-                length_key => rand(rng),
-                diameter_key => rand(rng),
+            attrs = Dict{Symbol,Any}(
+                :mass => rand(rng),
+                :Length => rand(rng),
+                :Diameter => rand(rng),
             )
         elseif roll < 0.95
             sym = :Leaf
             scale_ = 3
             link_ = :+
-            attrs = Dict{Any,Any}(
-                mass_key => rand(rng),
-                width_key => rand(rng),
-                area_key => rand(rng),
+            attrs = Dict{Symbol,Any}(
+                :mass => rand(rng),
+                :Width => rand(rng),
+                :Area => rand(rng),
             )
         else
             sym = :Axis
             scale_ = 2
             link_ = :<
-            attrs = Dict{Any,Any}(
-                mass_key => rand(rng),
-                length_key => rand(rng),
+            attrs = Dict{Symbol,Any}(
+                :mass => rand(rng),
+                :Length => rand(rng),
             )
         end
 
@@ -215,9 +170,9 @@ end
 
 function traverse_update_one_explicit_api!(root, key_mass)
     traverse!(root) do node
-        m = _attribute_default(node, key_mass, 0.0)
+        m = attribute(node, key_mass, 0.0)
         m === nothing && (m = 0.0)
-        HAS_EXPLICIT_ATTRIBUTE_API ? attribute!(node, key_mass, m + 0.1) : (node[key_mass] = m + 0.1)
+        attribute!(node, key_mass, m + 0.1)
     end
     return nothing
 end
@@ -236,17 +191,12 @@ end
 
 function traverse_update_multi_leaf_explicit_api!(root, key_width, key_area, symbol_leaf)
     traverse!(root, symbol=symbol_leaf) do node
-        width = _attribute_default(node, key_width, 0.0)
-        area = _attribute_default(node, key_area, 0.0)
+        width = attribute(node, key_width, 0.0)
+        area = attribute(node, key_area, 0.0)
         width === nothing && (width = 0.0)
         area === nothing && (area = 0.0)
-        if HAS_EXPLICIT_ATTRIBUTE_API
-            attribute!(node, key_width, width * 1.001)
-            attribute!(node, key_area, area + width)
-        else
-            node[key_width] = width * 1.001
-            node[key_area] = area + width
-        end
+        attribute!(node, key_width, width * 1.001)
+        attribute!(node, key_area, area + width)
     end
     return nothing
 end
@@ -265,24 +215,19 @@ end
 
 function traverse_update_multi_mixed_explicit_api!(root, key_mass, key_counter, symbol_leaf_internode)
     traverse!(root, symbol=symbol_leaf_internode) do node
-        m = _attribute_default(node, key_mass, 0.0)
+        m = attribute(node, key_mass, 0.0)
         m === nothing && (m = 0.0)
-        counter = _attribute_default(node, key_counter, 0)
+        counter = attribute(node, key_counter, 0)
         isnothing(counter) && (counter = 0)
-        if HAS_EXPLICIT_ATTRIBUTE_API
-            attribute!(node, key_mass, m * 0.999 + 0.0001)
-            attribute!(node, key_counter, counter + 1)
-        else
-            node[key_mass] = m * 0.999 + 0.0001
-            node[key_counter] = counter + 1
-        end
+        attribute!(node, key_mass, m * 0.999 + 0.0001)
+        attribute!(node, key_counter, counter + 1)
     end
     return nothing
 end
 
 function descendants_vec_workload(root, keys, symbol_internode)
     vals = descendants(root, keys, symbol=symbol_internode, ignore_nothing=true)
-    _assert_descendants_matrix(vals, 2)
+    _assert_descendants_matrix(vals, length(keys))
     s = 0.0
     for v in vals
         s += v[1] + v[2]
@@ -296,7 +241,7 @@ end
 
 function descendants_mixed_many(root, keys, symbol_leaf_internode; ignore_nothing::Bool)
     vals = descendants(root, keys, symbol=symbol_leaf_internode, ignore_nothing=ignore_nothing)
-    _assert_descendants_matrix(vals, 2)
+    _assert_descendants_matrix(vals, length(keys))
     return vals
 end
 
@@ -306,18 +251,16 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
     root = data.root
     sample_nodes = data.sample_nodes
     sample_leaves = data.sample_leaves
-    sym_is_symbol = symbol(root) isa Symbol
-    symbol_attrs = _is_symbol_attr_store(root)
 
-    key_mass = _attr_key(symbol_attrs, :mass)
-    key_length = _attr_key(symbol_attrs, :Length)
-    key_width = _attr_key(symbol_attrs, :Width)
-    key_area = _attr_key(symbol_attrs, :Area)
-    key_counter = _attr_key(symbol_attrs, :update_counter)
+    key_mass = :mass
+    key_length = :Length
+    key_width = :Width
+    key_area = :Area
+    key_counter = :update_counter
 
-    symbol_leaf = _symbol_filter(sym_is_symbol, :Leaf)
-    symbol_internode = _symbol_filter(sym_is_symbol, :Internode)
-    symbol_leaf_internode = _symbol_filter(sym_is_symbol, (:Leaf, :Internode))
+    symbol_leaf = :Leaf
+    symbol_internode = :Internode
+    symbol_leaf_internode = (:Leaf, :Internode)
 
     tier = BenchmarkGroup()
     suite[tier_name] = tier
@@ -351,20 +294,18 @@ function build_tier!(suite, tier_name::String, n_nodes::Int)
     tier["many_queries"]["descendants_repeated_inplace"] = @benchmarkable descendants_repeated_workload_inplace($root, 30, $key_length, $symbol_internode)
 
     if tier_name == "small"
-        tier["api_surface_small_only"]["insert_child"] = @benchmarkable insert_child!(mtg_[1], MutableNodeMTG(:<, :Internode, 1, 2), x -> Dict{Any,Any}(mass_key_ => 0.1), max_id_) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=111); mtg_ = data_.root; max_id_ = [max_id(mtg_)]; mass_key_ = _attr_key(_is_symbol_attr_store(mtg_), :mass))
+        tier["api_surface_small_only"]["insert_child"] = @benchmarkable insert_child!(mtg_[1], MutableNodeMTG(:<, :Internode, 1, 2), _ -> Dict{Symbol,Any}(:mass => 0.1), max_id_) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=111); mtg_ = data_.root; max_id_ = [max_id(mtg_)])
 
         tier["api_surface_small_only"]["delete_node"] = @benchmarkable delete_node!(target_) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=222); mtg_ = data_.root; target_ = get_node(mtg_, node_id(mtg_[1])))
 
         tier["api_surface_small_only"]["prune_subtree"] = @benchmarkable prune!(target_) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=333); mtg_ = data_.root; target_ = mtg_[1])
 
-        tier["api_surface_small_only"]["transform"] = @benchmarkable transform!(mtg_, in_ => (x -> x + 1.0) => out_, ignore_nothing=true) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=444); mtg_ = data_.root; symattrs_ = _is_symbol_attr_store(mtg_); in_ = _attr_key(symattrs_, :mass); out_ = _attr_key(symattrs_, :mass2))
+        tier["api_surface_small_only"]["transform"] = @benchmarkable transform!(mtg_, in_ => (x -> x + 1.0) => out_, ignore_nothing=true) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=444); mtg_ = data_.root; in_ = :mass; out_ = :mass2)
 
-        tier["api_surface_small_only"]["select"] = @benchmarkable select!(mtg_, key1_, key2_, ignore_nothing=true) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=555); mtg_ = data_.root; symattrs_ = _is_symbol_attr_store(mtg_); key1_ = _attr_key(symattrs_, :mass); key2_ = _attr_key(symattrs_, :Length))
+        tier["api_surface_small_only"]["select"] = @benchmarkable select!(mtg_, key1_, key2_, ignore_nothing=true) setup = (data_ = synthetic_mtg(n_nodes=8_000, seed=555); mtg_ = data_.root; key1_ = :mass; key2_ = :Length)
 
-        if HAS_TABLE_VIEWS_API
-            tier["api_surface_small_only"]["tables_symbol"] = @benchmarkable symbol_table($root, :Leaf)
-            tier["api_surface_small_only"]["tables_unified"] = @benchmarkable mtg_table($root)
-        end
+        tier["api_surface_small_only"]["tables_symbol"] = @benchmarkable to_table($root, symbol=:Leaf)
+        tier["api_surface_small_only"]["tables_unified"] = @benchmarkable to_table($root)
 
         tier["api_surface_small_only"]["write_mtg"] = @benchmarkable write_mtg(f_, mtg_) setup = (data_ = synthetic_mtg(n_nodes=3_000, seed=666); mtg_ = data_.root; f_ = tempname() * ".mtg") teardown = (isfile(f_) && rm(f_, force=true))
     end
