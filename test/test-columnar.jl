@@ -59,7 +59,7 @@ all_df_sink = to_table(mtg, vars=[:Width, :Length], sink=DataFrame)
 @test :Width in Symbol.(names(all_df_sink))
 
 all_table_str = sprint(show, MIME("text/plain"), all_selected_kw)
-@test occursin("ColumnTable", all_table_str)
+@test occursin("Attributes Table", all_table_str)
 @test occursin("node_id", all_table_str)
 @test occursin("Width", all_table_str)
 @test occursin("Symbols:", all_table_str)
