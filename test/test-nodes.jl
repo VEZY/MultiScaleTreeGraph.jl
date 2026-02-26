@@ -126,3 +126,18 @@ end
     mtg = read_mtg(file, MutableNodeMTG)
     VERSION >= v"1.7" && @test_throws "The parent node has an MTG encoding of type `MutableNodeMTG`, but the MTG encoding you provide is of type `NodeMTG`, please make sure they are the same." Node(mtg, NodeMTG(:/, :Branch, 1, 2))
 end
+
+@testset "addchild! re-columnarizes when attaching a root subtree" begin
+    mtg_a = read_mtg(file)
+    mtg_b = read_mtg(file)
+    addchild!(mtg_a, mtg_b; force=true)
+    @test_nowarn descendants(mtg_a, :Width)
+end
+
+@testset "new child node attributes are in the columnar store" begin
+    mtg = read_mtg(file)
+    leaf = addchild!(mtg, MutableNodeMTG(:+, :Leaf, 999, 2), Dict{Symbol,Any}(:my_attr => 42))
+    @test leaf[:my_attr] == 42
+    vals = descendants(mtg, :my_attr; ignore_nothing=true)
+    @test vals == [42]
+end

@@ -79,10 +79,23 @@ end
     attrs = node_attributes(node)
     store = attrs.ref.store
     store === nothing && return nothing
+    if store !== plan.store
+        throw(ArgumentError(
+            "Incoherent columnar query plan for key `$(key)` on node id $(node_id(node)): " *
+            "the node belongs to a different attribute store than the query root. " *
+            "This usually happens after attaching subtrees from independent MTGs. " *
+            "Rebuild a unified store with `MultiScaleTreeGraph.columnarize!(get_root(node))`."
+        ))
+    end
     nodeid = node_id(node)
     nodeid > length(store.node_bucket) && return nothing
     bid = store.node_bucket[nodeid]
     bid == 0 && return nothing
+    bid > length(plan.col_idx_by_bucket) && throw(ArgumentError(
+        "Incoherent columnar query plan for key `$(key)` on node id $(nodeid): " *
+        "bucket id $(bid) is outside query-plan bounds $(length(plan.col_idx_by_bucket)). " *
+        "Rebuild a unified store with `MultiScaleTreeGraph.columnarize!(get_root(node))`."
+    ))
     col_idx = plan.col_idx_by_bucket[bid]
     col_idx == 0 && return nothing
     row = store.node_row[nodeid]

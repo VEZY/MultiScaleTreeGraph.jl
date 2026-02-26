@@ -65,6 +65,25 @@
       @test descendants!(out_nodes, get_node(mtg, 6), self=true) == [get_node(mtg, 6), get_node(mtg, 7)]
 end
 
+@testset "descendants clear error on mixed columnar stores" begin
+      mtg_a = read_mtg("files/simple_plant.mtg")
+      mtg_b = read_mtg("files/simple_plant.mtg")
+      # Bypass addchild! on purpose to build an incoherent tree (mixed stores).
+      reparent!(mtg_b, mtg_a)
+      push!(children(mtg_a), mtg_b)
+
+      err = try
+            descendants(mtg_a, :Width)
+            nothing
+      catch e
+            e
+      end
+
+      @test err isa ArgumentError
+      @test occursin("different attribute store", sprint(showerror, err))
+      @test occursin("columnarize!", sprint(showerror, err))
+end
+
 # using BenchmarkTools
 # @benchmark descendants($mtg, :Width) # 876 ns
 # @benchmark descendants!($mtg, :Width) # 5.6 μs
