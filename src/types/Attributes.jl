@@ -45,6 +45,7 @@ end
 
 struct ColumnarQueryPlan
     key::Symbol
+    store::MTGAttributeStore
     col_idx_by_bucket::Vector{Int}
 end
 
@@ -110,7 +111,25 @@ function _rebuild_subtree_index!(store::MTGAttributeStore, root)
         pos = stack_pos[end]
 
         if pos == 0
+            current_attrs = node_attributes(current)
+            current_attrs isa ColumnarAttrs || throw(ArgumentError(
+                "Subtree index rebuild requires a columnar attribute backend."
+            ))
+            current_store = _store_for_node_attrs(current_attrs)
+            if current_store !== store
+                throw(ArgumentError(
+                    "Incoherent MTG columnar stores detected while building descendants index: " *
+                    "node id $(node_id(current)) belongs to a different attribute store than the root. " *
+                    "Rebuild a unified store with `MultiScaleTreeGraph.columnarize!(get_root(root))`."
+                ))
+            end
             nid = node_id(current)
+            if nid > nmax || store.node_bucket[nid] == 0
+                throw(ArgumentError(
+                    "Incoherent MTG columnar indexing state for node id $(nid). " *
+                    "Rebuild a unified store with `MultiScaleTreeGraph.columnarize!(get_root(root))`."
+                ))
+            end
             t += 1
             tin[nid] = t
             push!(dfs_order, nid)
@@ -398,7 +417,7 @@ function build_columnar_query_plan(node, key::Symbol)
     @inbounds for i in eachindex(store.buckets)
         col_idx_by_bucket[i] = get(store.buckets[i].col_index, key, 0)
     end
-    ColumnarQueryPlan(key, col_idx_by_bucket)
+    ColumnarQueryPlan(key, store, col_idx_by_bucket)
 end
 
 @inline function _symbol_bucket_ids(store::MTGAttributeStore, symbol_filter)

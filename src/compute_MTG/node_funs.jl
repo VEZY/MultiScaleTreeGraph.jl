@@ -77,14 +77,33 @@ function addchild!(p::Node, MTG::M) where {M<:AbstractNodeMTG}
     return child
 end
 
+@inline function _columnar_store_or_nothing(node::Node)
+    attrs = node_attributes(node)
+    attrs isa ColumnarAttrs || return nothing
+    return _store_for_node_attrs(attrs)
+end
+
+@inline function _maybe_recolumnarize_after_attach!(p::Node, child::Node, child_was_root::Bool)
+    child_was_root || return nothing
+    p_store = _columnar_store_or_nothing(p)
+    c_store = _columnar_store_or_nothing(child)
+    if p_store !== nothing && c_store !== nothing && p_store !== c_store
+        columnarize!(get_root(p))
+    end
+    return nothing
+end
+
 function addchild!(p::Node{N,A}, child::Node; force=false) where {N<:AbstractNodeMTG,A}
-    if parent(child) === nothing || force == true
+    child_was_root = parent(child) === nothing
+
+    if child_was_root || force == true
         reparent!(child, p)
     elseif parent(child) != p && force == false
         error("The node already has a parent. Hint: use `force=true` if needed.")
     end
 
     push!(children(p), child)
+    _maybe_recolumnarize_after_attach!(p, child, child_was_root)
 
     return child
 end
