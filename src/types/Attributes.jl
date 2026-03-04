@@ -641,13 +641,7 @@ function Base.get(attrs::ColumnarAttrs, key::Symbol, default::T) where {T}
 end
 Base.get(attrs::ColumnarAttrs, key, default) = get(attrs, _normalize_attr_key(key), default)
 
-function Base.setindex!(attrs::ColumnarAttrs, value::T, key::Symbol) where {T}
-    if !_isbound(attrs)
-        attrs.staged[key] = value
-        return value
-    end
-    store, bid, row = _bound_store_bid_row(attrs.ref)
-    bucket = store.buckets[bid]
+@inline function _set_value_bound!(bucket::SymbolBucket, row::Int, key::Symbol, value::T) where {T}
     col_idx = get(bucket.col_index, key, 0)
     if col_idx == 0
         _set_value!(bucket, row, key, value)
@@ -664,6 +658,17 @@ function Base.setindex!(attrs::ColumnarAttrs, value::T, key::Symbol) where {T}
         _set_value!(bucket, row, key, value)
     end
 
+    return value
+end
+
+function Base.setindex!(attrs::ColumnarAttrs, value::T, key::Symbol) where {T}
+    if !_isbound(attrs)
+        attrs.staged[key] = value
+        return value
+    end
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
+    _set_value_bound!(bucket, row, key, value)
     return value
 end
 Base.setindex!(attrs::ColumnarAttrs, value, key) = setindex!(attrs, value, _normalize_attr_key(key))
