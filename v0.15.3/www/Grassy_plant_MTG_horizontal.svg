@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg width="1478.8" height="437.84" version="1.1" viewBox="-.3 0 1478.8 437.84" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+ <defs>
+  <marker id="Arrow1Mend-3-1-4-66" overflow="visible" orient="auto">
+   <path transform="matrix(-.4 0 0 -.4 -4 0)" d="m0 0 5-5-17.5 5 17.5 5z" fill-rule="evenodd" stroke="#000" stroke-width="1pt"/>
+  </marker>
+  <marker id="Arrow1Mend-3-0-02-0-7" overflow="visible" orient="auto">
+   <path transform="matrix(-.4 0 0 -.4 -4 0)" d="m0 0 5-5-17.5 5 17.5 5z" fill-rule="evenodd" stroke="#000" stroke-width="1pt"/>
+  </marker>
+  <marker id="Arrow1Mend-3-0-5-98-1-7" overflow="visible" orient="auto">
+   <path transform="matrix(-.4 0 0 -.4 -4 0)" d="m0 0 5-5-17.5 5 17.5 5z" fill-rule="evenodd" stroke="#000" stroke-width="1pt"/>
+  </marker>
+  <marker id="Arrow1Mend-3-0-5-1-9-5-4" overflow="visible" orient="auto">
+   <path transform="matrix(-.4 0 0 -.4 -4 0)" d="m0 0 5-5-17.5 5 17.5 5z" fill-rule="evenodd" stroke="#000" stroke-width="1pt"/>
+  </marker>
+  <marker id="Arrow1Mend-62-1" overflow="visible" orient="auto">
+   <path transform="matrix(-.4 0 0 -.4 -4 0)" d="m0 0 5-5-17.5 5 17.5 5z" fill-rule="evenodd" stroke="#000" stroke-width="1pt"/>
+  </marker>
+  <marker id="Arrow1Mend-3-1-4-6-0" overflow="visible" orient="auto">
+   <path transform="matrix(-.4 0 0 -.4 -4 0)" d="m0 0 5-5-17.5 5 17.5 5z" fill-rule="evenodd" stroke="#000" stroke-width="1pt"/>
+  </marker>
+  <marker id="Arrow1Mend-3-1-4-6-9-7" overflow="visible" orient="auto">
+   <path transform="matrix(-.4 0 0 -.4 -4 0)" d="m0 0 5-5-17.5 5 17.5 5z" fill-rule="evenodd" stroke="#000" stroke-width="1pt"/>
+  </marker>
+  <marker id="Arrow1Mend-62-2-8" overflow="visible" orient="auto">
+   <path transform="matrix(-.4 0 0 -.4 -4 0)" d="m0 0 5-5-17.5 5 17.5 5z" fill-rule="evenodd" stroke="#000" stroke-width="1pt"/>
+  </marker>
+ </defs>
+ <metadata>
+  <rdf:RDF>
+   <cc:Work rdf:about="">
+    <dc:format>image/svg+xml</dc:format>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title/>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <g transform="translate(294.86 -245.44)">
+  <g fill="#00000c">
+   <g stroke-width="15.143">
+    <ellipse transform="rotate(90)" cx="632.79" cy="-680.45" rx="32.616" ry="33.599" stroke="#c22360"/>
+    <ellipse transform="rotate(90)" cx="632.7" cy="-911.26" rx="32.616" ry="33.599" stroke="#236ec2"/>
+    <ellipse transform="rotate(90)" cx="632.57" cy="-449.48" rx="32.616" ry="33.599" stroke="#23c2af"/>
+   </g>
+  </g>
+  <path transform="matrix(2.2414 2.0611 -2.055 2.2347 4089.7 -5028.3)" d="m337.27 2222.2c8.3344-7.6676 16.668-15.334 25-23" fill="none" marker-end="url(#Arrow1Mend-3-1-4-66)" stroke="#000" stroke-width="1.0791"/>
+  <text x="299.34543" y="615.46289" fill="#000000" font-family="sans-serif" font-size="53.841px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="299.34543" y="615.46289" stroke-width="2.5238">&lt;</tspan></text>
+  <ellipse transform="rotate(90)" cx="632.32" cy="-218.55" rx="32.616" ry="33.599" fill="#00000c" stroke="#9b9b9b" stroke-width="15.143"/>
+  <path transform="matrix(2.2414 2.0611 -2.055 2.2347 4320.5 -5028.1)" d="m337.27 2222.2c8.3344-7.6676 16.668-15.334 25-23" fill="none" marker-end="url(#Arrow1Mend-3-0-02-0-7)" stroke="#000" stroke-width="1.0791"/>
+  <g>
+   <text x="530.15253" y="615.65381" fill="#000000" font-family="sans-serif" font-size="53.841px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="530.15253" y="615.65381" stroke-width="2.5238">&lt;</tspan></text>
+   <text x="202.71506" y="642.06372" fill="#ffffff" font-family="sans-serif" font-size="33.651px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="202.71506" y="642.06372" stroke-width="2.5238">I1</tspan></text>
+   <ellipse cx="560.87" cy="286.61" rx="32.616" ry="33.599" fill="#00000c" stroke="#9423c2" stroke-width="15.143"/>
+  </g>
+  <g fill="#ffffff" font-family="sans-serif" font-size="33.651px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px">
+   <text x="543.84125" y="297.4838" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="543.84125" y="297.4838" stroke-width="2.5238">I2</tspan></text>
+   <text x="432.95688" y="644.52502" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="432.95688" y="644.52502" stroke-width="2.5238">I3</tspan></text>
+   <text x="663.685" y="644.1167" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="663.685" y="644.1167" stroke-width="2.5238">I4</tspan></text>
+  </g>
+  <path transform="matrix(2.2414 2.0611 -2.055 2.2347 4551.7 -5028)" d="m337.27 2222.2c8.3344-7.6676 16.668-15.334 25-23" fill="none" marker-end="url(#Arrow1Mend-3-0-5-98-1-7)" stroke="#000" stroke-width="1.0791"/>
+  <g>
+   <text x="761.33221" y="615.7937" fill="#000000" font-family="sans-serif" font-size="53.841px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="761.33221" y="615.7937" stroke-width="2.5238">&lt;</tspan></text>
+   <text x="894.98773" y="642.62415" fill="#ffffff" font-family="sans-serif" font-size="33.651px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="894.98773" y="642.62415" stroke-width="2.5238">I5</tspan></text>
+   <ellipse transform="rotate(90)" cx="632.84" cy="-1142.4" rx="32.616" ry="33.599" fill="#00000c" stroke="#c4892c" stroke-width="15.143"/>
+  </g>
+  <path transform="matrix(2.2414 2.0611 -2.055 2.2347 4782.9 -5027.8)" d="m337.27 2222.2c8.3344-7.6676 16.668-15.334 25-23" fill="none" marker-end="url(#Arrow1Mend-3-0-5-1-9-5-4)" stroke="#000" stroke-width="1.0791"/>
+  <g>
+   <text x="992.51178" y="615.93372" fill="#000000" font-family="sans-serif" font-size="53.841px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="992.51178" y="615.93372" stroke-width="2.5238">&lt;</tspan></text>
+   <text x="1125.118" y="644.27271" fill="#ffffff" font-family="sans-serif" font-size="33.65px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="1125.118" y="644.27271" stroke-width="2.5238">I6</tspan></text>
+   <ellipse transform="rotate(90)" cx="633.12" cy="243.77" rx="40.715" ry="41.941" fill="#00000c" stroke="#c22360" stroke-width="18.903"/>
+   <text x="-255.14478" y="647.83374" fill="#ffffff" font-family="sans-serif" font-size="42.005px" letter-spacing="0px" stroke-width="3.1504" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="-255.14478" y="647.83374" stroke-width="3.1504">P</tspan></text>
+   <ellipse transform="rotate(90)" cx="632.74" cy="12.691" rx="35.829" ry="36.908" fill="#00000c" stroke="#c22423" stroke-width="16.634"/>
+   <text x="-34.918491" y="643.28748" fill="#ffffff" font-family="sans-serif" font-size="36.966px" letter-spacing="0px" stroke-width="2.7724" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="-34.918491" y="643.28748" stroke-width="2.7724">A1</tspan></text>
+   <ellipse cx="389.07" cy="458.75" rx="35.829" ry="36.908" fill="#00000c" stroke="#236ec2" stroke-width="16.634"/>
+  </g>
+  <g transform="matrix(0 .62769 -.62769 0 1800.2 -122.76)">
+   <path transform="matrix(-.23187 -5.3239 5.3082 -.23118 -10582 4762.6)" d="m337.27 2222.2c8.3344-7.6676 16.668-15.334 25-23" fill="none" marker-end="url(#Arrow1Mend-62-1)" stroke="#000" stroke-width="1.0791"/>
+   <text transform="rotate(-90)" x="-2466.772" y="1070.3501" fill="#000000" font-family="sans-serif" font-size="94.226px" letter-spacing="0px" stroke-width="4.4168" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="-2466.772" y="1070.3501" stroke-width="4.4168">+</tspan></text>
+  </g>
+  <text x="366.92172" y="470.00443" fill="#ffffff" font-family="sans-serif" font-size="36.966px" letter-spacing="0px" stroke-width="2.7724" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="366.92172" y="470.00443" stroke-width="2.7724">A2</tspan></text>
+  <g transform="matrix(0 2.5238 -2.5238 0 5637.4 -160.74)">
+   <path transform="matrix(.81667 -.88809 .88547 .81425 -1928.8 704.79)" d="m337.27 2222.2c8.3344-7.6676 16.668-15.334 25-23" fill="none" marker-end="url(#Arrow1Mend-3-1-4-6-0)" stroke="#000" stroke-width="1.0791"/>
+  </g>
+  <path transform="matrix(2.2414 2.0611 -2.055 2.2347 3627.6 -5027.5)" d="m337.27 2222.2c8.3344-7.6676 16.668-15.334 25-23" fill="none" marker-end="url(#Arrow1Mend-3-1-4-6-9-7)" stroke="#000" stroke-width="1.0791"/>
+  <text x="-152.53003" y="615.27563" fill="#000000" font-family="sans-serif" font-size="53.841px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="-152.53003" y="615.27563" stroke-width="2.5238">/</tspan></text>
+  <text x="78.43869" y="614.29492" fill="#000000" font-family="sans-serif" font-size="53.841px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="78.43869" y="614.29492" stroke-width="2.5238">/</tspan></text>
+  <path transform="matrix(3.3417 -.14554 .14511 3.3319 -1014.1 -6939.9)" d="m337.27 2222.2c8.3344-7.6676 16.668-15.334 25-23" fill="none" marker-end="url(#Arrow1Mend-62-2-8)" stroke="#000" stroke-width="1.0791"/>
+  <text x="438.51425" y="374.26883" fill="#000000" font-family="sans-serif" font-size="53.841px" letter-spacing="0px" stroke-width="2.5238" word-spacing="0px" style="font-feature-settings:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;line-height:1.25" xml:space="preserve"><tspan x="438.51425" y="374.26883" stroke-width="2.5238">/</tspan></text>
+ </g>
+</svg>
