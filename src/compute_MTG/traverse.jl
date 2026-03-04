@@ -113,8 +113,8 @@ function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothi
     link = normalize_link_filter(link)
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
-    cache = node_traversal_cache(node)
-    if !isempty(cache)
+    cache = _maybe_traversal_cache(node)
+    if cache !== nothing && !isempty(cache)
         cache_key = cache_name(scale, symbol, link, all, filter_fun)
         cached_nodes = get(cache, cache_key, nothing)
         if cached_nodes !== nothing
@@ -172,8 +172,8 @@ function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothin
     # NB: f has to return someting here, if its a mutating function, use traverse!
 
     # If the node has already a cache of the traversal, we use it instead of traversing the mtg:
-    cache = node_traversal_cache(node)
-    if !isempty(cache)
+    cache = _maybe_traversal_cache(node)
+    if cache !== nothing && !isempty(cache)
         cache_key = cache_name(scale, symbol, link, all, filter_fun)
         cached_nodes = get(cache, cache_key, nothing)
 

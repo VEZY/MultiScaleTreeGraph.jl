@@ -55,7 +55,7 @@ mutable struct Node{N<:AbstractNodeMTG,A}
     "Node attributes. Can be anything really"
     attributes::A
     "Cache for mtg nodes traversal"
-    traversal_cache::Dict{String,Vector{Node{N,A}}}
+    traversal_cache::Union{Nothing,Dict{String,Vector{Node{N,A}}}}
 end
 
 # All deprecated methods (the ones with a node name) :
@@ -68,7 +68,7 @@ end
 
 function Node(id::Int, MTG::T, attributes::ColumnarAttrs) where {T<:AbstractNodeMTG}
     node = Node{T,ColumnarAttrs}(
-        id, nothing, Vector{Node{T,ColumnarAttrs}}(), MTG, attributes, Dict{String,Vector{Node{T,ColumnarAttrs}}}()
+        id, nothing, Vector{Node{T,ColumnarAttrs}}(), MTG, attributes, nothing
     )
     init_columnar_root!(attributes, id, getfield(MTG, :symbol))
     return node
@@ -101,7 +101,7 @@ end
 
 function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::ColumnarAttrs) where {M<:AbstractNodeMTG}
     node = Node{M,ColumnarAttrs}(
-        id, parent, Vector{Node{M,ColumnarAttrs}}(), MTG, attributes, Dict{String,Vector{Node{M,ColumnarAttrs}}}()
+        id, parent, Vector{Node{M,ColumnarAttrs}}(), MTG, attributes, nothing
     )
     addchild!(parent, node)
     bind_columnar_child!(node_attributes(parent), attributes, id, getfield(MTG, :symbol))
@@ -517,7 +517,16 @@ Base.names(mtg::T) where {T<:MultiScaleTreeGraph.Node} = get_attributes(mtg)
 
 Get the traversal cache of the node if any.
 """
-node_traversal_cache(node::Node) = getfield(node, :traversal_cache)
+@inline _maybe_traversal_cache(node::Node) = getfield(node, :traversal_cache)
+
+function node_traversal_cache(node::Node{T,A}) where {T,A}
+    cache = getfield(node, :traversal_cache)
+    if cache === nothing
+        cache = Dict{String,Vector{Node{T,A}}}()
+        setfield!(node, :traversal_cache, cache)
+    end
+    return cache
+end
 
 Base.getproperty(node::Node, key::Symbol) = unsafe_getindex(node, key)
 Base.hasproperty(node::Node, key::Symbol) = haskey(node_attributes(node), key)

@@ -57,16 +57,19 @@ function cache_nodes!(node; scale=nothing, symbol=nothing, link=nothing, filter_
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
     # The cache is already present:
-    if length(node_traversal_cache(node)) != 0 && haskey(node_traversal_cache(node), cache_name(scale, symbol, link, all, filter_fun))
+    cache_key = cache_name(scale, symbol, link, all, filter_fun)
+    cache = _maybe_traversal_cache(node)
+    if cache !== nothing && !isempty(cache) && haskey(cache, cache_key)
         if !overwrite
             error("The node already has a cache for this combination of filters. Hint: use `overwrite=true` if needed.")
         else
             # We have to delete the cache first because else it would be used in the traversal below:
-            delete!(node_traversal_cache(node), cache_name(scale, symbol, link, all, filter_fun))
+            delete!(cache, cache_key)
         end
     end
 
-    node_traversal_cache(node)[cache_name(scale, symbol, link, all, filter_fun)] = traverse(
+    cache = node_traversal_cache(node)
+    cache[cache_key] = traverse(
         node,
         node -> node,
         scale=scale, symbol=symbol, link=link, filter_fun=filter_fun, all=all
