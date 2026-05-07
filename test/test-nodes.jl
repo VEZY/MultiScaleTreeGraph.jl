@@ -85,6 +85,40 @@ end
     @test children(mtg) == [internode]
 end
 
+@testset "parent and children setters stay synchronized" begin
+    mtg = MultiScaleTreeGraph.Node(MultiScaleTreeGraph.NodeMTG(:/, :Plant, 1, 1))
+    first_parent = MultiScaleTreeGraph.Node(mtg, MultiScaleTreeGraph.NodeMTG(:/, :Axis, 1, 2))
+    second_parent = MultiScaleTreeGraph.Node(mtg, MultiScaleTreeGraph.NodeMTG(:+, :Axis, 2, 2))
+    child = MultiScaleTreeGraph.Node(first_parent, MultiScaleTreeGraph.NodeMTG(:/, :Internode, 1, 3))
+    # Simulate a stale duplicate child entry from direct children vector mutation.
+    push!(children(first_parent), child)
+
+    reparent!(child, second_parent)
+    @test parent(child) === second_parent
+    @test !any(n -> n === child, children(first_parent))
+    @test count(n -> n === child, children(second_parent)) == 1
+
+    reparent!(child, second_parent)
+    @test count(n -> n === child, children(second_parent)) == 1
+
+    reparent!(child, nothing)
+    @test parent(child) === nothing
+    @test !any(n -> n === child, children(second_parent))
+
+    rechildren!(first_parent, typeof(children(first_parent))([child]))
+    @test parent(child) === first_parent
+    @test children(first_parent) == [child]
+
+    rechildren!(second_parent, typeof(children(second_parent))([child]))
+    @test parent(child) === second_parent
+    @test !any(n -> n === child, children(first_parent))
+    @test children(second_parent) == [child]
+
+    rechildren!(second_parent, typeof(children(second_parent))())
+    @test parent(child) === nothing
+    @test isempty(children(second_parent))
+end
+
 # From a file:
 file = "files/simple_plant.mtg"
 mtg = read_mtg(file)

@@ -72,7 +72,6 @@ end
       mtg_b = read_mtg("files/simple_plant.mtg")
       # Bypass addchild! on purpose to build an incoherent tree (mixed stores).
       reparent!(mtg_b, mtg_a)
-      push!(children(mtg_a), mtg_b)
 
       err = try
             descendants(mtg_a, :Width)

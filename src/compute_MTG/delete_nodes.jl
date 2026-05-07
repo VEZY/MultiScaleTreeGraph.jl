@@ -143,7 +143,7 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
 
         if !isleaf(node)
             # We re-parent the children to the parent of the node.
-            for chnode in children(node)
+            for chnode in copy(children(node))
                 # Updating the link of the children:
                 link!(chnode, child_link_fun(chnode))
                 addchild!(parent_node, chnode; force=true)

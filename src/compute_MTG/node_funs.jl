@@ -129,13 +129,11 @@ end
 function addchild!(p::Node{N,A}, child::Node; force=false) where {N<:AbstractNodeMTG,A}
     child_was_root = parent(child) === nothing
 
-    if child_was_root || force == true
-        reparent!(child, p)
-    elseif parent(child) != p && force == false
+    if !child_was_root && parent(child) !== p && force == false
         error("The node already has a parent. Hint: use `force=true` if needed.")
     end
 
-    push!(children(p), child)
+    reparent!(child, p)
     _maybe_recolumnarize_after_attach!(p, child, child_was_root)
 
     return child

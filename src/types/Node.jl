@@ -175,25 +175,75 @@ AbstractTrees.parent(node::Node{T,A}) where {T,A} = Base.parent(node)
 AbstractTrees.childrentype(node::Node{T,A}) where {T,A} = Vector{Node{T,A}}
 AbstractTrees.childtype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
 
+@inline function _child_index_by_identity(chnodes, child)
+    @inbounds for i in eachindex(chnodes)
+        chnodes[i] === child && return i
+    end
+    return nothing
+end
+
+function _detach_child!(p::Node, child::Node)
+    chnodes = children(p)
+    removed = false
+    for i in reverse(eachindex(chnodes))
+        if chnodes[i] === child
+            deleteat!(chnodes, i)
+            removed = true
+        end
+    end
+    removed && _mark_structure_mutation!(p)
+    return removed
+end
+
+function _attach_child!(p::Node, child::Node)
+    chnodes = children(p)
+    _child_index_by_identity(chnodes, child) !== nothing && return false
+    push!(chnodes, child)
+    _mark_structure_mutation!(p)
+    return true
+end
+
 """
     reparent!(node::N, p::N) where N<:Node{T,A}
 
-Set the parent of the node.
+Set the parent of the node, removing it from the old parent's children and adding it
+to the new parent's children.
 """
 function reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,A}}} where {T,A}
+    p === node && error("A node cannot be its own parent.")
+
+    old_parent = parent(node)
+    changed = old_parent !== p
+    if old_parent !== nothing && changed
+        _detach_child!(old_parent, node)
+    end
+
     setfield!(node, :parent, p)
-    _mark_structure_mutation!(node)
-    p === nothing || _mark_structure_mutation!(p)
+    attached = p === nothing ? false : _attach_child!(p, node)
+    (changed || attached) && _mark_structure_mutation!(node)
     return p
 end
 
 """
     rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
 
-Set the children of the node.
+Set the children of the node, detaching removed children and setting this node as the
+parent of the new children.
 """
 function rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
+    old_children = children(node)
     setfield!(node, :children, chnodes)
+
+    for old_child in old_children
+        if parent(old_child) === node && _child_index_by_identity(chnodes, old_child) === nothing
+            reparent!(old_child, nothing)
+        end
+    end
+
+    for child in chnodes
+        reparent!(child, node)
+    end
+
     _mark_structure_mutation!(node)
     return chnodes
 end

@@ -35,8 +35,10 @@ end
 @testset "test mtg mutation" begin
     @test (mtg[:scales] .= [0, 1, 2, 3, 4]) == [0, 1, 2, 3, 4]
     @test MultiScaleTreeGraph.node_mtg!(mtg, MultiScaleTreeGraph.NodeMTG(:<, :Leaf, 2, 0)) == MultiScaleTreeGraph.NodeMTG(:<, :Leaf, 2, 0)
-    reparent!(mtg[1], nothing)
-    @test parent(mtg[1]) === nothing
+    child = mtg[1]
+    reparent!(child, nothing)
+    @test parent(child) === nothing
+    @test isempty(children(mtg))
 end
 
 @testset "test mtg with empty lines" begin
