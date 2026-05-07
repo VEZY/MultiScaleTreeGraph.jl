@@ -58,6 +58,8 @@
       @test descendants(mtg) == traverse(mtg[1], x -> x)
       @test descendants(mtg, self=true) == traverse(mtg, x -> x)
       @test descendants(get_node(mtg, 6), self=true) == [get_node(mtg, 6), get_node(mtg, 7)]
+      mtg[:symbols] = SubString("Leaf", 1, 4)
+      @test descendants(mtg, symbol=:Leaf) == [get_node(mtg, 5), get_node(mtg, 7)]
 
       out_nodes = typeof(mtg)[]
       @test descendants!(out_nodes, mtg) == traverse(mtg[1], x -> x)

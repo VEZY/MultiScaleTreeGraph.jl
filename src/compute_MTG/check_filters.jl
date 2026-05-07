@@ -31,6 +31,7 @@ end
 end
 
 @inline normalize_symbol_allowed(filters::Nothing) = nothing
+@inline normalize_symbol_allowed(filter) = (normalize_symbol_filter(filter),)
 @inline function normalize_symbol_allowed(filters::T) where {T<:Union{Tuple,AbstractArray}}
     map(normalize_symbol_filter, filters)
 end
