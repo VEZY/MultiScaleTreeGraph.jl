@@ -76,6 +76,10 @@ end
 function parse_mtg_file(f, mtg_type)
     line = [0]
     l = [""]
+    classes = nothing
+    description = nothing
+    features = nothing
+    mtg = nothing
     l[1] = next_line!(f, line)
 
     while !eof(f)
@@ -95,7 +99,7 @@ function parse_mtg_file(f, mtg_type)
 
         # Parse the mtg CLASSES section, and then continue to next while loop iteration:
         if issection(l[1], "CLASSES")
-            global classes = parse_section!(f, ["SYMBOL", "SCALE", "DECOMPOSITION", "INDEXATION", "DEFINITION"], "CLASSES", line, l)
+            classes = parse_section!(f, ["SYMBOL", "SCALE", "DECOMPOSITION", "INDEXATION", "DEFINITION"], "CLASSES", line, l)
             classes.SCALE = parse.(Int, classes.SCALE)
             replace!(classes.SYMBOL, "\$" => "Scene")
             continue
@@ -103,7 +107,7 @@ function parse_mtg_file(f, mtg_type)
 
         # Parse the mtg DESCRIPTION section:
         if issection(l[1], "DESCRIPTION")
-            global description = parse_section!(f, ["LEFT", "RIGHT", "RELTYPE", "MAX"], "DESCRIPTION", line, l, allow_empty=true)
+            description = parse_section!(f, ["LEFT", "RIGHT", "RELTYPE", "MAX"], "DESCRIPTION", line, l, allow_empty=true)
             if description !== nothing
                 description.RIGHT = split.(description.RIGHT, ",")
                 if !all([i in description.RELTYPE for i in ("+", "<")])
@@ -116,13 +120,13 @@ function parse_mtg_file(f, mtg_type)
 
         # Parse the mtg FEATURES section:
         if issection(l[1], "FEATURES")
-            global features = parse_section!(f, ["NAME", "TYPE"], "FEATURES", line, l, allow_empty=true)
+            features = parse_section!(f, ["NAME", "TYPE"], "FEATURES", line, l, allow_empty=true)
             continue
         end
 
         # Parse the mtg FEATURES section:
         if issection(l[1], "MTG")
-            global mtg = parse_mtg!(f, classes, features, line, l, mtg_type)
+            mtg = parse_mtg!(f, classes, features, line, l, mtg_type)
             continue
         end
 

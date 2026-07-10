@@ -62,3 +62,24 @@ end
         !MultiScaleTreeGraph.isroot(x) && @test isempty(node_attributes(x))
     end
 end
+
+@testset "read_mtg parser state is local" begin
+    parser_state_names = (:classes, :description, :features, :mtg)
+    @test all(name -> !isdefined(MultiScaleTreeGraph, name), parser_state_names)
+
+    files = [
+        "files/simple_plant.mtg",
+        "files/simple_plant-blanks.mtg",
+        "files/simple_plant-P1U1.mtg",
+        "files/palm.mtg",
+    ]
+
+    for file in files
+        mtg = read_mtg(file, NodeMTG)
+        @test node_id(mtg) == 1
+        @test mtg[:symbols] isa Vector{String}
+        @test mtg[:scales] isa Vector{Int}
+    end
+
+    @test all(name -> !isdefined(MultiScaleTreeGraph, name), parser_state_names)
+end
