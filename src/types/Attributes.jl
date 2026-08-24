@@ -12,9 +12,11 @@ mutable struct SubtreeIndexCache
     tin::Vector{Int}
     tout::Vector{Int}
     dfs_order::Vector{Int}
+    traversal_cache_nodes::Union{Nothing,WeakRef,Vector{WeakRef}}
 end
 
-SubtreeIndexCache() = SubtreeIndexCache(true, false, :auto, 0, 0, Int[], Int[], Int[])
+SubtreeIndexCache() =
+    SubtreeIndexCache(true, false, :auto, 0, 0, Int[], Int[], Int[], nothing)
 
 mutable struct Column{T}
     name::Symbol

@@ -26,6 +26,7 @@ function prune!(node)
         stack = Node[node]
         while !isempty(stack)
             n = pop!(stack)
+            _discard_traversal_cache!(n)
             attrs = node_attributes(n)
             attrs isa ColumnarAttrs && remove_columnar_node!(attrs)
             ch = children(n)
@@ -38,6 +39,7 @@ function prune!(node)
         parent_children = children(parent_node)
         idx = _child_index_by_id(parent_children, node_id(node))
         idx === nothing || deleteat!(parent_children, idx)
+        idx === nothing || _mark_structure_mutation!(parent_node)
     end
 
     # Delete the links to the parent:

@@ -4,11 +4,15 @@
 Bind all node attributes to a single `MTGAttributeStore`.
 """
 function columnarize!(mtg::Node)
-    nodes = traverse(mtg, node -> node, type=typeof(mtg))
+    root = get_root(mtg)
+    nodes = traverse(root, node -> node, type=typeof(root))
     isempty(nodes) && return mtg
 
     store = MTGAttributeStore()
     for n in nodes
+        if _maybe_traversal_cache(n) !== nothing
+            _register_traversal_cache!(store, n)
+        end
         attrs = node_attributes(n)
         attrs isa ColumnarAttrs || error("columnarize! expects nodes with ColumnarAttrs attributes.")
         raw = _isbound(attrs) ? Dict{Symbol,Any}(pairs(attrs)) : attrs.staged

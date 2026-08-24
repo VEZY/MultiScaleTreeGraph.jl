@@ -295,7 +295,7 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
             Node{N,A}[node],
             new_node_MTG(node, template),
             _coerce_insert_attrs(A, copy(attr_fun(node))),
-            Dict{String,Vector{Node{N,A}}}()
+            nothing
         )
         _bind_inserted_columnar!(A, node, new_node)
 
@@ -317,7 +317,7 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
             Node{N,A}[node],
             new_node_MTG(node, template),
             _coerce_insert_attrs(A, copy(attr_fun(node))),
-            Dict{String,Vector{Node{N,A}}}()
+            nothing
         )
         _bind_inserted_columnar!(A, parent(node), new_node)
 
@@ -358,12 +358,13 @@ function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=
         Vector{Node{N,A}}(),
         new_node_MTG(node, template),
         _coerce_insert_attrs(A, copy(attr_fun(node))),
-        Dict{String,Vector{Node{N,A}}}()
+        nothing
     )
     _bind_inserted_columnar!(A, parent(node), new_node)
 
     # Add the new node to the children of the parent node:
     push!(children(parent(node)), new_node)
+    _mark_structure_mutation!(parent(node))
 
     return node
 end
@@ -378,7 +379,7 @@ function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), max
         children(node),
         new_node_MTG(node, template),
         _coerce_insert_attrs(A, copy(attr_fun(node))),
-        Dict{String,Vector{Node{N,A}}}()
+        nothing
     )
     _bind_inserted_columnar!(A, node, new_node)
 

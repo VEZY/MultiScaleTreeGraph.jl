@@ -10,7 +10,7 @@ cache_name("test","var")
 ```
 """
 function cache_name(vars...)
-    "_cache_" * bytes2hex(sha1(join([vars...])))
+    "_cache_" * bytes2hex(sha1(join(vars)))
 end
 
 """
@@ -36,6 +36,9 @@ end
 
 Cache the nodes of the mtg based on the filters that would be applied to a traversal. This is used automatically
 when traversing using [`traverse!`](@ref) or [`transform!`](@ref).
+
+Cached traversals are invalidated automatically on the mutated subtree and its
+ancestors when nodes are added, removed, or reparented.
 
 # Examples
 

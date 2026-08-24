@@ -70,8 +70,9 @@ end
 @testset "descendants clear error on mixed columnar stores" begin
       mtg_a = read_mtg("files/simple_plant.mtg")
       mtg_b = read_mtg("files/simple_plant.mtg")
-      # Bypass addchild! on purpose to build an incoherent tree (mixed stores).
-      reparent!(mtg_b, mtg_a)
+      # Bypass the public topology mutators on purpose to build an incoherent tree.
+      push!(children(mtg_a), mtg_b)
+      setfield!(mtg_b, :parent, mtg_a)
 
       err = try
             descendants(mtg_a, :Width)

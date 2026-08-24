@@ -161,11 +161,17 @@ end
     VERSION >= v"1.7" && @test_throws "The parent node has an MTG encoding of type `MutableNodeMTG`, but the MTG encoding you provide is of type `NodeMTG`, please make sure they are the same." Node(mtg, NodeMTG(:/, :Branch, 1, 2))
 end
 
-@testset "addchild! re-columnarizes when attaching a root subtree" begin
+@testset "addchild! rejects colliding root-subtree ids transactionally" begin
     mtg_a = read_mtg(file)
     mtg_b = read_mtg(file)
-    addchild!(mtg_a, mtg_b; force=true)
-    @test_nowarn descendants(mtg_a, :Width)
+    children_before = copy(children(mtg_a))
+    store_a_before = MultiScaleTreeGraph._node_store(mtg_a)
+    store_b_before = MultiScaleTreeGraph._node_store(mtg_b)
+    @test_throws ArgumentError addchild!(mtg_a, mtg_b; force=true)
+    @test children(mtg_a) == children_before
+    @test parent(mtg_b) === nothing
+    @test MultiScaleTreeGraph._node_store(mtg_a) === store_a_before
+    @test MultiScaleTreeGraph._node_store(mtg_b) === store_b_before
 end
 
 @testset "new child node attributes are in the columnar store" begin
