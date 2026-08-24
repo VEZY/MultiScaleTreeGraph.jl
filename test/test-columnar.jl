@@ -5,6 +5,64 @@ mtg = read_mtg(file)
 
 @test node_attributes(mtg) isa MultiScaleTreeGraph.ColumnarAttrs
 
+@testset "ColumnarAttrs iteration" begin
+    root = MultiScaleTreeGraph.Node(
+        MultiScaleTreeGraph.NodeMTG(:/, :Plant, 1, 1),
+        (root_value=1,),
+    )
+    first_leaf = MultiScaleTreeGraph.Node(
+        root,
+        MultiScaleTreeGraph.NodeMTG(:/, :Leaf, 1, 2),
+        (first_only=11, shared="first"),
+    )
+    second_leaf = MultiScaleTreeGraph.Node(
+        root,
+        MultiScaleTreeGraph.NodeMTG(:+, :Leaf, 2, 2),
+        (second_only=22, shared="second"),
+    )
+
+    first_attrs = node_attributes(first_leaf)
+    second_attrs = node_attributes(second_leaf)
+    first_pairs = collect(pairs(first_attrs))
+    second_pairs = collect(pairs(second_attrs))
+
+    @test first.(first_pairs) == collect(keys(first_attrs))
+    @test last.(first_pairs) == [
+        get(first_attrs, key, nothing) for key in keys(first_attrs)
+    ]
+    @test first.(second_pairs) == collect(keys(second_attrs))
+    @test last.(second_pairs) == [
+        get(second_attrs, key, nothing) for key in keys(second_attrs)
+    ]
+    @test first_attrs[:first_only] == 11
+    @test first_attrs[:second_only] === nothing
+    @test second_attrs[:first_only] === nothing
+    @test second_attrs[:second_only] == 22
+
+    second_attrs[:shared] = 2
+    @test Dict(pairs(first_attrs))[:shared] == "first"
+    @test Dict(pairs(second_attrs))[:shared] == 2
+
+    add_column!(root, :Leaf, :temperature, Float64, default=20.0)
+    @test last(collect(keys(first_attrs))) == :temperature
+    @test last(collect(pairs(first_attrs))) == (:temperature => 20.0)
+
+    rename_column!(root, :Leaf, :temperature, :renamed_temperature)
+    @test :temperature ∉ keys(first_attrs)
+    @test last(collect(keys(first_attrs))) == :renamed_temperature
+    @test last(collect(pairs(first_attrs))) == (:renamed_temperature => 20.0)
+
+    drop_column!(root, :Leaf, :renamed_temperature)
+    @test :renamed_temperature ∉ keys(first_attrs)
+    @test first.(collect(pairs(first_attrs))) == collect(keys(first_attrs))
+
+    unbound = MultiScaleTreeGraph.ColumnarAttrs(
+        Dict{Symbol,Any}(:unbound_first => 1, :unbound_second => "two"),
+    )
+    @test collect(pairs(unbound)) == collect(pairs(unbound.staged))
+    @test first.(collect(pairs(unbound))) == collect(keys(unbound))
+end
+
 leaf = traverse(mtg, node -> node, symbol=:Leaf, type=typeof(mtg))[1]
 
 leaf_width = attribute(leaf, :Width, default=nothing)

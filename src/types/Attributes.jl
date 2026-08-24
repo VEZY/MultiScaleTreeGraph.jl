@@ -679,11 +679,12 @@ function Base.iterate(attrs::ColumnarAttrs, state=nothing)
     if !_isbound(attrs)
         return state === nothing ? iterate(attrs.staged) : iterate(attrs.staged, state)
     end
-    k = keys(attrs)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
     i = state === nothing ? 1 : state
-    i > length(k) && return nothing
-    key = k[i]
-    return (key => get(attrs, key, nothing), i + 1)
+    i > length(bucket.columns) && return nothing
+    column = _column(bucket, i)
+    return (column.name => column.data[row], i + 1)
 end
 
 function Base.pop!(attrs::ColumnarAttrs, key, default=nothing)

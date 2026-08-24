@@ -1,3 +1,11 @@
+struct _ShiftedWriterVector{T} <: AbstractVector{T}
+    values::Vector{T}
+end
+
+Base.size(vector::_ShiftedWriterVector) = size(vector.values)
+Base.axes(vector::_ShiftedWriterVector) = (0:(length(vector.values) - 1),)
+Base.getindex(vector::_ShiftedWriterVector, index::Int) = vector.values[index + 1]
+
 file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", "simple_plant.mtg")
 mtg = read_mtg(file)
 
@@ -217,6 +225,11 @@ end
         mtg, features = _many_feature_writer_fixture(nfeatures)
         @test node_attributes(mtg) isa MultiScaleTreeGraph.ColumnarAttrs
         @test list_nodes(mtg) == [10, 41, 105, 1_000, 10_000]
+        layout = MultiScaleTreeGraph._mtg_write_layout(mtg)
+        feature_columns = MultiScaleTreeGraph._mtg_write_feature_columns(mtg, features)
+        @test MultiScaleTreeGraph._mtg_columnar_write_context(
+            layout, feature_columns
+        ) isa MultiScaleTreeGraph._MTGColumnarWriteContext
 
         expected_section = _legacy_mtg_section_for_test(mtg, features)
         actual = mktemp() do path, io
@@ -283,6 +296,218 @@ end
         return read(path, String)
     end
     @test _written_mtg_section_for_test(actual) == expected_section
+
+    projected = mktemp() do path, io
+        close(io)
+        write_mtg(
+            path,
+            root,
+            get_classes(root),
+            nothing,
+            features;
+            feature_overrides=Dict(:long_text => fill(long_text, 2)),
+        )
+        return read(path, String)
+    end
+    @test _written_mtg_section_for_test(projected) == expected_section
+end
+
+@testset "Feature overrides are aligned, typed, and source preserving" begin
+    root = Node(
+        10,
+        MutableNodeMTG(:/, :Plant, 1, 1),
+        Dict{Symbol,Any}(
+            :reference => 10,
+            :date => Date(2026, 8, 24),
+            :other => "root",
+            :mtg_print => "original root",
+        ),
+    )
+    Node(
+        1_000,
+        root,
+        MutableNodeMTG(:<, :Leaf, -9999, 2),
+        Dict{Symbol,Any}(
+            :reference => 1_000,
+            :date => Date(2025, 1, 2),
+            :other => "child",
+            :mtg_print => "original child",
+        ),
+    )
+    features = DataFrame(
+        NAME=[:reference, :date, :other, :mtg_print],
+        TYPE=["INT", "DD/MM/YY", "STRING", "STRING"],
+    )
+    overrides = Dict{Symbol,AbstractVector}(
+        :reference => Union{Nothing,Int}[2, 1],
+        :date => Union{Nothing,Date}[Date(2024, 12, 31), nothing],
+        :mtg_print => ["projected root", "projected child"],
+    )
+    source_attributes = [Dict(pairs(node_attributes(node))) for node in traverse(root, identity)]
+
+    expected = deepcopy(root)
+    expected_nodes = traverse(expected, identity)
+    for (i, node) in pairs(expected_nodes)
+        node[:reference] = overrides[:reference][i]
+        node[:date] = overrides[:date][i]
+        node[:mtg_print] = overrides[:mtg_print][i]
+    end
+    expected_section = _legacy_mtg_section_for_test(expected, features)
+
+    actual = mktemp() do path, io
+        close(io)
+        write_mtg(
+            path,
+            root,
+            get_classes(root),
+            nothing,
+            features;
+            feature_overrides=overrides,
+        )
+        return read(path, String)
+    end
+    @test _written_mtg_section_for_test(actual) == expected_section
+    @test occursin("31/12/2024", actual)
+    @test !occursin("24/8/2026", actual)
+    @test [Dict(pairs(node_attributes(node))) for node in traverse(root, identity)] ==
+          source_attributes
+
+    high_level = mktemp() do path, io
+        close(io)
+        write_mtg(
+            path,
+            root;
+            classes=get_classes(root),
+            description=nothing,
+            features=features,
+            feature_overrides=overrides,
+        )
+        return read(path, String)
+    end
+    @test high_level == actual
+
+    default = mktemp() do path, io
+        close(io)
+        write_mtg(path, root, get_classes(root), nothing, features)
+        return read(path, String)
+    end
+    empty_override = mktemp() do path, io
+        close(io)
+        write_mtg(
+            path,
+            root,
+            get_classes(root),
+            nothing,
+            features;
+            feature_overrides=Dict{Symbol,Vector{Int}}(),
+        )
+        return read(path, String)
+    end
+    @test empty_override == default
+
+    invalid_overrides = (
+        (Dict(:undeclared => [1, 2]), "undeclared MTG feature :undeclared"),
+        (Dict(:reference => [1]), "expected 2 values aligned with MTG preorder"),
+        (Dict("reference" => [1, 2]), "keys must be Symbols"),
+        (Dict(:reference => 1), "must be an AbstractVector"),
+        (
+            Dict(:reference => _ShiftedWriterVector([1, 2])),
+            "must use one-based axes",
+        ),
+    )
+    for (invalid, expected_message) in invalid_overrides
+        mktemp() do path, io
+            close(io)
+            error = try
+                write_mtg(
+                    path,
+                    root,
+                    get_classes(root),
+                    nothing,
+                    features;
+                    feature_overrides=invalid,
+                )
+                nothing
+            catch caught
+                caught
+            end
+            @test error isa ArgumentError
+            @test occursin(expected_message, sprint(showerror, error))
+            @test endswith(read(path, String), "MTG:\n")
+        end
+    end
+end
+
+@testset "Feature overrides preserve the fallback lookup boundary" begin
+    encoding = MutableNodeMTG(:/, :Plant, 1, 1)
+    attributes = MultiScaleTreeGraph.ColumnarAttrs(Dict(:reference => 10, :other => "root"))
+    NodeType = Node{typeof(encoding),typeof(attributes)}
+    root = NodeType(
+        10,
+        nothing,
+        NodeType[],
+        encoding,
+        attributes,
+        nothing,
+    )
+    features = DataFrame(NAME=[:reference, :other], TYPE=["INT", "STRING"])
+    layout = MultiScaleTreeGraph._mtg_write_layout(root)
+    feature_columns = MultiScaleTreeGraph._mtg_write_feature_columns(root, features)
+    @test MultiScaleTreeGraph._mtg_columnar_write_context(
+        layout,
+        feature_columns,
+    ) === nothing
+
+    expected = deepcopy(root)
+    expected[:reference] = 1
+    expected_section = _legacy_mtg_section_for_test(expected, features)
+    actual = mktemp() do path, io
+        close(io)
+        write_mtg(
+            path,
+            root,
+            get_classes(root),
+            nothing,
+            features;
+            feature_overrides=Dict(:reference => [1]),
+        )
+        return read(path, String)
+    end
+    @test _written_mtg_section_for_test(actual) == expected_section
+    @test root[:reference] == 10
+end
+
+@testset "Duplicate feature last STRING type overrides earlier date type" begin
+    root = Node(
+        10,
+        MutableNodeMTG(:/, :Plant, 1, 1),
+        Dict{Symbol,Any}(:date => Date(2026, 8, 24)),
+    )
+    Node(
+        20,
+        root,
+        MutableNodeMTG(:<, :Leaf, 1, 2),
+        Dict{Symbol,Any}(:date => Date(2025, 1, 2)),
+    )
+    features = DataFrame(
+        NAME=[:date, :date], TYPE=["DD/MM/YY", "STRING"]
+    )
+    feature_columns = MultiScaleTreeGraph._mtg_write_feature_columns(root, features)
+    @test feature_columns.names == ["date"]
+    @test collect(feature_columns.is_date) == [false]
+    @test MultiScaleTreeGraph._mtg_columnar_write_context(
+        MultiScaleTreeGraph._mtg_write_layout(root), feature_columns
+    ) isa MultiScaleTreeGraph._MTGColumnarWriteContext
+
+    expected_section = _legacy_mtg_section_for_test(root, features)
+    actual = mktemp() do path, io
+        close(io)
+        write_mtg(path, root, get_classes(root), nothing, features)
+        return read(path, String)
+    end
+    @test _written_mtg_section_for_test(actual) == expected_section
+    @test occursin("2026-08-24", actual)
+    @test !occursin("24/08/2026", actual)
 end
 
 @testset "Streaming writer preserves mtg_print feature collision" begin
@@ -316,6 +541,179 @@ end
     @test isequal(actual_attributes, expected_attributes)
 end
 
+@testset "Typed column writer preserves scalar and container cells" begin
+    root = Node(
+        10,
+        MutableNodeMTG(:/, :Plant, 1, 1),
+        Dict{Symbol,Any}(
+            :vector_value => [1, 2],
+            :missing_value => missing,
+            :nothing_value => nothing,
+            :date_value => Date(2026, 8, 24),
+            :plain_date => Date(2026, 8, 24),
+            :text_value => "root",
+        ),
+    )
+    branch = Node(
+        1_000,
+        root,
+        MutableNodeMTG(:+, :Branch, 1, 2),
+        Dict{Symbol,Any}(
+            :vector_value => [3, 4, 5],
+            :missing_value => "present",
+            :date_value => nothing,
+            :plain_date => Date(2025, 1, 2),
+            :text_value => "branch",
+        ),
+    )
+    Node(
+        10_000,
+        branch,
+        MutableNodeMTG(:<, :Leaf, 1, 3),
+        Dict{Symbol,Any}(
+            :vector_value => String["a", "b"],
+            :missing_value => missing,
+            :nothing_value => nothing,
+            :date_value => Date(2024, 12, 31),
+            :plain_date => Date(2024, 12, 31),
+        ),
+    )
+    features = DataFrame(
+        NAME=[
+            :vector_value,
+            :missing_value,
+            :nothing_value,
+            :absent_value,
+            :absent_date,
+            :date_value,
+            :plain_date,
+            :text_value,
+        ],
+        TYPE=[
+            "STRING",
+            "STRING",
+            "STRING",
+            "STRING",
+            "DD/MM/YY",
+            "DD/MM/YY",
+            "STRING",
+            "STRING",
+        ],
+    )
+
+    for subtree in (root, branch)
+        layout = MultiScaleTreeGraph._mtg_write_layout(subtree)
+        feature_columns = MultiScaleTreeGraph._mtg_write_feature_columns(
+            subtree, features
+        )
+        @test MultiScaleTreeGraph._mtg_columnar_write_context(
+            layout, feature_columns
+        ) isa MultiScaleTreeGraph._MTGColumnarWriteContext
+
+        expected_section = _legacy_mtg_section_for_test(subtree, features)
+        actual = mktemp() do path, io
+            close(io)
+            write_mtg(path, subtree, get_classes(subtree), nothing, features)
+            return read(path, String)
+        end
+        @test _written_mtg_section_for_test(actual) == expected_section
+        @test occursin("missing", actual)
+        @test occursin("[1, 2]", actual) || subtree === branch
+        @test occursin("24/8/2026", actual) || subtree === branch
+        @test occursin("2026-08-24", actual) || subtree === branch
+    end
+end
+
+@testset "Typed writer falls back on mixed columnar stores" begin
+    root = Node(
+        1,
+        MutableNodeMTG(:/, :Plant, 1, 1),
+        Dict{Symbol,Any}(:value => 1),
+    )
+    external = Node(
+        20,
+        MutableNodeMTG(:/, :External, 1, 1),
+        Dict{Symbol,Any}(:value => 2),
+    )
+    push!(children(root), external)
+    features = DataFrame(NAME=[:value], TYPE=["INT"])
+    layout = MultiScaleTreeGraph._mtg_write_layout(root)
+    feature_columns = MultiScaleTreeGraph._mtg_write_feature_columns(root, features)
+    @test MultiScaleTreeGraph._mtg_columnar_write_context(
+        layout, feature_columns
+    ) === nothing
+
+    mktemp() do path, io
+        close(io)
+        @test_throws ArgumentError write_mtg(
+            path, root, get_classes(root), nothing, features
+        )
+        @test endswith(read(path, String), "MTG:\n")
+    end
+    mktemp() do path, io
+        close(io)
+        @test_throws ArgumentError write_mtg(
+            path,
+            root,
+            get_classes(root),
+            nothing,
+            features;
+            feature_overrides=Dict(:value => [10, 20]),
+        )
+        @test endswith(read(path, String), "MTG:\n")
+    end
+end
+
+@testset "Typed writer validates every bucket row before streaming" begin
+    root = Node(
+        1,
+        MutableNodeMTG(:/, :Plant, 1, 1),
+        Dict{Symbol,Any}(:value => "root"),
+    )
+    child = Node(
+        2,
+        root,
+        MutableNodeMTG(:<, :Plant, 2, 1),
+        Dict{Symbol,Any}(:value => "child"),
+    )
+    attrs = node_attributes(child)
+    store = attrs.ref.store
+    bid = store.node_bucket[node_id(child)]
+    row = store.node_row[node_id(child)]
+    bucket = store.buckets[bid]
+    column = bucket.columns[bucket.col_index[:value]]
+    resize!(column.data, row - 1)
+    resize!(column.data, row)
+    @test !isassigned(column.data, row)
+
+    features = DataFrame(NAME=[:value], TYPE=["STRING"])
+    layout = MultiScaleTreeGraph._mtg_write_layout(root)
+    feature_columns = MultiScaleTreeGraph._mtg_write_feature_columns(root, features)
+    @test MultiScaleTreeGraph._mtg_columnar_write_context(
+        layout, feature_columns
+    ) === nothing
+
+    mktemp() do path, io
+        close(io)
+        @test_throws UndefRefError write_mtg(
+            path, root, get_classes(root), nothing, features
+        )
+        @test endswith(read(path, String), "MTG:\n")
+    end
+    mktemp() do path, io
+        close(io)
+        @test_throws UndefRefError write_mtg(
+            path,
+            root,
+            get_classes(root),
+            nothing,
+            features;
+            feature_overrides=Dict(:value => ["projected root", "projected child"]),
+        )
+        @test endswith(read(path, String), "MTG:\n")
+    end
+end
+
 @testset "Table rows stream without changing DelimitedFiles quoting" begin
     table = DataFrame(
         first=["plain", "with\ttab", "with\"quote", "with\nline", repeat("long", 6_000)],
@@ -337,9 +735,40 @@ end
 @testset "Streaming writer preserves date conversion errors" begin
     mtg = Node(10, MutableNodeMTG(:/, :Plant, 1, 1), Dict(:date => missing))
     features = DataFrame(NAME=[:date], TYPE=["DD/MM/YY"])
+    layout = MultiScaleTreeGraph._mtg_write_layout(mtg)
+    feature_columns = MultiScaleTreeGraph._mtg_write_feature_columns(mtg, features)
+    @test MultiScaleTreeGraph._mtg_columnar_write_context(
+        layout, feature_columns
+    ) isa MultiScaleTreeGraph._MTGColumnarWriteContext
     mktemp() do path, io
         close(io)
         @test_throws MethodError write_mtg(path, mtg, get_classes(mtg), nothing, features)
+        @test endswith(read(path, String), "MTG:\n")
+    end
+end
+
+@testset "Duplicate date mtg_print fails before ENTITY-CODE" begin
+    mtg = Node(
+        10,
+        MutableNodeMTG(:/, :Plant, 1, 1),
+        Dict{Symbol,Any}(:mtg_print => missing, :other => 1),
+    )
+    features = DataFrame(
+        NAME=[:mtg_print, :other, :mtg_print],
+        TYPE=["STRING", "INT", "DD/MM/YY"],
+    )
+    feature_columns = MultiScaleTreeGraph._mtg_write_feature_columns(mtg, features)
+    @test feature_columns.names == ["mtg_print", "other"]
+    @test collect(feature_columns.is_date) == [true, false]
+    @test MultiScaleTreeGraph._mtg_columnar_write_context(
+        MultiScaleTreeGraph._mtg_write_layout(mtg), feature_columns
+    ) isa MultiScaleTreeGraph._MTGColumnarWriteContext
+
+    mktemp() do path, io
+        close(io)
+        @test_throws MethodError write_mtg(
+            path, mtg, get_classes(mtg), nothing, features
+        )
         @test endswith(read(path, String), "MTG:\n")
     end
 end
