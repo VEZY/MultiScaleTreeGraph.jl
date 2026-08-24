@@ -106,10 +106,11 @@ function _merge_columnar_subtree_into_store!(node::Node, target_store::MTGAttrib
     attrs = node_attributes(node)
     attrs isa ColumnarAttrs || return false
     source_store = _store_for_node_attrs(attrs)
+    source_node_id = attrs.ref.node_id
     snapshot = Dict{Symbol,Any}(pairs(attrs))
     _add_node_with_attrs!(target_store, node_id(node), symbol(node), snapshot)
     if source_store !== nothing && source_store !== target_store
-        _remove_node!(source_store, node_id(node))
+        _remove_node!(source_store, source_node_id)
     end
     attrs.ref.store = target_store
     attrs.ref.node_id = node_id(node)

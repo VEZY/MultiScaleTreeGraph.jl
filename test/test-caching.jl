@@ -409,4 +409,59 @@ end
     @test MultiScaleTreeGraph._node_store(rechildren_target) === target_store_before
     @test MultiScaleTreeGraph._node_store(incoming_a) === incoming_a_store_before
     @test MultiScaleTreeGraph._node_store(incoming_b) === incoming_b_store_before
+
+    relabelled_source = Node(
+        20,
+        MutableNodeMTG(:/, :RelabelledSource, 1, 0),
+        Dict{Symbol,Any}(:SourceValue => 20),
+    )
+    relabelled_child = addchild!(
+        relabelled_source,
+        1,
+        MutableNodeMTG(:+, :RelabelledChild, 1, 1),
+        Dict{Symbol,Any}(:ChildValue => 1),
+    )
+    relabelled_descendant = addchild!(
+        relabelled_child,
+        2,
+        MutableNodeMTG(:+, :RelabelledDescendant, 1, 2),
+        Dict{Symbol,Any}(:DescendantValue => 2),
+    )
+    relabelled_source_store = MultiScaleTreeGraph._node_store(relabelled_source)
+    setfield!(relabelled_source, :id, 1)
+    setfield!(relabelled_child, :id, 2)
+    setfield!(relabelled_descendant, :id, 3)
+
+    relabelled_target = Node(
+        50,
+        MutableNodeMTG(:/, :RelabelledTarget, 1, 0),
+        Dict{Symbol,Any}(),
+    )
+    relabelled_target_parent = addchild!(
+        relabelled_target,
+        51,
+        MutableNodeMTG(:+, :RelabelledTargetParent, 1, 1),
+        Dict{Symbol,Any}(),
+    )
+    relabelled_target_store = MultiScaleTreeGraph._node_store(relabelled_target)
+
+    addchild!(relabelled_target_parent, relabelled_source)
+
+    @test parent(relabelled_source) === relabelled_target_parent
+    @test [node_id(node) for node in traverse(relabelled_source, identity)] == [1, 2, 3]
+    @test relabelled_source[:SourceValue] == 20
+    @test relabelled_child[:ChildValue] == 1
+    @test relabelled_descendant[:DescendantValue] == 2
+    @test all(
+        node -> MultiScaleTreeGraph._node_store(node) === relabelled_target_store,
+        traverse(relabelled_source, identity),
+    )
+    @test [
+        MultiScaleTreeGraph.node_attributes(node).ref.node_id
+        for node in traverse(relabelled_source, identity)
+    ] == [1, 2, 3]
+    @test all(
+        old_id -> relabelled_source_store.node_bucket[old_id] == 0,
+        (20, 1, 2),
+    )
 end
