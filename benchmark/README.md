@@ -8,6 +8,16 @@ Run the benchmark suite locally:
 julia --project=benchmark benchmark/benchmarks.jl
 ```
 
+Run the byte-parity, allocation, and timing gates for the streaming MTG writer:
+
+```bash
+julia --project=benchmark benchmark/write_mtg_streaming.jl
+```
+
+The writer gate exercises 40 features at 1,000 and 10,000 nodes. It compares the
+streaming path with the compatibility materialization path, measures seven alternating
+samples after warmup, and checks linear scaling.
+
 Workloads currently covered:
 
 - tiered datasets: `small` (~10k nodes), `medium` (~100k), `large` (~300k)

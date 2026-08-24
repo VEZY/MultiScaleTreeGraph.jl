@@ -90,69 +90,232 @@ function write_mtg(file, mtg, classes, description, features)
         # MTG section:
         writedlm(io, [""])
         writedlm(io, ["MTG:"])
-        mtg_df, mtg_colnames = paste_node_mtg(mtg, features)
+        layout = _mtg_write_layout(mtg)
+        feature_columns = _mtg_write_feature_columns(mtg, features)
+        feature_values = _mtg_write_feature_values(layout, feature_columns)
+        entity_feature, output_features, mtg_colnames =
+            _mtg_write_projection(layout, feature_columns)
         writedlm(io, reshape(mtg_colnames, (1, :)), quotes=false)
-        for i in eachindex(mtg_df["mtg_print"])
-            writedlm(io, reshape([mtg_df[k][i] for k in keys(mtg_df)], (1, :)), quotes=false)
-        end
+        _write_mtg_rows(
+            io, layout, feature_values, entity_feature, output_features
+        )
     end
 end
 
-function _write_table_rows(io, table)
-    nrows, ncols = size(table)
-    for i in 1:nrows
-        row = Any[table[i, j] for j in 1:ncols]
-        writedlm(io, reshape(row, (1, :)))
+@inline function _flush_write_buffer!(io, buffer::IOBuffer)
+    if position(buffer) > 0
+        seekstart(buffer)
+        write(io, buffer)
+        truncate(buffer, 0)
     end
     return nothing
 end
 
-function paste_node_mtg(mtg, features)
+function _write_table_rows(io, table)
+    nrows, ncols = size(table)
+    rows = ((table[i, j] for j in 1:ncols) for i in 1:nrows)
+    writedlm(io, rows)
+    return nothing
+end
 
-    # Get the leading tabulations for each node (i.e. the column of the node)
-    lead = Int[]
-    parent_ref = String[]
-    print_node = String[]
-    get_node_printing!(mtg, lead, parent_ref, print_node)
+struct _MTGWriteLayout{N}
+    nodes::Vector{N}
+    leads::Vector{Int}
+    parent_refs::BitVector
+    max_tabs::Int
+end
 
-    max_tabs = maximum(lead)
+struct _MTGWriteFeatureColumns
+    names::Vector{String}
+    keys::Vector{Symbol}
+    is_date::BitVector
+    plans::Vector{Union{Nothing,ColumnarQueryPlan}}
+end
 
-    # Get the attributes for each node:
-    attributes = OrderedDict{String,Vector{Any}}()
+function _mtg_write_layout(mtg)
+    nodes = Vector{typeof(mtg)}()
+    leads = Int[]
+    parent_refs = BitVector()
 
-    attributes["mtg_print"] = string.(
-        # Add the leading tabulations:
-        repeat.("\t", lead),
-        # Add the "^" keyword before mtg print in case we refer to the column above:
-        parent_ref,
-        # Add the mtg printing (e.g. "/Axis0"):
-        print_node,
-        # Add the trailing tabulations:
-        repeat.("\t", max_tabs .- lead)
-    )
+    stack_nodes = Vector{typeof(mtg)}(undef, 1)
+    stack_leads = Vector{Int}(undef, 1)
+    stack_refs = BitVector(undef, 1)
+    stack_nodes[1] = mtg
+    stack_leads[1] = 0
+    stack_refs[1] = false
+    max_tabs = 0
 
-    for var in string.(features.NAME)
-        push!(attributes, var => descendants(mtg, var, self=true))
+    while !isempty(stack_nodes)
+        node = pop!(stack_nodes)
+        node_lead = pop!(stack_leads)
+        node_ref = pop!(stack_refs)
+
+        push!(nodes, node)
+        push!(leads, node_lead)
+        push!(parent_refs, node_ref)
+        max_tabs = max(max_tabs, node_lead)
+
+        child_nodes = children(node)
+        n_children = length(child_nodes)
+        @inbounds for i in n_children:-1:1
+            changes_column = n_children > 1 && i != n_children
+            push!(stack_nodes, child_nodes[i])
+            push!(stack_leads, changes_column ? node_lead + 1 : node_lead)
+            push!(stack_refs, !changes_column)
+        end
     end
 
-    # Build the "ENTITY-CODE" column with necessary "^", leading and trailing tabs
-    feature_type = Dict{String,String}()
+    return _MTGWriteLayout(nodes, leads, parent_refs, max_tabs)
+end
+
+function _mtg_write_feature_columns(mtg, features)
+    names_ = String[]
+    keys_ = Symbol[]
+    is_date = BitVector()
+    name_to_column = Dict{String,Int}()
+
     @inbounds for i in eachindex(features.NAME)
-        feature_type[string(features.NAME[i])] = string(features.TYPE[i])
+        name = string(features.NAME[i])
+        date_feature = string(features.TYPE[i]) == "DD/MM/YY"
+        column = get(name_to_column, name, 0)
+        if column == 0
+            push!(names_, name)
+            push!(keys_, Symbol(name))
+            push!(is_date, date_feature)
+            name_to_column[name] = length(names_)
+        else
+            # `paste_node_mtg` historically kept the first column position for a
+            # duplicate feature name, while the last type controlled formatting.
+            is_date[column] = date_feature
+        end
     end
 
-    for (key, val) in attributes
-        # If the attribute is a date, write it in the day/month/year format:
-        if get(feature_type, key, "") == "DD/MM/YY"
-            replace!(x -> isnothing(x) ? x : format(x, dateformat"d/m/Y"), val)
+    plans = Vector{Union{Nothing,ColumnarQueryPlan}}(undef, length(keys_))
+    @inbounds for i in eachindex(keys_)
+        plans[i] = build_columnar_query_plan(mtg, keys_[i])
+    end
+    return _MTGWriteFeatureColumns(names_, keys_, is_date, plans)
+end
+
+function _mtg_write_feature_values(
+    layout::_MTGWriteLayout, features::_MTGWriteFeatureColumns
+)
+    values = [Vector{Any}(undef, length(layout.nodes)) for _ in eachindex(features.keys)]
+
+    # Column-major lookup matches the physical layout of `ColumnarAttrs` and avoids
+    # repeating a full tree traversal for every feature.
+    @inbounds for j in eachindex(features.keys)
+        column = values[j]
+        key = features.keys[j]
+        plan = features.plans[j]
+        for i in eachindex(layout.nodes)
+            column[i] = unsafe_getindex(layout.nodes[i], key, plan)
+        end
+    end
+
+    # Keep the historical conversion order: all values are collected before date
+    # formatting is attempted, and `nothing` is represented by an empty field.
+    @inbounds for j in eachindex(values)
+        column = values[j]
+        if features.is_date[j]
+            for i in eachindex(column)
+                value = column[i]
+                column[i] = value === nothing ? "" : format(value, dateformat"d/m/Y")
+            end
+        else
+            replace!(column, nothing => "")
+        end
+    end
+    return values
+end
+
+function _mtg_write_projection(
+    layout::_MTGWriteLayout, features::_MTGWriteFeatureColumns
+)
+    # `paste_node_mtg` has always used `mtg_print` as its internal topology key.
+    # A feature with that name therefore replaces the entity-code values instead
+    # of adding a column; retain that unusual but observable behavior.
+    entity_feature = findfirst(==("mtg_print"), features.names)
+    output_features = Int[]
+    mtg_colnames = String[string("ENTITY-CODE", repeat("\t", layout.max_tabs))]
+    @inbounds for j in eachindex(features.names)
+        j == entity_feature && continue
+        push!(output_features, j)
+        push!(mtg_colnames, features.names[j])
+    end
+    return entity_feature, output_features, mtg_colnames
+end
+
+@inline function _write_mtg_node_code(io, node)
+    print(io, String(link(node)), String(symbol(node)))
+    node_index = index(node)
+    node_index == -9999 || print(io, node_index)
+    return nothing
+end
+
+function _write_mtg_rows(
+    io,
+    layout::_MTGWriteLayout,
+    feature_values::Vector{Vector{Any}},
+    entity_feature::Union{Nothing,Int},
+    output_features::Vector{Int},
+)
+    buffer = IOBuffer(; sizehint=64 * 1024)
+    @inbounds for i in eachindex(layout.nodes)
+        node = layout.nodes[i]
+        node_lead = layout.leads[i]
+
+        if entity_feature === nothing
+            for _ in 1:node_lead
+                print(buffer, '\t')
+            end
+            layout.parent_refs[i] && print(buffer, '^')
+            _write_mtg_node_code(buffer, node)
+            for _ in 1:(layout.max_tabs - node_lead)
+                print(buffer, '\t')
+            end
+        else
+            print(buffer, feature_values[entity_feature][i])
         end
 
-        # Replacing all nothing values by an empty string:
-        replace!(val, nothing => "")
+        for j in output_features
+            print(buffer, '\t')
+            print(buffer, feature_values[j][i])
+        end
+        print(buffer, '\n')
+        position(buffer) > 16 * 1024 && _flush_write_buffer!(io, buffer)
     end
-    # Renaming first column and adding tabs:
+    _flush_write_buffer!(io, buffer)
+    return nothing
+end
+
+function paste_node_mtg(mtg, features)
+    layout = _mtg_write_layout(mtg)
+    feature_columns = _mtg_write_feature_columns(mtg, features)
+    feature_values = _mtg_write_feature_values(layout, feature_columns)
+
+    attributes = OrderedDict{String,Vector{Any}}()
+    mtg_print = Vector{Any}(undef, length(layout.nodes))
+    @inbounds for i in eachindex(layout.nodes)
+        node_buffer = IOBuffer()
+        for _ in 1:layout.leads[i]
+            print(node_buffer, '\t')
+        end
+        layout.parent_refs[i] && print(node_buffer, '^')
+        _write_mtg_node_code(node_buffer, layout.nodes[i])
+        for _ in 1:(layout.max_tabs - layout.leads[i])
+            print(node_buffer, '\t')
+        end
+        mtg_print[i] = String(take!(node_buffer))
+    end
+    attributes["mtg_print"] = mtg_print
+
+    @inbounds for j in eachindex(feature_columns.keys)
+        attributes[feature_columns.names[j]] = feature_values[j]
+    end
+
     mtg_colnames = collect(keys(attributes))
-    mtg_colnames[1] = string("ENTITY-CODE", repeat("\t", max_tabs))
+    mtg_colnames[1] = string("ENTITY-CODE", repeat("\t", layout.max_tabs))
     return attributes, mtg_colnames
 end
 
