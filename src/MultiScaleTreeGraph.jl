@@ -62,13 +62,8 @@ export traverse
 export transform!, transform, select!, select
 export get_root
 export nextsibling, prevsibling, lastsibling
-export print
-export show
-export length
 export MetaGraph
-export iterate
 export siblings
-export append!
 export @mutate_node!
 export @mutate_mtg!
 export is_filtered
@@ -84,10 +79,9 @@ export Node
 export AbstractNodeMTG
 export NodeMTG
 export MutableNodeMTG
-export (==)
 export check_filters
 export get_features, get_attributes
-export names, scales, symbols, components
+export scales, symbols, components
 export node_id, node_mtg, node_attributes
 export symbol, scale, index, link
 export symbol!, scale!, index!, link!

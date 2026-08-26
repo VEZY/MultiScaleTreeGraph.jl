@@ -394,4 +394,13 @@ function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), max
     return node
 end
 
-@deprecate insert_node!(node, template, maxid) insert_parent!(node, template, maxid)
+# Retained through 0.16.x and removed in 0.17.
+function insert_node!(node::Node{N,A}, template, maxid) where {N<:AbstractNodeMTG,A}
+    Base.depwarn(
+        "`insert_node!(node, template, maxid)` is deprecated; use " *
+        "`insert_parent!(node, template, _ -> typeof(node_attributes(node))(), maxid)` " *
+        "instead. The compatibility alias will be removed in MultiScaleTreeGraph 0.17.",
+        :insert_node!,
+    )
+    return insert_parent!(node, template, _ -> A(), maxid)
+end

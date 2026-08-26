@@ -32,6 +32,7 @@ makedocs(;
             "Add and Remove Nodes" => "tutorials/6.add_remove_nodes.md",
             "Performance Considerations" => "tutorials/7.performance_considerations.md",
         ],
+        "Compatibility" => "compatibility.md",
         "API" => "api.md",
     ]
 )

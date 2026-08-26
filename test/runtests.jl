@@ -4,6 +4,10 @@ using Dates
 import DataFrames: DataFrame, names, nrow
 using Graphs, AbstractTrees
 
+@testset "compatibility boundaries" begin
+    include("test-compatibility.jl")
+end
+
 @testset "read_mtg" begin
     include("test-read_mtg.jl")
 end
