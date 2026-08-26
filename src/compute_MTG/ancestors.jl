@@ -71,7 +71,9 @@ is filtered out (`false`).
 `recursivity_level = 2`. If a negative value is provided (the default), the function returns
 all valid values from the node to the root.
 - `ignore_nothing = false`: filter-out the nodes with `nothing` values for the given `key`
-- `type::Union{Union,DataType}`: Deprecated. Return types are inferred automatically.
+- `type::Union{Union,DataType}`: Deprecated and scheduled for removal in 0.17. Omit it
+  for `ancestors`; single-key allocating calls infer their result type. For
+  `ancestors!(out, node, key)`, choose the element type of `out`.
 
 # Examples
 
@@ -114,7 +116,7 @@ function ancestors(
 
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
-    _maybe_depwarn_traversal_type_kw(:ancestors, type)
+    _maybe_depwarn_traversal_type_kw(:ancestors, type, :single_allocating)
     key_ = Symbol(key)
 
     # Check the filters once, and then compute the ancestors recursively using `ancestors_`
@@ -277,7 +279,7 @@ function ancestors!(
 
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
-    _maybe_depwarn_traversal_type_kw(:ancestors!, type)
+    _maybe_depwarn_traversal_type_kw(:ancestors!, type, :explicit_buffer)
     key_ = Symbol(key)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     filter_fun_ = filter_fun_nothing(filter_fun, ignore_nothing, key_)
