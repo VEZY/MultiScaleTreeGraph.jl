@@ -97,6 +97,8 @@ function _record_column_features!(
         store.node_row[nodeid] == row || return false
         get(bucket.node_to_row, nodeid, 0) == row || return false
         isassigned(column.data, row) || return false
+        row <= length(column.present) || return false
+        _row_has_value(column, row) || continue
 
         value = column.data[row]
         value_type = typeof(value)
@@ -167,6 +169,8 @@ function _get_features_columnar(mtg)
             column isa Column || return nothing
             get(bucket.col_index, column.name, 0) == col_idx || return nothing
             length(column.data) == nrows || return nothing
+            length(column.present) == nrows || return nothing
+            count(identity, column.present) == column.n_present || return nothing
             column.name in (:description, :symbols, :scales) && continue
             _record_column_features!(
                 first_positions,

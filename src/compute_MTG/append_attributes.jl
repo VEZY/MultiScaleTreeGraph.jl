@@ -48,13 +48,20 @@ function Base.pop!(node::Node{M,T}, key) where {M<:AbstractNodeMTG,T<:NamedTuple
 end
 
 function Base.pop!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, key)
-    poped_value = pop!(node_attributes(node), key, nothing)
-
-    return poped_value
+    return pop!(node_attributes(node), key)
 end
 
 function Base.pop!(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, key)
-    pop!(node_attributes(node), key, nothing)
+    return pop!(node_attributes(node), key)
+end
+
+function Base.pop!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, key, default)
+    return pop!(node_attributes(node), key, default)
+end
+
+function Base.delete!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, key)
+    delete!(node_attributes(node), key)
+    return node
 end
 
 # Renaming attributes:

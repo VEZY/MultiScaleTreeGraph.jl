@@ -3,15 +3,30 @@ struct MTGAttrColumnView{N,T} <: AbstractVector{T}
     key::Symbol
 end
 
+struct ColumnarTableView{T,C<:Column} <: AbstractVector{T}
+    column::C
+end
+
 const _TABLE_META_COLUMNS = (:description, :symbols, :scales)
 
 Base.IndexStyle(::Type{<:MTGAttrColumnView}) = IndexLinear()
 Base.size(col::MTGAttrColumnView) = (length(col.nodes),)
 Base.length(col::MTGAttrColumnView) = length(col.nodes)
 
+Base.IndexStyle(::Type{<:ColumnarTableView}) = IndexLinear()
+Base.size(col::ColumnarTableView) = (length(col.column.data),)
+Base.length(col::ColumnarTableView) = length(col.column.data)
+
 @inline function Base.getindex(col::MTGAttrColumnView{N,T}, i::Int) where {N,T}
     v = attribute(col.nodes[i], col.key, nothing)
     return v === nothing ? (missing::T) : (v::T)
+end
+
+@inline function Base.getindex(col::ColumnarTableView{T}, i::Int) where {T}
+    column = col.column
+    _row_has_value(column, i) || return missing::T
+    value = @inbounds column.data[i]
+    return value === nothing ? (missing::T) : (value::T)
 end
 
 @inline _to_table_key(key::Symbol) = key
@@ -41,6 +56,8 @@ end
         end
 
         has_any = true
+        column = bucket.columns[col_idx]
+        column.n_present == length(column.present) || (has_missing = true)
         col_T = bucket.col_types[col_idx]
         col_T_no_nothing = _remove_nothing_type(col_T)
         if col_T_no_nothing === Union{}
@@ -55,6 +72,14 @@ end
 
     has_any || return Missing
     has_missing ? Union{Missing,T} : T
+end
+
+
+@inline function _table_column_type(column::Column)
+    T = _remove_nothing_type(eltype(column.data))
+    has_missing = column.n_present != length(column.present) || T !== eltype(column.data)
+    T === Union{} && return Missing
+    return has_missing ? Union{Missing,T} : T
 end
 
 function _collect_attr_names_from_store(store::MTGAttributeStore)
@@ -174,7 +199,8 @@ function symbol_table(mtg::Node, symbol, vars=nothing)
             if vars_ === nothing
                 for col in bucket.columns
                     push!(names_, col.name)
-                    push!(cols_, col.data)
+                    T = _table_column_type(col)
+                    push!(cols_, ColumnarTableView{T,typeof(col)}(col))
                 end
             else
                 for key in vars_
@@ -183,7 +209,9 @@ function symbol_table(mtg::Node, symbol, vars=nothing)
                     if col_idx == 0
                         push!(cols_, fill(missing, length(bucket.row_to_node)))
                     else
-                        push!(cols_, bucket.columns[col_idx].data)
+                        col = bucket.columns[col_idx]
+                        T = _table_column_type(col)
+                        push!(cols_, ColumnarTableView{T,typeof(col)}(col))
                     end
                 end
             end

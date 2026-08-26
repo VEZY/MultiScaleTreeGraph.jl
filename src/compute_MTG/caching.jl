@@ -20,10 +20,21 @@ Clean the cached variables in the mtg, usually added from [`descendants!`](@ref)
 """
 function clean_cache!(mtg)
     cached_vars = find_cached_vars(mtg)
-    traverse!(
-        mtg,
-        node -> [pop!(node, attr) for attr in cached_vars]
-    )
+    store = _columnar_store(get_root(mtg))
+    if store === nothing
+        traverse!(mtg) do node
+            for attr in cached_vars
+                pop!(node, attr, nothing)
+            end
+        end
+    else
+        for bucket in store.buckets
+            for attr in cached_vars
+                _drop_column_internal!(bucket, attr)
+            end
+        end
+    end
+    return nothing
 end
 
 function find_cached_vars(node)

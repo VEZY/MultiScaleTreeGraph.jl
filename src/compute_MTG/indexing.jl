@@ -126,6 +126,7 @@ end
     col_idx == 0 && return nothing
     row = store.node_row[nodeid]
     col = store.buckets[bid].columns[col_idx]
+    _row_has_value(col, row) || return nothing
     return col.data[row]
 end
 

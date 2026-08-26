@@ -1,7 +1,8 @@
 @inline function _maybe_depwarn_traversal_type_kw(fname::Symbol, type)
     type === Any && return nothing
     Base.depwarn(
-        "Keyword argument `type` in `$fname` is deprecated and will be removed in a future release. " *
+        "Keyword argument `type` in `$fname` is deprecated and will be removed in " *
+        "MultiScaleTreeGraph 0.17. " *
         "Return types are inferred automatically from the columnar attribute store; remove `type` " *
         "and use `ignore_nothing=true` when you want `nothing` values filtered out.",
         fname,
@@ -46,7 +47,13 @@ end
     @inbounds for i in left:right
         nid = idx.dfs_order[i]
         store.node_bucket[nid] == bid || continue
-        v = col.data[store.node_row[nid]]
+        row = store.node_row[nid]
+        if !_row_has_value(col, row)
+            ignore_nothing && continue
+            push!(out, nothing)
+            continue
+        end
+        v = col.data[row]
         ignore_nothing && v === nothing && continue
         push!(out, v)
     end
@@ -120,7 +127,13 @@ function _collect_descendant_values_indexed!(
         end
 
         row = store.node_row[nid]
-        v = store.buckets[bid].columns[col_idx].data[row]
+        column = store.buckets[bid].columns[col_idx]
+        if !_row_has_value(column, row)
+            ignore_nothing && continue
+            push!(out, nothing)
+            continue
+        end
+        v = column.data[row]
         ignore_nothing && v === nothing && continue
         push!(out, v)
     end
@@ -188,9 +201,15 @@ function _collect_descendant_multi_values_indexed!(
                 row_vals[j] = nothing
                 row_has_nothing = true
             else
-                v = store.buckets[bid].columns[col_idx].data[row]
-                row_vals[j] = v
-                row_has_nothing |= v === nothing
+                column = store.buckets[bid].columns[col_idx]
+                if _row_has_value(column, row)
+                    v = column.data[row]
+                    row_vals[j] = v
+                    row_has_nothing |= v === nothing
+                else
+                    row_vals[j] = nothing
+                    row_has_nothing = true
+                end
             end
         end
         ignore_nothing && row_has_nothing && continue

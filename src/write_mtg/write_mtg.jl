@@ -257,6 +257,7 @@ end
 function _mtg_validate_column_rows(column::Column{T}, rows::Vector{Int}) where {T}
     @inbounds for row in rows
         row <= length(column.data) || return false
+        row <= length(column.present) || return false
         isassigned(column.data, row) || return false
     end
     return true
@@ -400,6 +401,7 @@ function _mtg_columnar_write_context(
 end
 
 @inline function _mtg_column_value(column::Column{T}, row::Int) where {T}
+    _row_has_value(column, row) || return nothing
     return @inbounds column.data[row]
 end
 
@@ -603,6 +605,7 @@ function _write_mtg_rows(
 end
 
 @inline function _write_mtg_column_value(io, column::Column{T}, row::Int) where {T}
+    _row_has_value(column, row) || return nothing
     value = @inbounds column.data[row]
     value === nothing || print(io, value)
     return nothing

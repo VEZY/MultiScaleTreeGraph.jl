@@ -94,7 +94,7 @@ function Node(
     Node{N,A}(id, parent, children, MTG, attributes, traversal_cache)
 end
 
-# All deprecated methods (the ones with a node name) :
+# Deprecated named-node constructors are retained through 0.16.x and removed in 0.17.
 @deprecate Node(name::String, id::Int, parent::Union{Nothing,Node{N,A}}, children::Nothing, MTG::N, attributes::A, traversal_cache::Dict{String,Vector{Node{N,A}}}) where {N<:AbstractNodeMTG,A} Node(id, parent, children, MTG, attributes, traversal_cache)
 @deprecate Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple} Node(id, MTG, attributes)
 @deprecate Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple} Node(id, MTG, attributes)
@@ -176,8 +176,21 @@ function Node(parent::Node{N,A}, MTG::T) where {N<:AbstractNodeMTG,A,T<:Abstract
     Node(new_id(get_root(parent)), parent, MTG, A())
 end
 
-# Copying a node returns the node:
-Base.copy(node::Node) = node
+"""
+    copy(node::Node)
+
+Shallow copying an MTG node is unsupported because sharing its parent, children, and
+columnar attribute store would violate tree identity and mutation invariants. Use
+`deepcopy(get_root(node))` for an independent tree, or [`attributes`](@ref) to copy only
+one node's attribute values.
+"""
+function Base.copy(::Node)
+    throw(ArgumentError(
+        "copy(::Node) is unsupported because a shallow node copy would alias topology " *
+        "and columnar storage; use deepcopy(get_root(node)) for an independent tree or " *
+        "attributes(node; format=:dict) for an attribute snapshot",
+    ))
+end
 
 ## AbstractTrees compatibility:
 

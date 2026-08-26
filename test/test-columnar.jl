@@ -35,8 +35,12 @@ mtg = read_mtg(file)
         get(second_attrs, key, nothing) for key in keys(second_attrs)
     ]
     @test first_attrs[:first_only] == 11
-    @test first_attrs[:second_only] === nothing
-    @test second_attrs[:first_only] === nothing
+    @test !haskey(first_attrs, :second_only)
+    @test !haskey(second_attrs, :first_only)
+    @test get(first_attrs, :second_only, nothing) === nothing
+    @test get(second_attrs, :first_only, nothing) === nothing
+    @test_throws KeyError first_attrs[:second_only]
+    @test_throws KeyError second_attrs[:first_only]
     @test second_attrs[:second_only] == 22
 
     second_attrs[:shared] = 2
@@ -61,6 +65,88 @@ mtg = read_mtg(file)
     )
     @test collect(pairs(unbound)) == collect(pairs(unbound.staged))
     @test first.(collect(pairs(unbound))) == collect(keys(unbound))
+end
+
+@testset "ColumnarAttrs mutations are row-local" begin
+    root = Node(NodeMTG(:/, :Plant, 1, 1))
+    first_leaf = Node(root, NodeMTG(:/, :Leaf, 1, 2), (x=10, shared="first"))
+    second_leaf = Node(root, NodeMTG(:+, :Leaf, 2, 2), (x=20, shared="second"))
+
+    store = MultiScaleTreeGraph._node_store(root)
+    leaf_bucket = store.buckets[store.symbol_to_bucket[:Leaf]]
+    x_column = leaf_bucket.columns[leaf_bucket.col_index[:x]]
+    @test eltype(x_column.data) == Union{Nothing,Int}
+    @test eltype(x_column.data) !== Any
+
+    @test pop!(first_leaf, :x) == 10
+    @test !haskey(first_leaf, :x)
+    @test attribute(first_leaf, :x, :absent) === :absent
+    @test first_leaf[:x] === nothing
+    @test_throws KeyError node_attributes(first_leaf)[:x]
+    @test_throws KeyError pop!(first_leaf, :x)
+    @test pop!(first_leaf, :x, :absent) === :absent
+    @test haskey(second_leaf, :x)
+    @test second_leaf[:x] == 20
+
+    first_leaf[:nullable] = nothing
+    @test haskey(first_leaf, :nullable)
+    @test first_leaf[:nullable] === nothing
+    @test !haskey(second_leaf, :nullable)
+
+    @test delete!(second_leaf, :shared) === second_leaf
+    @test !haskey(second_leaf, :shared)
+    @test first_leaf[:shared] == "first"
+
+    empty!(node_attributes(first_leaf))
+    @test isempty(node_attributes(first_leaf))
+    @test haskey(second_leaf, :x)
+    @test second_leaf[:x] == 20
+
+    drop_column!(root, :Leaf, :x)
+    @test !haskey(second_leaf, :x)
+    @test !haskey(leaf_bucket.col_index, :x)
+end
+
+@testset "Sparse columnar attributes survive growth, merge, and MTG I/O" begin
+    root = Node(NodeMTG(:/, :Plant, 1, 1))
+    first_leaf = Node(root, NodeMTG(:/, :Leaf, 1, 2), (local_value=1,))
+    second_leaf = Node(root, NodeMTG(:+, :Leaf, 2, 2))
+    @test !haskey(second_leaf, :local_value)
+
+    third_leaf = Node(root, NodeMTG(:+, :Leaf, 3, 2))
+    @test !haskey(third_leaf, :local_value)
+    append!(third_leaf, (local_value=3, appended="yes"))
+    @test third_leaf[:local_value] == 3
+    @test !haskey(first_leaf, :appended)
+
+    add_column!(root, :Leaf, :temperature, Float64, default=20.0)
+    fourth_leaf = Node(root, NodeMTG(:+, :Leaf, 4, 2))
+    @test fourth_leaf[:temperature] == 20.0
+    @test first_leaf[:temperature] == 20.0
+
+    detached = Node(10, NodeMTG(:+, :Leaf, 10, 2), (detached_only=10,))
+    addchild!(root, detached)
+    @test detached[:detached_only] == 10
+    @test !haskey(first_leaf, :detached_only)
+    @test first_leaf[:local_value] == 1
+
+    pop!(first_leaf, :local_value)
+    roundtrip = mktemp() do path, io
+        write_mtg(path, root)
+        read_mtg(path)
+    end
+    @test !haskey(get_node(roundtrip, 2), :local_value)
+    @test get_node(roundtrip, 4)[:local_value] == 3
+    roundtrip_leaves = descendants(roundtrip; symbol=:Leaf)
+    @test last(roundtrip_leaves)[:detached_only] == 10
+end
+
+@testset "Node copy rejects topology aliasing" begin
+    root = Node(NodeMTG(:/, :Plant, 1, 1))
+    @test_throws ArgumentError copy(root)
+    copied = deepcopy(root)
+    @test copied !== root
+    @test node_id(copied) == node_id(root)
 end
 
 leaf = traverse(mtg, node -> node, symbol=:Leaf, type=typeof(mtg))[1]
