@@ -133,6 +133,70 @@ end
     @test leaf_bucket.columns[leaf_bucket.col_index[:value]].n_present == 2
 end
 
+@testset "columnarize! preserves the root store schema" begin
+    root = Node(1, NodeMTG(:/, :Plant, 1, 1), (root_value=1,))
+    first_leaf = Node(2, root, NodeMTG(:/, :Leaf, 1, 2), (leaf_value=1,))
+    second_leaf = Node(3, root, NodeMTG(:+, :Leaf, 2, 2), (leaf_value=2,))
+
+    add_column!(root, :Leaf, :temperature, Float64, default=20.0)
+    add_column!(root, :Bud, :dormancy, Float64, default=1.5)
+    first_leaf[:retained_absent_column] = "temporary"
+    delete!(first_leaf, :retained_absent_column)
+    pop!(first_leaf, :temperature)
+    # A symbol edit changes the logical destination bucket but not the old
+    # physical bucket; `columnarize!` must handle that transition explicitly.
+    symbol!(second_leaf, :RenamedLeaf)
+
+    root_store = MultiScaleTreeGraph._node_store(root)
+    root_leaf_bucket = root_store.buckets[root_store.symbol_to_bucket[:Leaf]]
+    root_leaf_columns = [column.name for column in root_leaf_bucket.columns]
+
+    foreign_root = Node(100, NodeMTG(:+, :Branch, 1, 2), (foreign_root=true,))
+    foreign_leaf = Node(
+        101,
+        foreign_root,
+        NodeMTG(:+, :Leaf, 1, 3),
+        (foreign_value=99,),
+    )
+    add_column!(foreign_root, :Leaf, :source_default, Float64, default=99.0)
+    # Build the mixed-store state that `columnarize!` is documented to repair.
+    push!(children(root), foreign_root)
+    setfield!(foreign_root, :parent, root)
+
+    columnarize!(root)
+
+    unified_store = MultiScaleTreeGraph._node_store(root)
+    @test unified_store !== root_store
+    @test all(
+        MultiScaleTreeGraph._node_store(node) === unified_store for
+        node in traverse(root, identity, type=typeof(root))
+    )
+
+    leaf_bucket = unified_store.buckets[unified_store.symbol_to_bucket[:Leaf]]
+    unified_leaf_columns = [column.name for column in leaf_bucket.columns]
+    @test unified_leaf_columns[eachindex(root_leaf_columns)] == root_leaf_columns
+    temperature_index = leaf_bucket.col_index[:temperature]
+    temperature_column = leaf_bucket.columns[temperature_index]
+    @test leaf_bucket.col_types[temperature_index] === Float64
+    @test temperature_column.default === 20.0
+    @test temperature_column.default_present
+    @test haskey(leaf_bucket.col_index, :retained_absent_column)
+
+    @test !haskey(first_leaf, :temperature)
+    @test symbol(second_leaf) === :RenamedLeaf
+    @test second_leaf[:temperature] === 20.0
+    @test foreign_leaf[:temperature] === 20.0
+    @test foreign_leaf[:foreign_value] == 99
+    @test foreign_leaf[:source_default] === 99.0
+
+    new_leaf = Node(102, root, NodeMTG(:+, :Leaf, 3, 2))
+    new_bud = Node(103, root, NodeMTG(:+, :Bud, 1, 2))
+    @test new_leaf[:temperature] === 20.0
+    @test !haskey(new_leaf, :retained_absent_column)
+    @test !haskey(new_leaf, :source_default)
+    @test new_bud[:dormancy] === 1.5
+end
+
 @testset "Sparse columnar attributes survive growth, merge, and MTG I/O" begin
     root = Node(NodeMTG(:/, :Plant, 1, 1))
     first_leaf = Node(root, NodeMTG(:/, :Leaf, 1, 2), (local_value=1,))
