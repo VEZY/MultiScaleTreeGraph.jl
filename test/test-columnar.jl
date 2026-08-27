@@ -107,6 +107,32 @@ end
     @test !haskey(leaf_bucket.col_index, :x)
 end
 
+@testset "Columnar child insertion preserves presence and widening" begin
+    root = Node(NodeMTG(:/, :Plant, 1, 1))
+    add_column!(root, :Leaf, :temperature, Float64, default=20.0)
+    first_leaf = Node(
+        2,
+        root,
+        NodeMTG(:/, :Leaf, 1, 2),
+        Dict{Any,Any}("temperature" => 21.0, "nullable" => nothing, :value => 1),
+    )
+    second_leaf = Node(3, root, NodeMTG(:+, :Leaf, 2, 2), (value="widened",))
+
+    @test first_leaf[:temperature] == 21.0
+    @test second_leaf[:temperature] == 20.0
+    @test haskey(first_leaf, :nullable)
+    @test first_leaf[:nullable] === nothing
+    @test !haskey(second_leaf, :nullable)
+    @test first_leaf[:value] == 1
+    @test second_leaf[:value] == "widened"
+
+    store = MultiScaleTreeGraph._node_store(root)
+    leaf_bucket = store.buckets[store.symbol_to_bucket[:Leaf]]
+    @test leaf_bucket.columns[leaf_bucket.col_index[:temperature]].n_present == 2
+    @test leaf_bucket.columns[leaf_bucket.col_index[:nullable]].n_present == 1
+    @test leaf_bucket.columns[leaf_bucket.col_index[:value]].n_present == 2
+end
+
 @testset "Sparse columnar attributes survive growth, merge, and MTG I/O" begin
     root = Node(NodeMTG(:/, :Plant, 1, 1))
     first_leaf = Node(root, NodeMTG(:/, :Leaf, 1, 2), (local_value=1,))

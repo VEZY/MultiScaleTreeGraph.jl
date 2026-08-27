@@ -319,6 +319,13 @@ end
     return nothing
 end
 
+@inline function _append_default_row!(column::Column)
+    push!(column.data, column.default)
+    push!(column.present, column.default_present)
+    column.default_present && (column.n_present += 1)
+    return nothing
+end
+
 function _set_value!(bucket::SymbolBucket, row::Int, key::Symbol, value)
     col_idx = get(bucket.col_index, key, 0)
     if col_idx == 0
@@ -375,17 +382,14 @@ function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::S
     bucket.node_to_row[node_id] = row
 
     @inbounds for i in eachindex(bucket.columns)
-        col = bucket.columns[i]
-        push!(col.data, col.default)
-        push!(col.present, col.default_present)
-        col.default_present && (col.n_present += 1)
+        _append_default_row!(bucket.columns[i])
     end
 
     store.node_bucket[node_id] = bid
     store.node_row[node_id] = row
 
     for (k, v) in attrs
-        _set_value!(bucket, row, _normalize_attr_key(k), v)
+        _set_value_bound!(bucket, row, _normalize_attr_key(k), v)
     end
 
     return nothing
