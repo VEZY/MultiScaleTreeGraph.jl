@@ -23,6 +23,7 @@ Base.length(col::ColumnarTableView) = length(col.column.data)
 end
 
 @inline function Base.getindex(col::ColumnarTableView{T}, i::Int) where {T}
+    @boundscheck checkbounds(col, i)
     column = col.column
     _row_has_value(column, i) || return missing::T
     value = @inbounds column.data[i]

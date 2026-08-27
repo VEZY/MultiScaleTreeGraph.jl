@@ -208,6 +208,11 @@ leaf_df = DataFrame(leaf_table)
 leaf_selected = to_table(mtg, symbol=:Leaf, vars=[:Width, "Length"])
 @test Tables.columnnames(leaf_selected) == (:node_id, :Width, :Length)
 @test length(Tables.getcolumn(leaf_selected, :Width)) == nrow(leaf_df)
+width_column = Tables.getcolumn(leaf_selected, :Width)
+@test width_column[firstindex(width_column)] == leaf_df.Width[1]
+@test width_column[lastindex(width_column)] == leaf_df.Width[end]
+@test_throws BoundsError width_column[0]
+@test_throws BoundsError width_column[lastindex(width_column) + 1]
 
 all_table = to_table(mtg)
 all_df = DataFrame(all_table)
