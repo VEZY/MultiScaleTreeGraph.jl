@@ -103,6 +103,7 @@ end
 @deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple} Node(id, parent, MTG, attributes)
 
 function Node(id::Int, MTG::T, attributes::ColumnarAttrs) where {T<:AbstractNodeMTG}
+    _assert_columnar_attrs_unbound(attributes)
     node = Node{T,ColumnarAttrs}(
         id, nothing, Vector{Node{T,ColumnarAttrs}}(), MTG, attributes, nothing
     )
@@ -136,6 +137,12 @@ function _to_columnar_attrs(attributes)
 end
 
 function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::ColumnarAttrs) where {M<:AbstractNodeMTG}
+    parent_attrs = node_attributes(parent)
+    parent_store = _store_for_node_attrs(parent_attrs)
+    parent_store === nothing &&
+        error("Parent node is not attached to a columnar attribute store.")
+    _assert_columnar_attrs_unbound(attributes)
+    _assert_node_id_available(parent_store, id)
     node = Node{M,ColumnarAttrs}(
         id, parent, Vector{Node{M,ColumnarAttrs}}(), MTG, attributes, nothing
     )

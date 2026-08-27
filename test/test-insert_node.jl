@@ -171,3 +171,77 @@ end
     @test get_node(mtg, 8) |> node_mtg == template
     @test get_node(mtg, 9) |> node_mtg == template
 end
+
+function auto_id_fixture()
+    root = Node(1, MutableNodeMTG(:/, :Root, 1, 0))
+    target = Node(2, root, MutableNodeMTG(:+, :Target, 1, 1))
+    detached_high = Node(100, root, MutableNodeMTG(:+, :DetachedHigh, 1, 1))
+    reparent!(detached_high, nothing)
+    return root, target, detached_high
+end
+
+@testset "insertions use the store-wide active maximum ID" begin
+    template = MutableNodeMTG(:+, :Inserted, 1, 2)
+    for insert! in (insert_parent!, insert_child!, insert_sibling!, insert_generation!)
+        root, target, detached_high = auto_id_fixture()
+        store = MultiScaleTreeGraph._node_store(root)
+        @test MultiScaleTreeGraph._node_store(detached_high) === store
+        @test max_id(root) == 2
+        @test store.max_node_id == 100
+
+        insert!(target, template)
+
+        @test get_node(root, 101) !== nothing
+        @test store.max_node_id == 101
+        @test new_id(root) == 102
+    end
+
+    root = Node(1, MutableNodeMTG(:/, :Root, 1, 0))
+    Node(2, root, MutableNodeMTG(:+, :Target, 1, 1))
+    Node(3, root, MutableNodeMTG(:+, :Target, 2, 1))
+    detached_high = Node(100, root, MutableNodeMTG(:+, :DetachedHigh, 1, 1))
+    reparent!(detached_high, nothing)
+    shared_attrs = MultiScaleTreeGraph.ColumnarAttrs(Dict{Symbol,Any}(:marker => 42))
+    insert_children!(root, template, shared_attrs, symbol=:Target)
+    first_inserted = get_node(root, 101)
+    second_inserted = get_node(root, 102)
+    @test first_inserted !== nothing
+    @test second_inserted !== nothing
+    @test node_attributes(first_inserted) !== node_attributes(second_inserted)
+    @test node_attributes(first_inserted).ref.node_id == 101
+    @test node_attributes(second_inserted).ref.node_id == 102
+    @test first_inserted[:marker] == 42
+    @test second_inserted[:marker] == 42
+    @test shared_attrs.ref.store === nothing
+    @test shared_attrs.ref.node_id == 0
+    @test MultiScaleTreeGraph._node_store(root).max_node_id == 102
+
+    root, target, _ = auto_id_fixture()
+    store = MultiScaleTreeGraph._node_store(root)
+    children_before = [node_id(child) for child in children(target)]
+    node_bucket_before = copy(store.node_bucket)
+    max_before = store.max_node_id
+    stale_max = [1]
+    @test_throws ArgumentError insert_child!(
+        target,
+        template,
+        _ -> typeof(node_attributes(target))(),
+        stale_max,
+    )
+    @test stale_max == [1]
+    @test [node_id(child) for child in children(target)] == children_before
+    @test store.node_bucket == node_bucket_before
+    @test store.max_node_id == max_before
+
+    failing_max = [100]
+    @test_throws ErrorException insert_child!(
+        target,
+        template,
+        _ -> error("sentinel attribute failure"),
+        failing_max,
+    )
+    @test failing_max == [100]
+    @test [node_id(child) for child in children(target)] == children_before
+    @test store.node_bucket == node_bucket_before
+    @test store.max_node_id == max_before
+end

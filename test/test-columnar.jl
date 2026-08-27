@@ -167,6 +167,7 @@ end
 
     unified_store = MultiScaleTreeGraph._node_store(root)
     @test unified_store !== root_store
+    @test unified_store.max_node_id == 101
     @test all(
         MultiScaleTreeGraph._node_store(node) === unified_store for
         node in traverse(root, identity, type=typeof(root))
@@ -195,6 +196,7 @@ end
     @test !haskey(new_leaf, :retained_absent_column)
     @test !haskey(new_leaf, :source_default)
     @test new_bud[:dormancy] === 1.5
+    @test unified_store.max_node_id == 103
 end
 
 @testset "Sparse columnar attributes survive growth, merge, and MTG I/O" begin
@@ -237,6 +239,93 @@ end
     copied = deepcopy(root)
     @test copied !== root
     @test node_id(copied) == node_id(root)
+end
+
+@testset "Columnar stores track active IDs and reject aliases atomically" begin
+    root = Node(10, NodeMTG(:/, :Plant, 1, 1), (root_value=10,))
+    low_child = Node(2, root, NodeMTG(:/, :Leaf, 1, 2), (value=2,))
+    high_child = Node(20, root, NodeMTG(:+, :Leaf, 2, 2), (value=20,))
+    store = MultiScaleTreeGraph._node_store(root)
+
+    @test store.max_node_id == 20
+
+    legacy_root = Node(10, NodeMTG(:/, :LegacyPlant, 1, 1), (root_value=10,))
+    Node(2, legacy_root, NodeMTG(:/, :LegacyLeaf, 1, 2), (value=2,))
+    legacy_high = Node(
+        20,
+        legacy_root,
+        NodeMTG(:+, :LegacyLeaf, 2, 2),
+        (value=20,),
+    )
+    legacy_source_store = MultiScaleTreeGraph._node_store(legacy_root)
+    delete_node!(legacy_high)
+    @test length(legacy_source_store.node_bucket) == 20
+    @test legacy_source_store.max_node_id == 10
+    legacy_store = MultiScaleTreeGraph.MTGAttributeStore(
+        copy(legacy_source_store.symbol_to_bucket),
+        copy(legacy_source_store.buckets),
+        copy(legacy_source_store.node_bucket),
+        copy(legacy_source_store.node_row),
+        deepcopy(legacy_source_store.subtree_index),
+    )
+    @test legacy_store.max_node_id == 10
+
+    store_state() = (
+        child_ids=[node_id(child) for child in children(root)],
+        node_bucket=copy(store.node_bucket),
+        node_row=copy(store.node_row),
+        max_node_id=store.max_node_id,
+        index_dirty=store.subtree_index.dirty,
+        index_built=store.subtree_index.built,
+        index_mutations=store.subtree_index.mutation_count,
+    )
+
+    before_invalid = store_state()
+    @test_throws ArgumentError Node(
+        20, root, NodeMTG(:+, :DuplicateLeaf, 3, 2), (duplicate=true,)
+    )
+    @test store_state() == before_invalid
+    @test_throws ArgumentError Node(
+        0, root, NodeMTG(:+, :InvalidLeaf, 3, 2), (invalid=true,)
+    )
+    @test store_state() == before_invalid
+
+    linked_attrs = node_attributes(low_child)
+    @test_throws ArgumentError Node(
+        30, root, NodeMTG(:+, :AliasedLeaf, 3, 2), linked_attrs
+    )
+    @test_throws ArgumentError Node(
+        30, NodeMTG(:/, :AliasedRoot, 1, 1), linked_attrs
+    )
+    @test_throws ArgumentError MultiScaleTreeGraph.bind_columnar_child!(
+        node_attributes(root), linked_attrs, 30, :AliasedLeaf
+    )
+    @test store_state() == before_invalid
+    @test linked_attrs.ref.store === store
+    @test linked_attrs.ref.node_id == node_id(low_child)
+    @test low_child[:value] == 2
+
+    copied_child = Node(
+        30,
+        root,
+        NodeMTG(:+, :CopiedLeaf, 3, 2),
+        copy(linked_attrs),
+    )
+    @test copied_child[:value] == 2
+    @test store.max_node_id == 30
+
+    copied_root = deepcopy(root)
+    copied_store = MultiScaleTreeGraph._node_store(copied_root)
+    @test copied_store !== store
+    @test copied_store.max_node_id == store.max_node_id == 30
+    copied_new = Node(copied_root, NodeMTG(:+, :CopiedNewLeaf, 4, 2))
+    @test node_id(copied_new) == 31
+    @test copied_store.max_node_id == 31
+    @test store.max_node_id == 30
+    delete_node!(copied_new)
+    @test copied_store.max_node_id == 30
+    @test store.max_node_id == 30
+    @test high_child[:value] == 20
 end
 
 leaf = traverse(mtg, node -> node, symbol=:Leaf, type=typeof(mtg))[1]

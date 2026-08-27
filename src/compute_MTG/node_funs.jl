@@ -83,6 +83,11 @@ end
     return _store_for_node_attrs(attrs)
 end
 
+@inline function _max_assigned_id(node::Node)
+    store = _columnar_store_or_nothing(node)
+    return store === nothing ? max_id(node) : store.max_node_id
+end
+
 function _subtree_has_node_id_conflict(node::Node, store::MTGAttributeStore)
     seen_ids = Set{Int}()
     stack = typeof(node)[node]
@@ -237,16 +242,19 @@ end
 
 """
     new_id(mtg)
-    new_id(mtg, max_id)
+    new_id(max_id::Int)
 
 Make a new unique identifier by incrementing on the maximum node id.
-Hint: prefer using `max_id = max_id(mtg)` and then `new_id(mtg, max_is)` for performance
-if you do it repeatidely.
+
+For columnar MTGs, uniqueness is enforced across the complete attribute store,
+including detached components that still share it. [`max_id`](@ref) remains a
+component traversal and can therefore be lower than `new_id(mtg) - 1` in that
+case.
 """
 function new_id(max_id::Int)
     max_id + 1
 end
 
 function new_id(mtg::Node)
-    new_id(max_id(mtg))
+    new_id(_max_assigned_id(mtg))
 end

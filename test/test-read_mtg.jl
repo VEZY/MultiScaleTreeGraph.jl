@@ -24,6 +24,8 @@ end
     @test mtg[:symbols] == ["Scene", "Individual", "Axis", "Internode", "Leaf"]
     @test node_mtg(mtg) == NodeMTG("/", "Scene", 0, 0)
     @test typeof(children(mtg)) <: Vector{Node{NodeMTG,MultiScaleTreeGraph.ColumnarAttrs}}
+    @test MultiScaleTreeGraph._node_store(mtg).max_node_id == max_id(mtg) == 7
+    @test new_id(mtg) == 8
 
     leaf_1 = get_node(mtg, 5)
     @test leaf_1[:Length] == 0.2

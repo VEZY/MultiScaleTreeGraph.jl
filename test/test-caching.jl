@@ -286,6 +286,25 @@ end
     @test MultiScaleTreeGraph._maybe_traversal_cache(nonroot_columnar_mtg) === nothing
     @test :NonrootColumnarAfterCache in get_features(nonroot_columnar_mtg).NAME
 
+    id_root = Node(1, MutableNodeMTG(:/, :IdRoot, 1, 0), Dict{Symbol,Any}())
+    id_high = addchild!(
+        id_root,
+        100,
+        MutableNodeMTG(:+, :IdHigh, 1, 1),
+        Dict{Symbol,Any}(),
+    )
+    reparent!(id_high, nothing)
+    id_store = MultiScaleTreeGraph._node_store(id_root)
+    @test MultiScaleTreeGraph._node_store(id_high) === id_store
+    @test max_id(id_root) == 1
+    @test id_store.max_node_id == 100
+    @test new_id(id_root) == 101
+    id_root_new = Node(id_root, MutableNodeMTG(:+, :IdRootNew, 1, 1))
+    id_high_new = Node(id_high, MutableNodeMTG(:+, :IdHighNew, 1, 2))
+    @test node_id(id_root_new) == 101
+    @test node_id(id_high_new) == 102
+    @test id_store.max_node_id == 102
+
     source_tree = Node(
         100,
         MutableNodeMTG(:/, :SourceRoot, 1, 0),
@@ -322,6 +341,8 @@ end
     )
     source_store = MultiScaleTreeGraph._node_store(source_tree)
     target_store = MultiScaleTreeGraph._node_store(target_tree)
+    @test source_store.max_node_id == 103
+    @test target_store.max_node_id == 2
     cache_nodes!(source_tree)
     cache_nodes!(moved_subtree)
     cache_nodes!(moved_descendant)
@@ -338,6 +359,8 @@ end
     @test MultiScaleTreeGraph._node_store(moved_descendant) === target_store
     @test source_store.node_bucket[node_id(moved_subtree)] == 0
     @test source_store.node_bucket[node_id(moved_descendant)] == 0
+    @test source_store.max_node_id == 101
+    @test target_store.max_node_id == 103
     @test source_store.subtree_index.traversal_cache_nodes === nothing
     cache_nodes!(target_tree)
     addchild!(
@@ -349,6 +372,7 @@ end
     @test MultiScaleTreeGraph._maybe_traversal_cache(target_tree) === nothing
     @test MultiScaleTreeGraph._maybe_traversal_cache(moved_descendant) === nothing
     @test :CrossStoreAfterCache in get_features(target_tree).NAME
+    @test target_store.max_node_id == 104
 
     conflict_tree = Node(
         1,
@@ -444,6 +468,8 @@ end
         Dict{Symbol,Any}(),
     )
     relabelled_target_store = MultiScaleTreeGraph._node_store(relabelled_target)
+    @test relabelled_source_store.max_node_id == 20
+    @test relabelled_target_store.max_node_id == 51
 
     addchild!(relabelled_target_parent, relabelled_source)
 
@@ -464,4 +490,6 @@ end
         old_id -> relabelled_source_store.node_bucket[old_id] == 0,
         (20, 1, 2),
     )
+    @test relabelled_source_store.max_node_id == 0
+    @test relabelled_target_store.max_node_id == 51
 end

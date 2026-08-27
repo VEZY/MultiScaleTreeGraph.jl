@@ -49,6 +49,7 @@ mutable struct MTGAttributeStore
     node_bucket::Vector{Int}
     node_row::Vector{Int}
     subtree_index::SubtreeIndexCache
+    max_node_id::Int
 end
 
 struct ColumnarQueryPlan
@@ -58,7 +59,37 @@ struct ColumnarQueryPlan
 end
 
 function MTGAttributeStore()
-    MTGAttributeStore(Dict{Symbol,Int}(), SymbolBucket[], Int[], Int[], SubtreeIndexCache())
+    MTGAttributeStore(
+        Dict{Symbol,Int}(),
+        SymbolBucket[],
+        Int[],
+        Int[],
+        SubtreeIndexCache(),
+        0,
+    )
+end
+
+function MTGAttributeStore(
+    symbol_to_bucket,
+    buckets,
+    node_bucket,
+    node_row,
+    subtree_index,
+)
+    store = MTGAttributeStore(
+        convert(Dict{Symbol,Int}, symbol_to_bucket),
+        convert(Vector{SymbolBucket}, buckets),
+        convert(Vector{Int}, node_bucket),
+        convert(Vector{Int}, node_row),
+        convert(SubtreeIndexCache, subtree_index),
+        0,
+    )
+    max_node_id = 0
+    @inbounds for node_id in eachindex(store.node_bucket)
+        store.node_bucket[node_id] == 0 || (max_node_id = node_id)
+    end
+    store.max_node_id = max_node_id
+    return store
 end
 
 @inline function _validate_descendants_strategy(strategy::Symbol)
@@ -213,6 +244,27 @@ function ColumnarAttrs(d::AbstractDict)
 end
 
 @inline _isbound(attrs::ColumnarAttrs) = attrs.ref.store !== nothing && attrs.ref.node_id > 0
+
+function _assert_columnar_attrs_unbound(attrs::ColumnarAttrs)
+    _isbound(attrs) || return nothing
+    throw(ArgumentError(
+        "ColumnarAttrs is already bound to node id $(attrs.ref.node_id); " *
+        "pass `copy(attrs)` to a Node constructor to copy its current values.",
+    ))
+end
+
+@inline function _node_id_is_active(store::MTGAttributeStore, node_id::Int)
+    1 <= node_id <= length(store.node_bucket) || return false
+    @inbounds return store.node_bucket[node_id] != 0
+end
+
+function _assert_node_id_available(store::MTGAttributeStore, node_id::Int)
+    node_id > 0 || throw(ArgumentError("node id must be positive; got $(node_id)"))
+    _node_id_is_active(store, node_id) && throw(ArgumentError(
+        "node id $(node_id) is already registered in the destination attribute store",
+    ))
+    return nothing
+end
 
 @inline function _ensure_node_capacity!(store::MTGAttributeStore, node_id::Int)
     if node_id > length(store.node_bucket)
@@ -372,6 +424,7 @@ end
 end
 
 function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
+    _assert_node_id_available(store, node_id)
     _mark_subtree_index_mutation!(store)
     _ensure_node_capacity!(store, node_id)
     bid = _get_or_create_bucket!(store, symbol)
@@ -387,6 +440,7 @@ function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::S
 
     store.node_bucket[node_id] = bid
     store.node_row[node_id] = row
+    store.max_node_id = max(store.max_node_id, node_id)
 
     for (k, v) in attrs
         _set_value_bound!(bucket, row, _normalize_attr_key(k), v)
@@ -396,10 +450,10 @@ function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::S
 end
 
 function _remove_node!(store::MTGAttributeStore, node_id::Int)
-    _mark_subtree_index_mutation!(store)
     node_id > length(store.node_bucket) && return nothing
     bid = store.node_bucket[node_id]
     bid == 0 && return nothing
+    _mark_subtree_index_mutation!(store)
 
     bucket = store.buckets[bid]
     row = bucket.node_to_row[node_id]
@@ -431,6 +485,13 @@ function _remove_node!(store::MTGAttributeStore, node_id::Int)
     end
     store.node_bucket[node_id] = 0
     store.node_row[node_id] = 0
+    if node_id == store.max_node_id
+        next_max = node_id - 1
+        while next_max > 0 && !_node_id_is_active(store, next_max)
+            next_max -= 1
+        end
+        store.max_node_id = next_max
+    end
     return nothing
 end
 
@@ -552,7 +613,7 @@ function infer_columnar_attr_type(node, key::Symbol, symbol_filter, ignore_nothi
 end
 
 function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
-    _isbound(attrs) && return attrs
+    _assert_columnar_attrs_unbound(attrs)
     store = MTGAttributeStore()
     _add_node_with_attrs!(store, node_id, symbol, attrs.staged)
     attrs.ref.store = store
@@ -562,13 +623,10 @@ function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
 end
 
 function bind_columnar_child!(parent_attrs::ColumnarAttrs, child_attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
-    if _isbound(child_attrs)
-        child_attrs.ref.node_id = node_id
-        return child_attrs
-    end
-
+    _assert_columnar_attrs_unbound(child_attrs)
     store = _store_for_node_attrs(parent_attrs)
     store === nothing && error("Parent node is not attached to a columnar attribute store.")
+    _assert_node_id_available(store, node_id)
     _add_node_with_attrs!(store, node_id, symbol, child_attrs.staged)
     child_attrs.ref.store = store
     child_attrs.ref.node_id = node_id
