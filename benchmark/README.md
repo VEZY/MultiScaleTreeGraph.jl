@@ -14,6 +14,26 @@ Run the byte-parity, allocation, and timing gates for the streaming MTG writer:
 julia --project=benchmark benchmark/write_mtg_streaming.jl
 ```
 
+Run the focused correctness gate for A1 row-local mutation and topology fixtures:
+
+```bash
+julia --project=benchmark benchmark/test/runtests.jl
+```
+
+The `a1_row_mutation_topology` benchmark group uses deterministic fixtures with
+32, 256, and 1,024 leaf rows plus one root. It measures cold explicit-ID
+construction, one hot explicit-ID append, and `write_mtg` for dense and sparse
+attributes. Row-local `pop!`, `empty!`, and sparse-toggle workloads are registered
+only when a public behavior probe confirms that the loaded MultiScaleTreeGraph
+revision supports row-local absence. Historical schema-wide revisions keep their
+semantic oracle but are not used as a timing baseline for those different
+operations.
+
+The `preexisting_auto_id` subgroup deliberately exercises repeated ID-less node
+construction. It exposes the historical full-tree `max_id` search separately
+from the A1 row-presence cost and can be reused unchanged to validate a future
+topology-growth correction.
+
 The writer gate exercises 40 features at 1,000 and 10,000 nodes. It compares the
 streaming path with the compatibility materialization path, measures seven alternating
 samples after warmup, and checks linear scaling.

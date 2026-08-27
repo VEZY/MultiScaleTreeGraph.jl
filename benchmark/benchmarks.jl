@@ -3,6 +3,9 @@ using MultiScaleTreeGraph
 using Random
 using Tables
 
+include("test-row-mutation-topology-benchmark.jl")
+using .A1RowMutationTopologyBenchmarks: build_a1_benchmark_suite!
+
 const SUITE = BenchmarkGroup()
 
 const SIZE_TIERS = (
@@ -325,6 +328,7 @@ SUITE[suite_name] = BenchmarkGroup()
 build_tier!(SUITE[suite_name], "small", SIZE_TIERS.small)
 build_tier!(SUITE[suite_name], "medium", SIZE_TIERS.medium)
 build_tier!(SUITE[suite_name], "large", SIZE_TIERS.large)
+build_a1_benchmark_suite!(SUITE[suite_name])
 
 # Keep the largest tier focused on critical hot paths.
 delete!(SUITE[suite_name]["large"], "api_surface_small_only")
