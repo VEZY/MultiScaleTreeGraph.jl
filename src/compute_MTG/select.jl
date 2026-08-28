@@ -70,15 +70,26 @@ function select!(
         ignore_nothing=ignore_nothing
     )
 
-    # Remove all un-selected attributes from the MTG:
-    traverse!(
-        mtg,
-        node -> begin
+    # Selection is intentionally schema-wide. On a columnar MTG, say so directly
+    # instead of relying on a node-local mutation to remove a shared column as a
+    # side effect.
+    store = _columnar_store(get_root(mtg))
+    if store === nothing
+        traverse!(mtg) do node
             for attr in keys(node_attributes(node))
                 attr in keep_var || pop!(node, attr)
             end
         end
-    )
+    else
+        for bucket in store.buckets
+            to_drop = Symbol[
+                column.name for column in bucket.columns if !(column.name in keep_var)
+            ]
+            for attr in to_drop
+                _drop_column_internal!(bucket, attr)
+            end
+        end
+    end
 
 end
 

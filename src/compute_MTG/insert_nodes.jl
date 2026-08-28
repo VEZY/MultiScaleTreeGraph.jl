@@ -132,7 +132,7 @@ function insert_nodes!(
     filter_fun=nothing
 ) where {N<:AbstractNodeMTG,A}
 
-    max_node_id = [max_id(node)]
+    max_node_id = [_max_assigned_id(node)]
     # # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
 
@@ -214,10 +214,10 @@ function new_node_MTG(node::Node{N,A}, template::T) where {N<:AbstractNodeMTG,A,
 end
 
 """
-    insert_parent!(node, template, attr_fun = node -> typeof(node_attributes(node))(), max_id = [max_id(node)])
-    insert_generation!(node, template, attr_fun = node -> typeof(node_attributes(node))(), max_id = [max_id(node)])
-    insert_child!(node, template, attr_fun = node -> typeof(node_attributes(node))(), max_id = [max_id(node)])
-    insert_sibling!(node, template, attr_fun = node -> typeof(node_attributes(node))(), max_id = [max_id(node)])
+    insert_parent!(node, template[, attr_fun[, maxid]])
+    insert_generation!(node, template[, attr_fun[, maxid]])
+    insert_child!(node, template[, attr_fun[, maxid]])
+    insert_sibling!(node, template[, attr_fun[, maxid]])
 
 Insert a node in an MTG as:
 
@@ -237,8 +237,10 @@ Insert a node in an MTG as:
 - `attr_fun`: A function to compute new attributes based on the filtered node. Must return
 attribute values of the same type as the one used in other nodes from the MTG (*e.g.* Dict or
 NamedTuple). If you just need to pass attributes values to a node use `x -> your_values`.
-- `max_id::Vector{Int64}`: The maximum id of the nodes in the MTG as a vector of length one. It is incremented in the function, 
-and use by default the value from [`max_id`](@ref).
+- `maxid`: A one-element mutable vector containing the last assigned node id. It is
+  updated only after a successful insertion. When omitted, columnar MTGs seed it from
+  all active ids in their shared attribute store; other backends use [`max_id`](@ref)
+  on the current component.
 
 # Examples
 
@@ -283,19 +285,19 @@ function _bind_inserted_columnar!(::Type{ColumnarAttrs}, parent_for_store::Node,
     return nothing
 end
 
-function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
+function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[_max_assigned_id(node)]) where {N<:AbstractNodeMTG,A}
 
-    maxid[1] += 1
+    candidate_id = maxid[1] + 1
 
     if isroot(node)
 
         new_node = Node(
-            maxid[1],
+            candidate_id,
             nothing,
             Node{N,A}[node],
             new_node_MTG(node, template),
             _coerce_insert_attrs(A, copy(attr_fun(node))),
-            Dict{String,Vector{Node{N,A}}}()
+            nothing
         )
         _bind_inserted_columnar!(A, node, new_node)
 
@@ -312,12 +314,12 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
         reparent!(node, new_node)
     else
         new_node = Node(
-            maxid[1],
+            candidate_id,
             parent(node),
             Node{N,A}[node],
             new_node_MTG(node, template),
             _coerce_insert_attrs(A, copy(attr_fun(node))),
-            Dict{String,Vector{Node{N,A}}}()
+            nothing
         )
         _bind_inserted_columnar!(A, parent(node), new_node)
 
@@ -334,51 +336,60 @@ function insert_parent!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[
         reparent!(node, new_node)
     end
 
+    maxid[1] = candidate_id
     return node
 end
 
 
-function insert_child!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
+function insert_child!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[_max_assigned_id(node)]) where {N<:AbstractNodeMTG,A}
 
-    maxid[1] += 1
+    candidate_id = maxid[1] + 1
 
-    addchild!(node, maxid[1], new_node_MTG(node, template), attr_fun(node))
+    addchild!(
+        node,
+        candidate_id,
+        new_node_MTG(node, template),
+        _coerce_insert_attrs(A, copy(attr_fun(node))),
+    )
 
+    maxid[1] = candidate_id
     return node
 end
 
 
-function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
+function insert_sibling!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[_max_assigned_id(node)]) where {N<:AbstractNodeMTG,A}
 
-    maxid[1] += 1
+    candidate_id = maxid[1] + 1
 
     new_node = Node(
-        maxid[1],
+        candidate_id,
         parent(node),
         Vector{Node{N,A}}(),
         new_node_MTG(node, template),
         _coerce_insert_attrs(A, copy(attr_fun(node))),
-        Dict{String,Vector{Node{N,A}}}()
+        nothing
     )
     _bind_inserted_columnar!(A, parent(node), new_node)
 
     # Add the new node to the children of the parent node:
     push!(children(parent(node)), new_node)
+    _mark_structure_mutation!(parent(node))
 
+    maxid[1] = candidate_id
     return node
 end
 
-function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[max_id(node)]) where {N<:AbstractNodeMTG,A}
+function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), maxid=[_max_assigned_id(node)]) where {N<:AbstractNodeMTG,A}
 
-    maxid[1] += 1
+    candidate_id = maxid[1] + 1
 
     new_node = Node(
-        maxid[1],
+        candidate_id,
         node,
         children(node),
         new_node_MTG(node, template),
         _coerce_insert_attrs(A, copy(attr_fun(node))),
-        Dict{String,Vector{Node{N,A}}}()
+        nothing
     )
     _bind_inserted_columnar!(A, node, new_node)
 
@@ -390,7 +401,17 @@ function insert_generation!(node::Node{N,A}, template, attr_fun=node -> A(), max
         reparent!(chnode, new_node)
     end
 
+    maxid[1] = candidate_id
     return node
 end
 
-@deprecate insert_node!(node, template, maxid) insert_parent!(node, template, maxid)
+# Retained through 0.16.x and removed in 0.17.
+function insert_node!(node::Node{N,A}, template, maxid) where {N<:AbstractNodeMTG,A}
+    Base.depwarn(
+        "`insert_node!(node, template, maxid)` is deprecated; use " *
+        "`insert_parent!(node, template, _ -> typeof(node_attributes(node))(), maxid)` " *
+        "instead. The compatibility alias will be removed in MultiScaleTreeGraph 0.17.",
+        :insert_node!,
+    )
+    return insert_parent!(node, template, _ -> A(), maxid)
+end

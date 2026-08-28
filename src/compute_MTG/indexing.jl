@@ -2,7 +2,33 @@
 Indexing a Node using an integer will index in its children
 """
 Base.getindex(n::Node, i::Integer) = children(n)[i]
-Base.setindex!(n::Node, x::Node, i::Integer) = children(n)[i] = x
+function _set_child_at!(n::Node{N,A}, x::Node{N,A}, i::Integer) where {N,A}
+    current_children = children(n)
+    old_child = current_children[i]
+    old_child === x && return x
+    existing_index = _child_index_by_identity(current_children, x)
+    existing_index === nothing || throw(ArgumentError(
+        "node $(node_id(x)) is already a child of node $(node_id(n)) at index $existing_index",
+    ))
+    parent(x) === nothing || throw(ArgumentError(
+        "replacement node $(node_id(x)) already has parent $(node_id(parent(x))); detach it before indexed assignment",
+    ))
+    _validate_reparent_target(x, n)
+    _validate_columnar_attach!(n, x)
+    reparent!(old_child, nothing)
+    addchild!(n, x)
+    attached_children = children(n)
+    attached_index = _child_index_by_identity(attached_children, x)::Int
+    deleteat!(attached_children, attached_index)
+    insert!(attached_children, i, x)
+    _mark_structure_mutation!(n)
+    return x
+end
+
+Base.setindex!(n::Node{N,A}, x::Node{N,A}, i::Integer) where {N,A} =
+    _set_child_at!(n, x, i)
+Base.setindex!(n::Node{N,A}, x::Node{N,A}, i::Integer) where {N<:AbstractNodeMTG,A<:AbstractDict} =
+    _set_child_at!(n, x, i)
 
 """
 Indexing Node attributes from node, e.g. node[:length] or node["length"],
@@ -100,6 +126,7 @@ end
     col_idx == 0 && return nothing
     row = store.node_row[nodeid]
     col = store.buckets[bid].columns[col_idx]
+    _row_has_value(col, row) || return nothing
     return col.data[row]
 end
 

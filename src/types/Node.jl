@@ -56,10 +56,46 @@ mutable struct Node{N<:AbstractNodeMTG,A}
     attributes::A
     "Cache for mtg nodes traversal"
     traversal_cache::Union{Nothing,Dict{String,Vector{Node{N,A}}}}
+
+    function Node{N,A}(
+        id,
+        parent,
+        children,
+        MTG,
+        attributes,
+        ::Nothing,
+    ) where {N<:AbstractNodeMTG,A}
+        new{N,A}(id, parent, children, MTG, attributes, nothing)
+    end
+
+    function Node{N,A}(
+        id,
+        parent,
+        children,
+        MTG,
+        attributes,
+        traversal_cache,
+    ) where {N<:AbstractNodeMTG,A}
+        node = new{N,A}(id, parent, children, MTG, attributes, traversal_cache)
+        getfield(node, :traversal_cache) === nothing ||
+            _register_existing_traversal_cache!(node)
+        return node
+    end
 end
 
-# All deprecated methods (the ones with a node name) :
-@deprecate Node(name::String, id::Int, parent::Union{Nothing,Node{N,A}}, children::Nothing, MTG::N, attributes::A, traversal_cache::Dict{String,Vector{Node{N,A}}}) where {N<:AbstractNodeMTG,A} Node(id, parent, children, MTG, attributes, traversal_cache)
+function Node(
+    id::Int,
+    parent::Union{Nothing,Node{N,A}},
+    children::Vector{Node{N,A}},
+    MTG::N,
+    attributes::A,
+    traversal_cache::Union{Nothing,Dict{String,Vector{Node{N,A}}}},
+) where {N<:AbstractNodeMTG,A}
+    Node{N,A}(id, parent, children, MTG, attributes, traversal_cache)
+end
+
+# Deprecated named-node constructors are retained through 0.16.x and removed in 0.17.
+@deprecate Node(name::String, id::Int, parent::Union{Nothing,Node{N,A}}, children::Nothing, MTG::N, attributes::A, traversal_cache::Dict{String,Vector{Node{N,A}}}) where {N<:AbstractNodeMTG,A} Node(id, parent, Node{N,A}[], MTG, attributes, traversal_cache)
 @deprecate Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple} Node(id, MTG, attributes)
 @deprecate Node(name::String, id::Int, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:NamedTuple} Node(id, MTG, attributes)
 @deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::A) where {M<:AbstractNodeMTG,A} Node(id, parent, MTG, attributes)
@@ -67,6 +103,7 @@ end
 @deprecate Node(name::String, id::Int, parent::Node, MTG::M, attributes::T) where {M<:AbstractNodeMTG,T<:MutableNamedTuple} Node(id, parent, MTG, attributes)
 
 function Node(id::Int, MTG::T, attributes::ColumnarAttrs) where {T<:AbstractNodeMTG}
+    _assert_columnar_attrs_unbound(attributes)
     node = Node{T,ColumnarAttrs}(
         id, nothing, Vector{Node{T,ColumnarAttrs}}(), MTG, attributes, nothing
     )
@@ -100,10 +137,17 @@ function _to_columnar_attrs(attributes)
 end
 
 function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::ColumnarAttrs) where {M<:AbstractNodeMTG}
+    parent_attrs = node_attributes(parent)
+    parent_store = _store_for_node_attrs(parent_attrs)
+    parent_store === nothing &&
+        error("Parent node is not attached to a columnar attribute store.")
+    _assert_columnar_attrs_unbound(attributes)
+    _assert_node_id_available(parent_store, id)
     node = Node{M,ColumnarAttrs}(
         id, parent, Vector{Node{M,ColumnarAttrs}}(), MTG, attributes, nothing
     )
-    addchild!(parent, node)
+    push!(children(parent), node)
+    _invalidate_traversal_caches!(parent)
     bind_columnar_child!(node_attributes(parent), attributes, id, getfield(MTG, :symbol))
     return node
 end
@@ -139,8 +183,21 @@ function Node(parent::Node{N,A}, MTG::T) where {N<:AbstractNodeMTG,A,T<:Abstract
     Node(new_id(get_root(parent)), parent, MTG, A())
 end
 
-# Copying a node returns the node:
-Base.copy(node::Node) = node
+"""
+    copy(node::Node)
+
+Shallow copying an MTG node is unsupported because sharing its parent, children, and
+columnar attribute store would violate tree identity and mutation invariants. Use
+`deepcopy(get_root(node))` for an independent tree, or [`attributes`](@ref) to copy only
+one node's attribute values.
+"""
+function Base.copy(::Node)
+    throw(ArgumentError(
+        "copy(::Node) is unsupported because a shallow node copy would alias topology " *
+        "and columnar storage; use deepcopy(get_root(node)) for an independent tree or " *
+        "attributes(node; format=:dict) for an attribute snapshot",
+    ))
+end
 
 ## AbstractTrees compatibility:
 
@@ -203,6 +260,17 @@ function _attach_child!(p::Node, child::Node)
     return true
 end
 
+function _validate_reparent_target(node::Node, new_parent::Node)
+    current = new_parent
+    while current !== nothing
+        current === node && throw(ArgumentError(
+            "cannot reparent node $(node_id(node)) below its own descendant $(node_id(new_parent))",
+        ))
+        current = parent(current)
+    end
+    return nothing
+end
+
 """
     reparent!(node::N, p::N) where N<:Node{T,A}
 
@@ -214,13 +282,21 @@ function reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,
 
     old_parent = parent(node)
     changed = old_parent !== p
+    if changed && p !== nothing
+        _validate_reparent_target(node, p)
+        _validate_columnar_attach!(p, node)
+    end
+    changed && _maybe_traversal_cache(node) !== nothing && _discard_traversal_cache!(node)
     if old_parent !== nothing && changed
         _detach_child!(old_parent, node)
     end
 
     setfield!(node, :parent, p)
     attached = p === nothing ? false : _attach_child!(p, node)
-    (changed || attached) && _mark_structure_mutation!(node)
+    p === nothing || _maybe_recolumnarize_after_attach!(p, node)
+    if (changed || attached) && (!attached || _maybe_traversal_cache(node) !== nothing)
+        _mark_structure_mutation!(node)
+    end
     return p
 end
 
@@ -231,6 +307,32 @@ Set the children of the node, detaching removed children and setting this node a
 parent of the new children.
 """
 function rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
+    if length(chnodes) <= 8
+        for child_index in eachindex(chnodes)
+            child = chnodes[child_index]
+            @inbounds for previous_index in firstindex(chnodes):(child_index - 1)
+                child === chnodes[previous_index] && throw(ArgumentError(
+                    "node $(node_id(child)) cannot occur more than once in the children of node $(node_id(node))",
+                ))
+            end
+        end
+    else
+        seen_children = Base.IdSet{Node{T,A}}()
+        sizehint!(seen_children, length(chnodes))
+        for child in chnodes
+            child in seen_children && throw(ArgumentError(
+                "node $(node_id(child)) cannot occur more than once in the children of node $(node_id(node))",
+            ))
+            push!(seen_children, child)
+        end
+    end
+    incoming_cross_store_ids = nothing
+    for child in chnodes
+        _validate_reparent_target(child, node)
+        incoming_cross_store_ids =
+            _validate_columnar_attach!(node, child, incoming_cross_store_ids)
+    end
+
     old_children = children(node)
     setfield!(node, :children, chnodes)
 
@@ -468,10 +570,216 @@ function _node_store(node::Node)
     return store
 end
 
-@inline function _mark_structure_mutation!(node::Node)
+function _register_traversal_cache!(store::MTGAttributeStore, node::Node)
+    registry = store.subtree_index.traversal_cache_nodes
+    if registry === nothing
+        store.subtree_index.traversal_cache_nodes = WeakRef(node)
+    elseif registry isa WeakRef
+        existing = registry.value
+        existing === node && return nothing
+        if existing === nothing
+            store.subtree_index.traversal_cache_nodes = WeakRef(node)
+        else
+            store.subtree_index.traversal_cache_nodes = WeakRef[registry, WeakRef(node)]
+        end
+    else
+        write_index = firstindex(registry)
+        found = false
+        @inbounds for read_index in eachindex(registry)
+            entry = registry[read_index]
+            existing = entry.value
+            existing === nothing && continue
+            found |= existing === node
+            registry[write_index] = entry
+            write_index += 1
+        end
+        resize!(registry, write_index - 1)
+        found || push!(registry, WeakRef(node))
+    end
+    return nothing
+end
+
+function _traversal_cache_registered(store::MTGAttributeStore, node::Node)
+    registry = store.subtree_index.traversal_cache_nodes
+    registry === nothing && return false
+    registry isa WeakRef && return registry.value === node
+    @inbounds for entry in registry
+        entry.value === node && return true
+    end
+    return false
+end
+
+@inline function _traversal_cache_registry_active!(store::MTGAttributeStore)
+    registry = store.subtree_index.traversal_cache_nodes
+    registry === nothing && return false
+    if registry isa WeakRef
+        existing = registry.value
+        (existing === nothing || _maybe_traversal_cache(existing::Node) === nothing) || return true
+    else
+        write_index = firstindex(registry)
+        @inbounds for read_index in eachindex(registry)
+            entry = registry[read_index]
+            existing = entry.value
+            (existing === nothing || _maybe_traversal_cache(existing::Node) === nothing) && continue
+            registry[write_index] = entry
+            write_index += 1
+        end
+        resize!(registry, write_index - 1)
+        if length(registry) == 1
+            store.subtree_index.traversal_cache_nodes = only(registry)
+            return true
+        end
+        isempty(registry) || return true
+    end
+    store.subtree_index.traversal_cache_nodes = nothing
+    return false
+end
+
+@inline function _traversal_cache_store(node::Node)
     attrs = node_attributes(node)
-    attrs isa ColumnarAttrs || return nothing
-    store = _store_for_node_attrs(attrs)
+    store = attrs isa ColumnarAttrs ? _store_for_node_attrs(attrs) : nothing
+    if store === nothing
+        parent_node = parent(node)
+        if parent_node !== nothing
+            parent_attrs = node_attributes(parent_node)
+            store = parent_attrs isa ColumnarAttrs ? _store_for_node_attrs(parent_attrs) : nothing
+        end
+    end
+    return store
+end
+
+function _register_existing_traversal_cache!(node::Node)
+    store = _traversal_cache_store(node)
+    store === nothing || _register_traversal_cache!(store, node)
+    return nothing
+end
+
+@inline function _unregister_traversal_cache!(store::MTGAttributeStore, node::Node)
+    registry = store.subtree_index.traversal_cache_nodes
+    registry === nothing && return nothing
+    if registry isa WeakRef
+        existing = registry.value
+        (existing === nothing || existing === node) &&
+            (store.subtree_index.traversal_cache_nodes = nothing)
+    else
+        write_index = firstindex(registry)
+        @inbounds for read_index in eachindex(registry)
+            entry = registry[read_index]
+            existing = entry.value
+            (existing === nothing || existing === node) && continue
+            registry[write_index] = entry
+            write_index += 1
+        end
+        resize!(registry, write_index - 1)
+        if isempty(registry)
+            store.subtree_index.traversal_cache_nodes = nothing
+        elseif length(registry) == 1
+            store.subtree_index.traversal_cache_nodes = only(registry)
+        end
+    end
+    return nothing
+end
+
+@inline function _discard_traversal_cache!(node::Node, store::MTGAttributeStore)
+    cache = _maybe_traversal_cache(node)
+    cache === nothing && return nothing
+    empty!(cache)
+    setfield!(node, :traversal_cache, nothing)
+    _unregister_traversal_cache!(store, node)
+    return nothing
+end
+
+@inline function _discard_traversal_cache!(node::Node)
+    cache = _maybe_traversal_cache(node)
+    cache === nothing && return nothing
+    empty!(cache)
+    setfield!(node, :traversal_cache, nothing)
+    store = _traversal_cache_store(node)
+    store === nothing || _unregister_traversal_cache!(store, node)
+    return nothing
+end
+
+@inline function _traversal_cache_mutation_store(node::Node)
+    attrs = node_attributes(node)
+    store = attrs isa ColumnarAttrs ? _store_for_node_attrs(attrs) : nothing
+    if store === nothing && attrs isa ColumnarAttrs
+        parent_node = parent(node)
+        if parent_node !== nothing
+            parent_attrs = node_attributes(parent_node)
+            store = parent_attrs isa ColumnarAttrs ? _store_for_node_attrs(parent_attrs) : nothing
+        end
+    end
+    return store
+end
+
+@noinline function _invalidate_traversal_caches_slow!(
+    node::Node,
+    store::Union{Nothing,MTGAttributeStore},
+)
+    # Traversal caches are local to their starting node. A structural mutation in
+    # this subtree therefore invalidates the cache on `node` and on every
+    # ancestor whose traversal can include it. Descendant caches remain valid.
+    # The common columnar path stays O(1) until a traversal cache has actually
+    # been requested for that store.
+    registry = store === nothing ? nothing : store.subtree_index.traversal_cache_nodes
+    registry_active = store === nothing
+    registry_entry_count = 0
+    if registry isa WeakRef
+        existing = registry.value
+        if existing === nothing || _maybe_traversal_cache(existing::Node) === nothing
+            store.subtree_index.traversal_cache_nodes = nothing
+        else
+            registry_active = true
+            registry_entry_count = 1
+        end
+    elseif registry !== nothing
+        registry_active = true
+        registry_entry_count = length(registry)
+    end
+    if registry_active
+        cleared_count = 0
+        current = node
+        while current !== nothing
+            if store === nothing
+                _discard_traversal_cache!(current)
+            else
+                cache = _maybe_traversal_cache(current)
+                if cache !== nothing
+                    empty!(cache)
+                    setfield!(current, :traversal_cache, nothing)
+                    cleared_count += 1
+                end
+            end
+            current = parent(current)
+        end
+        if store !== nothing && store.subtree_index.traversal_cache_nodes !== nothing
+            if cleared_count == registry_entry_count
+                store.subtree_index.traversal_cache_nodes = nothing
+            else
+                _traversal_cache_registry_active!(store)
+            end
+        end
+    end
+    return nothing
+end
+
+@inline function _invalidate_traversal_caches!(
+    node::Node,
+    store::Union{Nothing,MTGAttributeStore},
+)
+    if store !== nothing && store.subtree_index.traversal_cache_nodes === nothing
+        return nothing
+    end
+    _invalidate_traversal_caches_slow!(node, store)
+end
+
+@inline function _invalidate_traversal_caches!(node::Node)
+    _invalidate_traversal_caches!(node, _traversal_cache_mutation_store(node))
+end
+
+@inline function _mark_structure_mutation!(node::Node)
+    store = _traversal_cache_mutation_store(node)
+    _invalidate_traversal_caches!(node, store)
     store === nothing && return nothing
     _mark_subtree_index_mutation!(store)
     return nothing
@@ -570,6 +878,11 @@ Get the traversal cache of the node if any.
 @inline _maybe_traversal_cache(node::Node) = getfield(node, :traversal_cache)
 
 function node_traversal_cache(node::Node{T,A}) where {T,A}
+    attrs = node_attributes(node)
+    if attrs isa ColumnarAttrs
+        store = _store_for_node_attrs(attrs)
+        store === nothing || _register_traversal_cache!(store, node)
+    end
     cache = getfield(node, :traversal_cache)
     if cache === nothing
         cache = Dict{String,Vector{Node{T,A}}}()

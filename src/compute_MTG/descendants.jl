@@ -1,9 +1,24 @@
-@inline function _maybe_depwarn_traversal_type_kw(fname::Symbol, type)
+@inline function _maybe_depwarn_traversal_type_kw(fname::Symbol, type, result_storage::Symbol)
     type === Any && return nothing
+    replacement = if result_storage === :single_allocating
+        "Remove `type`; single-key allocating calls infer their result type when possible. " *
+        "Use an explicit typed output buffer when an exact element type is required."
+    elseif result_storage === :explicit_buffer
+        "Remove `type`; the result element type is taken from the reusable output buffer."
+    elseif result_storage === :multi_allocating
+        "Remove `type`; multi-key calls retain their heterogeneous result representation."
+    elseif result_storage === :cache
+        "The cache-producing form does not infer a typed result. Remove `type`; callers " *
+        "that require a typed result should use `descendants!(out, node, key)` and choose " *
+        "the element type of `out`."
+    else
+        error("Unknown traversal result storage mode: $result_storage")
+    end
     Base.depwarn(
-        "Keyword argument `type` in `$fname` is deprecated and will be removed in a future release. " *
-        "Return types are inferred automatically from the columnar attribute store; remove `type` " *
-        "and use `ignore_nothing=true` when you want `nothing` values filtered out.",
+        "Keyword argument `type` in `$fname` is deprecated and will be removed in " *
+        "MultiScaleTreeGraph 0.17. " *
+        replacement *
+        " Use `ignore_nothing=true` when you want `nothing` values filtered out.",
         fname,
     )
     return nothing
@@ -46,7 +61,13 @@ end
     @inbounds for i in left:right
         nid = idx.dfs_order[i]
         store.node_bucket[nid] == bid || continue
-        v = col.data[store.node_row[nid]]
+        row = store.node_row[nid]
+        if !_row_has_value(col, row)
+            ignore_nothing && continue
+            push!(out, nothing)
+            continue
+        end
+        v = col.data[row]
         ignore_nothing && v === nothing && continue
         push!(out, v)
     end
@@ -120,7 +141,13 @@ function _collect_descendant_values_indexed!(
         end
 
         row = store.node_row[nid]
-        v = store.buckets[bid].columns[col_idx].data[row]
+        column = store.buckets[bid].columns[col_idx]
+        if !_row_has_value(column, row)
+            ignore_nothing && continue
+            push!(out, nothing)
+            continue
+        end
+        v = column.data[row]
         ignore_nothing && v === nothing && continue
         push!(out, v)
     end
@@ -188,9 +215,15 @@ function _collect_descendant_multi_values_indexed!(
                 row_vals[j] = nothing
                 row_has_nothing = true
             else
-                v = store.buckets[bid].columns[col_idx].data[row]
-                row_vals[j] = v
-                row_has_nothing |= v === nothing
+                column = store.buckets[bid].columns[col_idx]
+                if _row_has_value(column, row)
+                    v = column.data[row]
+                    row_vals[j] = v
+                    row_has_nothing |= v === nothing
+                else
+                    row_vals[j] = nothing
+                    row_has_nothing = true
+                end
             end
         end
         ignore_nothing && row_has_nothing && continue
@@ -337,7 +370,7 @@ function descendants(
     type::Union{Union,DataType}=Any)
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
-    _maybe_depwarn_traversal_type_kw(:descendants, type)
+    _maybe_depwarn_traversal_type_kw(:descendants, type, :single_allocating)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -392,7 +425,7 @@ function descendants(
 )
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
-    _maybe_depwarn_traversal_type_kw(:descendants, type)
+    _maybe_depwarn_traversal_type_kw(:descendants, type, :multi_allocating)
     check_filters(node, scale=scale, symbol=symbol, link=link)
 
     keys = _normalize_descendant_keys(key)
@@ -505,7 +538,7 @@ function descendants!(
 )
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
-    _maybe_depwarn_traversal_type_kw(:descendants!, type)
+    _maybe_depwarn_traversal_type_kw(:descendants!, type, :explicit_buffer)
     check_filters(node, scale=scale, symbol=symbol, link=link)
     key_ = Symbol(key)
     key_plan = build_columnar_query_plan(node, key_)
@@ -554,7 +587,7 @@ function descendants!(
 )
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
-    _maybe_depwarn_traversal_type_kw(:descendants!, type)
+    _maybe_depwarn_traversal_type_kw(:descendants!, type, :explicit_buffer)
     check_filters(node, scale=scale, symbol=symbol, link=link)
 
     keys = _normalize_descendant_keys(key)
@@ -660,7 +693,7 @@ function descendants!(
     type::Union{Union,DataType}=Any) where {N,A<:AbstractDict}
     symbol = normalize_symbol_filter(symbol)
     link = normalize_link_filter(link)
-    _maybe_depwarn_traversal_type_kw(:descendants!, type)
+    _maybe_depwarn_traversal_type_kw(:descendants!, type, :cache)
 
     # Check the filters once, and then compute the descendants recursively using `descendants_`
     check_filters(node, scale=scale, symbol=symbol, link=link)
@@ -760,7 +793,12 @@ is filtered out (`false`).
 grand-children: `recursivity_level = 2`. If `Inf` (the default) or a negative value is provided, there is no 
 recursion limitation.
 - `ignore_nothing = false`: filter-out the nodes with `nothing` values for the given `key`
-- `type::Union{Union,DataType}`: Deprecated. Return types are inferred automatically.
+- `type::Union{Union,DataType}`: Deprecated and scheduled for removal in 0.17. Omit it
+  for allocating calls; single-key calls infer from the columnar attribute store and
+  multi-key calls retain a heterogeneous representation. For
+  `descendants!(out, node, key)`, choose the element type of `out`. The cache-producing
+  `descendants!(node, key)` form should be replaced by the explicit-buffer form when a
+  typed result is required.
 
 
 # Tips

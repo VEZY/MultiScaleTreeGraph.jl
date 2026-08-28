@@ -126,6 +126,98 @@ function parse_MTG_node(l)
     (link, symbol, index)
 end
 
+@noinline function _mtg_node_data_text(node_data, diagnostic_start::Integer)
+    return join(view(node_data, diagnostic_start:lastindex(node_data)), "\t")
+end
+
+function _parse_MTG_node_attr_fields(
+    node_data,
+    features,
+    feature_names,
+    attr_column_start::Integer,
+    diagnostic_start::Integer,
+    line;
+    force=false,
+)
+    if length(node_data) < attr_column_start
+        return init_empty_attr()
+    end
+
+    node_data_attr_count = length(node_data) - attr_column_start + 1
+
+    if node_data_attr_count > size(features)[1]
+        error("Found more columns for features in MTG than declared in the FEATURE section",
+            ". Please check line ", line, " of the MTG:\n",
+            _mtg_node_data_text(node_data, diagnostic_start))
+    end
+
+    node_attr = Dict{Symbol,Any}()
+    sizehint!(node_attr, node_data_attr_count)
+
+    node_type = features.TYPE
+
+    # Attribute fields are always read in order so names and types correspond to
+    # values in FEATURES. Keep the intermediate Dict and ColumnarAttrs copy: its
+    # resulting physical column order is observable through `pairs` and writing.
+    for i in 1:node_data_attr_count
+        field_index = attr_column_start + i - 1
+        field = node_data[field_index]
+        feature_name = feature_names[i]
+        if field == "" || field == "NA"
+            continue
+        end
+
+        if node_type[i] == "INT"
+            try
+                node_attr[feature_name] = parse(Int, field)
+            catch e
+                if !force
+                    error("Found issue in the MTG when converting column $(features[i,1]) ",
+                        "with value $(field) into Integer.",
+                        " Please check line ", line, " of the MTG:\n",
+                        _mtg_node_data_text(node_data, diagnostic_start))
+                end
+            end
+        elseif node_type[i] == "BOOLEAN"
+            try
+                node_attr[feature_name] = parse(Bool, field)
+            catch e
+                if !force
+                    error("Found issue in the MTG when converting column $(features[i,1]) ",
+                        "with value $(field) into Boolean.",
+                        " Please check line ", line, " of the MTG:\n",
+                        _mtg_node_data_text(node_data, diagnostic_start))
+                end
+            end
+        elseif node_type[i] == "DD/MM/YY"
+            try
+                node_attr[feature_name] = Date(field, dateformat"d/m/y")
+            catch e
+                if !force
+                    error("Found issue in the MTG when converting column $(features[i,1]) ",
+                        "with value $(field) into a date with format 'day/month/year'.",
+                        " Please check line ", line, " of the MTG:\n",
+                        _mtg_node_data_text(node_data, diagnostic_start))
+                end
+            end
+        elseif node_type[i] == "REAL" || (node_type[i] == "ALPHA" && feature_name in (:Width, :Length))
+            try
+                node_attr[feature_name] = parse(Float64, field)
+            catch e
+                if !force
+                    error("Found issue in the MTG when converting column $(features[i,1]) ",
+                        "with value $(field) into Floating point number.",
+                        " Please check line ", line, " of the MTG:\n",
+                        _mtg_node_data_text(node_data, diagnostic_start))
+                end
+            end
+        else
+            node_attr[feature_name] = field
+        end
+    end
+
+    ColumnarAttrs(node_attr)
+end
 
 """
 
@@ -143,77 +235,18 @@ Parse MTG node attributes names, values and type
 A list of attributes
 
 """
-function parse_MTG_node_attr(node_data, features, feature_names, attr_column_start, line; force=false)
-
-    if length(node_data) < attr_column_start
-        return init_empty_attr()
-    end
-
-    node_data_attr = node_data[attr_column_start:end]
-
-    if length(node_data_attr) > size(features)[1]
-        error("Found more columns for features in MTG than declared in the FEATURE section",
-            ". Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
-    end
-
-    node_attr = Dict{Symbol,Any}()
-    sizehint!(node_attr, length(node_data_attr))
-
-    node_type = features.TYPE
-
-    # node_data_attr is always read in order so names and types correspond to values in features
-    for i in eachindex(node_data_attr)
-        feature_name = feature_names[i]
-        if node_data_attr[i] == "" || node_data_attr[i] == "NA"
-            continue
-        end
-
-        if node_type[i] == "INT"
-            try
-                node_attr[feature_name] = parse(Int, node_data_attr[i])
-            catch e
-                if !force
-                    error("Found issue in the MTG when converting column $(features[i,1]) ",
-                        "with value $(node_data_attr[i]) into Integer.",
-                        " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
-                end
-            end
-        elseif node_type[i] == "BOOLEAN"
-            try
-                node_attr[feature_name] = parse(Bool, node_data_attr[i])
-            catch e
-                if !force
-                    error("Found issue in the MTG when converting column $(features[i,1]) ",
-                        "with value $(node_data_attr[i]) into Boolean.",
-                        " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
-                end
-            end
-        elseif node_type[i] == "DD/MM/YY"
-            try
-                node_attr[feature_name] = Date(node_data_attr[i], dateformat"d/m/y")
-            catch e
-                if !force
-                    error("Found issue in the MTG when converting column $(features[i,1]) ",
-                        "with value $(node_data_attr[i]) into a date with format 'day/month/year'.",
-                        " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
-                end
-            end
-        elseif node_type[i] == "REAL" || (node_type[i] == "ALPHA" && feature_name in (:Width, :Length))
-            try
-                node_attr[feature_name] = parse(Float64, node_data_attr[i])
-            catch e
-                if !force
-                    error("Found issue in the MTG when converting column $(features[i,1]) ",
-                        "with value $(node_data_attr[i]) into Floating point number.",
-                        " Please check line ", line, " of the MTG:\n", join(node_data, "\t"))
-                end
-            end
-        else
-            node_attr[feature_name] = node_data_attr[i]
-        end
-    end
-
-    ColumnarAttrs(node_attr)
+function parse_MTG_node_attr(
+    node_data, features, feature_names, attr_column_start, line; force=false
+)
+    return _parse_MTG_node_attr_fields(
+        node_data,
+        features,
+        feature_names,
+        attr_column_start,
+        firstindex(node_data),
+        line;
+        force=force,
+    )
 end
 
 init_empty_attr() = ColumnarAttrs()
@@ -229,7 +262,6 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
 
     splitted_MTG = split(l[1], "\t")
     node_column = findfirst(x -> length(x) > 0, splitted_MTG)
-    node_data = splitted_MTG[node_column:end]
 
     if attr_column_start < node_column
         error(
@@ -243,13 +275,19 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
         )
     end
 
-    node_attr_column_start = attr_column_start - node_column + 1
-    node = split_MTG_elements(node_data[1])
+    node = split_MTG_elements(splitted_MTG[node_column])
     node, shared = expand_node!(node, 1)
 
     # Get node attributes:
     if features !== nothing
-        node_attr = parse_MTG_node_attr(node_data, features, feature_names, node_attr_column_start, line)
+        node_attr = _parse_MTG_node_attr_fields(
+            splitted_MTG,
+            features,
+            feature_names,
+            attr_column_start,
+            node_column,
+            line,
+        )
     else
         # if there are no attribute in the MTG, we create an empty attribute:
         node_attr = init_empty_attr()

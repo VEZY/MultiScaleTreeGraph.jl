@@ -154,10 +154,12 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
         parent_children = children(parent_node)
         idx = _child_index_by_id(parent_children, node_id(node))
         idx === nothing || deleteat!(parent_children, idx)
+        idx === nothing || _mark_structure_mutation!(parent_node)
         node_return = parent_node
     end
 
     # Clean the old deleted node (isolate it, no parent, no children):
+    _discard_traversal_cache!(node)
     attrs = node_attributes(node)
     attrs isa ColumnarAttrs && remove_columnar_node!(attrs)
     reparent!(node, nothing)

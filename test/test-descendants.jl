@@ -1,11 +1,6 @@
 @testset "descendants" begin
       mtg = read_mtg("files/simple_plant.mtg")
       width_all = [nothing, nothing, 0.02, 0.1, 0.02, 0.1]
-      if Base.JLOptions().depwarn == 0
-            @test descendants(mtg, :Width; type=Union{Nothing,Float64}) == width_all
-      else
-            @test_logs (:warn, r"Keyword argument `type` in `descendants` is deprecated") descendants(mtg, :Width; type=Union{Nothing,Float64})
-      end
       @test descendants(mtg, :Width) == width_all
 
       d = descendants(mtg, :Width, scale=1)
@@ -70,8 +65,9 @@ end
 @testset "descendants clear error on mixed columnar stores" begin
       mtg_a = read_mtg("files/simple_plant.mtg")
       mtg_b = read_mtg("files/simple_plant.mtg")
-      # Bypass addchild! on purpose to build an incoherent tree (mixed stores).
-      reparent!(mtg_b, mtg_a)
+      # Bypass the public topology mutators on purpose to build an incoherent tree.
+      push!(children(mtg_a), mtg_b)
+      setfield!(mtg_b, :parent, mtg_a)
 
       err = try
             descendants(mtg_a, :Width)

@@ -1,3 +1,10 @@
+const _MTG_SECTION_REGEX = r"(CODE|CLASSES|DESCRIPTION|FEATURES|MTG)[[:blank:]]*:"
+const _MTG_CODE_SECTION_REGEX = r"CODE[[:blank:]]*:"
+const _MTG_CLASSES_SECTION_REGEX = r"CLASSES[[:blank:]]*:"
+const _MTG_DESCRIPTION_SECTION_REGEX = r"DESCRIPTION[[:blank:]]*:"
+const _MTG_FEATURES_SECTION_REGEX = r"FEATURES[[:blank:]]*:"
+const _MTG_MTG_SECTION_REGEX = r"MTG[[:blank:]]*:"
+
 """
     issection(string)
 
@@ -10,10 +17,7 @@ Is a string part of an MTG section ? Returns `true` if it does, `false` otherwis
 issection("CODE :")
 ```
 """
-function issection(string)
-    sections = ("CODE", "CLASSES", "DESCRIPTION", "FEATURES", "MTG")
-    occursin(Regex("($(join(sections, "|")))[[:blank:]]*:"), string)
-end
+issection(string) = occursin(_MTG_SECTION_REGEX, string)
 
 """
     issection(string,section)
@@ -31,6 +35,14 @@ issection("CODE :", "CODE")
 ```
 """
 function issection(string, section)
+    if section isa AbstractString
+        section == "CODE" && return occursin(_MTG_CODE_SECTION_REGEX, string)
+        section == "CLASSES" && return occursin(_MTG_CLASSES_SECTION_REGEX, string)
+        section == "DESCRIPTION" &&
+            return occursin(_MTG_DESCRIPTION_SECTION_REGEX, string)
+        section == "FEATURES" && return occursin(_MTG_FEATURES_SECTION_REGEX, string)
+        section == "MTG" && return occursin(_MTG_MTG_SECTION_REGEX, string)
+    end
     occursin(Regex("$section[[:blank:]]*:"), string)
 end
 

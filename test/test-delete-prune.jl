@@ -20,6 +20,28 @@ file = joinpath(dirname(dirname(pathof(MultiScaleTreeGraph))), "test", "files", 
     @test length(new_mtg) == length_start - 1
 end
 
+@testset "delete_node! maintains the active maximum node ID" begin
+    root = Node(1, NodeMTG(:/, :Plant, 1, 1))
+    low = Node(2, root, NodeMTG(:/, :Leaf, 1, 2))
+    high = Node(10, root, NodeMTG(:+, :Leaf, 2, 2))
+    next_high = Node(7, root, NodeMTG(:+, :Leaf, 3, 2))
+    store = MultiScaleTreeGraph._node_store(root)
+
+    @test store.max_node_id == 10
+    delete_node!(high)
+    @test store.max_node_id == 7
+    @test new_id(root) == 8
+
+    delete_node!(low)
+    @test store.max_node_id == 7
+    delete_node!(next_high)
+    @test store.max_node_id == 1
+    @test new_id(root) == 2
+
+    MultiScaleTreeGraph.remove_columnar_node!(node_attributes(root))
+    @test store.max_node_id == 0
+end
+
 @testset "delete_node!: delete root node" begin
     # Delete a node:
     mtg = read_mtg(file)

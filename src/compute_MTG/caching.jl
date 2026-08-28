@@ -10,7 +10,7 @@ cache_name("test","var")
 ```
 """
 function cache_name(vars...)
-    "_cache_" * bytes2hex(sha1(join([vars...])))
+    "_cache_" * bytes2hex(sha1(join(vars)))
 end
 
 """
@@ -20,10 +20,21 @@ Clean the cached variables in the mtg, usually added from [`descendants!`](@ref)
 """
 function clean_cache!(mtg)
     cached_vars = find_cached_vars(mtg)
-    traverse!(
-        mtg,
-        node -> [pop!(node, attr) for attr in cached_vars]
-    )
+    store = _columnar_store(get_root(mtg))
+    if store === nothing
+        traverse!(mtg) do node
+            for attr in cached_vars
+                pop!(node, attr, nothing)
+            end
+        end
+    else
+        for bucket in store.buckets
+            for attr in cached_vars
+                _drop_column_internal!(bucket, attr)
+            end
+        end
+    end
+    return nothing
 end
 
 function find_cached_vars(node)
@@ -36,6 +47,9 @@ end
 
 Cache the nodes of the mtg based on the filters that would be applied to a traversal. This is used automatically
 when traversing using [`traverse!`](@ref) or [`transform!`](@ref).
+
+Cached traversals are invalidated automatically on the mutated subtree and its
+ancestors when nodes are added, removed, or reparented.
 
 # Examples
 

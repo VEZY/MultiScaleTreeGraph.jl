@@ -12,15 +12,23 @@ mutable struct SubtreeIndexCache
     tin::Vector{Int}
     tout::Vector{Int}
     dfs_order::Vector{Int}
+    traversal_cache_nodes::Union{Nothing,WeakRef,Vector{WeakRef}}
 end
 
-SubtreeIndexCache() = SubtreeIndexCache(true, false, :auto, 0, 0, Int[], Int[], Int[])
+SubtreeIndexCache() =
+    SubtreeIndexCache(true, false, :auto, 0, 0, Int[], Int[], Int[], nothing)
 
 mutable struct Column{T}
     name::Symbol
     data::Vector{T}
+    present::BitVector
+    n_present::Int
     default::T
+    default_present::Bool
 end
+
+Column{T}(name::Symbol, data::Vector{T}, default::T) where {T} =
+    Column{T}(name, data, trues(length(data)), length(data), default, true)
 
 mutable struct SymbolBucket
     symbol::Symbol
@@ -41,6 +49,7 @@ mutable struct MTGAttributeStore
     node_bucket::Vector{Int}
     node_row::Vector{Int}
     subtree_index::SubtreeIndexCache
+    max_node_id::Int
 end
 
 struct ColumnarQueryPlan
@@ -50,7 +59,37 @@ struct ColumnarQueryPlan
 end
 
 function MTGAttributeStore()
-    MTGAttributeStore(Dict{Symbol,Int}(), SymbolBucket[], Int[], Int[], SubtreeIndexCache())
+    MTGAttributeStore(
+        Dict{Symbol,Int}(),
+        SymbolBucket[],
+        Int[],
+        Int[],
+        SubtreeIndexCache(),
+        0,
+    )
+end
+
+function MTGAttributeStore(
+    symbol_to_bucket,
+    buckets,
+    node_bucket,
+    node_row,
+    subtree_index,
+)
+    store = MTGAttributeStore(
+        convert(Dict{Symbol,Int}, symbol_to_bucket),
+        convert(Vector{SymbolBucket}, buckets),
+        convert(Vector{Int}, node_bucket),
+        convert(Vector{Int}, node_row),
+        convert(SubtreeIndexCache, subtree_index),
+        0,
+    )
+    max_node_id = 0
+    @inbounds for node_id in eachindex(store.node_bucket)
+        store.node_bucket[node_id] == 0 || (max_node_id = node_id)
+    end
+    store.max_node_id = max_node_id
+    return store
 end
 
 @inline function _validate_descendants_strategy(strategy::Symbol)
@@ -206,6 +245,27 @@ end
 
 @inline _isbound(attrs::ColumnarAttrs) = attrs.ref.store !== nothing && attrs.ref.node_id > 0
 
+function _assert_columnar_attrs_unbound(attrs::ColumnarAttrs)
+    _isbound(attrs) || return nothing
+    throw(ArgumentError(
+        "ColumnarAttrs is already bound to node id $(attrs.ref.node_id); " *
+        "pass `copy(attrs)` to a Node constructor to copy its current values.",
+    ))
+end
+
+@inline function _node_id_is_active(store::MTGAttributeStore, node_id::Int)
+    1 <= node_id <= length(store.node_bucket) || return false
+    @inbounds return store.node_bucket[node_id] != 0
+end
+
+function _assert_node_id_available(store::MTGAttributeStore, node_id::Int)
+    node_id > 0 || throw(ArgumentError("node id must be positive; got $(node_id)"))
+    _node_id_is_active(store, node_id) && throw(ArgumentError(
+        "node id $(node_id) is already registered in the destination attribute store",
+    ))
+    return nothing
+end
+
 @inline function _ensure_node_capacity!(store::MTGAttributeStore, node_id::Int)
     if node_id > length(store.node_bucket)
         old = length(store.node_bucket)
@@ -245,7 +305,14 @@ function _widen_column!(bucket::SymbolBucket, col_idx::Int, ::Type{NewT}) where 
         new_data[i] = old_data[i]
     end
     new_default = convert(NewT, old_col.default)
-    bucket.columns[col_idx] = Column{NewT}(old_col.name, new_data, new_default)
+    bucket.columns[col_idx] = Column{NewT}(
+        old_col.name,
+        new_data,
+        copy(old_col.present),
+        old_col.n_present,
+        new_default,
+        old_col.default_present,
+    )
     bucket.col_types[col_idx] = NewT
     return bucket.columns[col_idx]
 end
@@ -260,10 +327,18 @@ function _ensure_column_type!(bucket::SymbolBucket, col_idx::Int, value)
     return _widen_column!(bucket, col_idx, NewT)
 end
 
-function _add_column_internal!(bucket::SymbolBucket, key::Symbol, ::Type{T}, default::T) where {T}
+function _add_column_internal!(
+    bucket::SymbolBucket,
+    key::Symbol,
+    ::Type{T},
+    default::T,
+    default_present::Bool=true,
+) where {T}
     haskey(bucket.col_index, key) && error("Column $(key) already exists for symbol $(bucket.symbol).")
     nrows = length(bucket.row_to_node)
-    col = Column{T}(key, fill(default, nrows), default)
+    present = default_present ? trues(nrows) : falses(nrows)
+    n_present = default_present ? nrows : 0
+    col = Column{T}(key, fill(default, nrows), present, n_present, default, default_present)
     push!(bucket.columns, col)
     push!(bucket.col_types, T)
     bucket.col_index[key] = length(bucket.columns)
@@ -272,14 +347,42 @@ end
 
 function _add_nullable_column_internal!(bucket::SymbolBucket, key::Symbol, ::Type{T}) where {T}
     TT = Union{Nothing,T}
-    _add_column_internal!(bucket, key, TT, nothing)
+    _add_column_internal!(bucket, key, TT, nothing, false)
+end
+
+@inline _row_has_value(column::Column, row::Int) = @inbounds column.present[row]
+
+@inline function _mark_row_present!(column::Column, row::Int)
+    @inbounds if !column.present[row]
+        column.present[row] = true
+        column.n_present += 1
+    end
+    return nothing
+end
+
+@inline function _mark_row_absent!(column::Column, row::Int)
+    @inbounds begin
+        column.data[row] = column.default
+        if column.present[row]
+            column.present[row] = false
+            column.n_present -= 1
+        end
+    end
+    return nothing
+end
+
+@inline function _append_default_row!(column::Column)
+    push!(column.data, column.default)
+    push!(column.present, column.default_present)
+    column.default_present && (column.n_present += 1)
+    return nothing
 end
 
 function _set_value!(bucket::SymbolBucket, row::Int, key::Symbol, value)
     col_idx = get(bucket.col_index, key, 0)
     if col_idx == 0
         if value === nothing
-            _add_nullable_column_internal!(bucket, key, Any)
+            _add_nullable_column_internal!(bucket, key, Nothing)
         else
             _add_nullable_column_internal!(bucket, key, typeof(value))
         end
@@ -288,13 +391,16 @@ function _set_value!(bucket::SymbolBucket, row::Int, key::Symbol, value)
 
     col = _ensure_column_type!(bucket, col_idx, value)
     col.data[row] = value
+    _mark_row_present!(col, row)
     return value
 end
 
 function _get_value(bucket::SymbolBucket, row::Int, key::Symbol, default=nothing)
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && return default
-    _column(bucket, col_idx).data[row]
+    column = _column(bucket, col_idx)
+    _row_has_value(column, row) || return default
+    column.data[row]
 end
 
 function _bucket_row(ref::NodeAttrRef)
@@ -318,6 +424,7 @@ end
 end
 
 function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
+    _assert_node_id_available(store, node_id)
     _mark_subtree_index_mutation!(store)
     _ensure_node_capacity!(store, node_id)
     bid = _get_or_create_bucket!(store, symbol)
@@ -328,25 +435,25 @@ function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::S
     bucket.node_to_row[node_id] = row
 
     @inbounds for i in eachindex(bucket.columns)
-        col = bucket.columns[i]
-        push!(col.data, col.default)
+        _append_default_row!(bucket.columns[i])
     end
 
     store.node_bucket[node_id] = bid
     store.node_row[node_id] = row
+    store.max_node_id = max(store.max_node_id, node_id)
 
     for (k, v) in attrs
-        _set_value!(bucket, row, _normalize_attr_key(k), v)
+        _set_value_bound!(bucket, row, _normalize_attr_key(k), v)
     end
 
     return nothing
 end
 
 function _remove_node!(store::MTGAttributeStore, node_id::Int)
-    _mark_subtree_index_mutation!(store)
     node_id > length(store.node_bucket) && return nothing
     bid = store.node_bucket[node_id]
     bid == 0 && return nothing
+    _mark_subtree_index_mutation!(store)
 
     bucket = store.buckets[bid]
     row = bucket.node_to_row[node_id]
@@ -363,10 +470,14 @@ function _remove_node!(store::MTGAttributeStore, node_id::Int)
 
     @inbounds for i in eachindex(bucket.columns)
         col = bucket.columns[i]
+        removed_present = col.present[row]
         if row != last_row
             col.data[row] = col.data[last_row]
+            col.present[row] = col.present[last_row]
         end
         pop!(col.data)
+        pop!(col.present)
+        removed_present && (col.n_present -= 1)
     end
 
     if moved_node != 0
@@ -374,6 +485,13 @@ function _remove_node!(store::MTGAttributeStore, node_id::Int)
     end
     store.node_bucket[node_id] = 0
     store.node_row[node_id] = 0
+    if node_id == store.max_node_id
+        next_max = node_id - 1
+        while next_max > 0 && !_node_id_is_active(store, next_max)
+            next_max -= 1
+        end
+        store.max_node_id = next_max
+    end
     return nothing
 end
 
@@ -474,6 +592,8 @@ function infer_columnar_attr_type(node, key::Symbol, symbol_filter, ignore_nothi
             continue
         end
         has_any = true
+        column = _column(bucket, col_idx)
+        column.n_present == length(column.present) || (missing_in_some = true)
         col_T = bucket.col_types[col_idx]
         T = T === Union{} ? col_T : typejoin(T, col_T)
     end
@@ -493,7 +613,7 @@ function infer_columnar_attr_type(node, key::Symbol, symbol_filter, ignore_nothi
 end
 
 function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
-    _isbound(attrs) && return attrs
+    _assert_columnar_attrs_unbound(attrs)
     store = MTGAttributeStore()
     _add_node_with_attrs!(store, node_id, symbol, attrs.staged)
     attrs.ref.store = store
@@ -503,13 +623,10 @@ function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
 end
 
 function bind_columnar_child!(parent_attrs::ColumnarAttrs, child_attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
-    if _isbound(child_attrs)
-        child_attrs.ref.node_id = node_id
-        return child_attrs
-    end
-
+    _assert_columnar_attrs_unbound(child_attrs)
     store = _store_for_node_attrs(parent_attrs)
     store === nothing && error("Parent node is not attached to a columnar attribute store.")
+    _assert_node_id_available(store, node_id)
     _add_node_with_attrs!(store, node_id, symbol, child_attrs.staged)
     child_attrs.ref.store = store
     child_attrs.ref.node_id = node_id
@@ -549,19 +666,29 @@ function Base.length(attrs::ColumnarAttrs)
     if !_isbound(attrs)
         return length(attrs.staged)
     end
-    store, bid, _ = _bound_store_bid_row(attrs.ref)
-    return length(store.buckets[bid].columns)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
+    count = 0
+    @inbounds for column in bucket.columns
+        count += column.present[row]
+    end
+    return count
 end
 
 function Base.keys(attrs::ColumnarAttrs)
     if !_isbound(attrs)
         return collect(keys(attrs.staged))
     end
-    store, bid, _ = _bound_store_bid_row(attrs.ref)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
-    out = Vector{Symbol}(undef, length(bucket.columns))
+    out = Vector{Symbol}(undef, length(attrs))
+    j = 1
     @inbounds for i in eachindex(bucket.columns)
-        out[i] = _column(bucket, i).name
+        column = _column(bucket, i)
+        if column.present[row]
+            out[j] = column.name
+            j += 1
+        end
     end
     out
 end
@@ -570,8 +697,11 @@ function Base.haskey(attrs::ColumnarAttrs, key::Symbol)
     if !_isbound(attrs)
         return haskey(attrs.staged, key)
     end
-    store, bid, _ = _bound_store_bid_row(attrs.ref)
-    haskey(store.buckets[bid].col_index, key)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
+    col_idx = get(bucket.col_index, key, 0)
+    col_idx == 0 && return false
+    return _row_has_value(_column(bucket, col_idx), row)
 end
 Base.haskey(attrs::ColumnarAttrs, key) = haskey(attrs, _normalize_attr_key(key))
 
@@ -583,7 +713,9 @@ function Base.getindex(attrs::ColumnarAttrs, key::Symbol)
     bucket = store.buckets[bid]
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && throw(KeyError(key))
-    return _column(bucket, col_idx).data[row]
+    column = _column(bucket, col_idx)
+    _row_has_value(column, row) || throw(KeyError(key))
+    return column.data[row]
 end
 Base.getindex(attrs::ColumnarAttrs, key) = getindex(attrs, _normalize_attr_key(key))
 
@@ -606,9 +738,11 @@ end
     bucket = store.buckets[bid]
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && return default
+    column = _column(bucket, col_idx)
+    _row_has_value(column, row) || return default
 
     if _column_matches_exact_type(bucket, col_idx, T)
-        col = bucket.columns[col_idx]::Column{T}
+        col = column::Column{T}
         return @inbounds col.data[row]
     elseif _column_matches_nullable_type(bucket, col_idx, T)
         col = bucket.columns[col_idx]::Column{Union{Nothing,T}}
@@ -628,9 +762,11 @@ function Base.get(attrs::ColumnarAttrs, key::Symbol, default::T) where {T}
     bucket = store.buckets[bid]
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && return default
+    column = _column(bucket, col_idx)
+    _row_has_value(column, row) || return default
 
     if _column_matches_exact_type(bucket, col_idx, T)
-        col = bucket.columns[col_idx]::Column{T}
+        col = column::Column{T}
         return @inbounds col.data[row]
     elseif _column_matches_nullable_type(bucket, col_idx, T)
         col = bucket.columns[col_idx]::Column{Union{Nothing,T}}
@@ -651,9 +787,11 @@ Base.get(attrs::ColumnarAttrs, key, default) = get(attrs, _normalize_attr_key(ke
     if _column_matches_exact_type(bucket, col_idx, T)
         col = bucket.columns[col_idx]::Column{T}
         @inbounds col.data[row] = value
+        _mark_row_present!(col, row)
     elseif _column_matches_nullable_type(bucket, col_idx, T)
         col = bucket.columns[col_idx]::Column{Union{Nothing,T}}
         @inbounds col.data[row] = value
+        _mark_row_present!(col, row)
     else
         _set_value!(bucket, row, key, value)
     end
@@ -677,26 +815,51 @@ function Base.iterate(attrs::ColumnarAttrs, state=nothing)
     if !_isbound(attrs)
         return state === nothing ? iterate(attrs.staged) : iterate(attrs.staged, state)
     end
-    k = keys(attrs)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
     i = state === nothing ? 1 : state
-    i > length(k) && return nothing
-    key = k[i]
-    return (key => get(attrs, key, nothing), i + 1)
+    @inbounds while i <= length(bucket.columns)
+        column = _column(bucket, i)
+        if column.present[row]
+            return (column.name => column.data[row], i + 1)
+        end
+        i += 1
+    end
+    return nothing
 end
 
-function Base.pop!(attrs::ColumnarAttrs, key, default=nothing)
+@inline function _pop_bound!(attrs::ColumnarAttrs, key::Symbol, default, throw_missing::Bool)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
+    col_idx = get(bucket.col_index, key, 0)
+    if col_idx == 0
+        throw_missing && throw(KeyError(key))
+        return default
+    end
+    column = _column(bucket, col_idx)
+    if !_row_has_value(column, row)
+        throw_missing && throw(KeyError(key))
+        return default
+    end
+    old = column.data[row]
+    _mark_row_absent!(column, row)
+    return old
+end
+
+function Base.pop!(attrs::ColumnarAttrs, key)
+    key_ = _normalize_attr_key(key)
+    if !_isbound(attrs)
+        return pop!(attrs.staged, key_)
+    end
+    return _pop_bound!(attrs, key_, nothing, true)
+end
+
+function Base.pop!(attrs::ColumnarAttrs, key, default)
     key_ = _normalize_attr_key(key)
     if !_isbound(attrs)
         return pop!(attrs.staged, key_, default)
     end
-
-    store, bid, row = _bound_store_bid_row(attrs.ref)
-    bucket = store.buckets[bid]
-    col_idx = get(bucket.col_index, key_, 0)
-    col_idx == 0 && return default
-    old = _column(bucket, col_idx).data[row]
-    _drop_column_internal!(bucket, key_)
-    return old
+    return _pop_bound!(attrs, key_, default, false)
 end
 
 function Base.delete!(attrs::ColumnarAttrs, key)
@@ -709,11 +872,11 @@ function Base.empty!(attrs::ColumnarAttrs)
         empty!(attrs.staged)
         return attrs
     end
-    store, bid, _ = _bound_store_bid_row(attrs.ref)
+    store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
-    empty!(bucket.col_index)
-    empty!(bucket.columns)
-    empty!(bucket.col_types)
+    @inbounds for column in bucket.columns
+        _row_has_value(column, row) && _mark_row_absent!(column, row)
+    end
     return attrs
 end
 
