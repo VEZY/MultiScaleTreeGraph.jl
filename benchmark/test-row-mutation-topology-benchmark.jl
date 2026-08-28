@@ -98,9 +98,9 @@ function build_dense_auto_id(n::Int)
     leaves = Vector{typeof(root)}()
     sizehint!(leaves, n)
     for index in 1:n
-        # This intentionally exercises the historical ID-less constructor. At
-        # the revisions used as A1 baselines, it calls max_id(root) for every
-        # new node and therefore performs a repeated full-tree search.
+        # Exercise the public ID-less constructor separately from explicit-ID
+        # construction. Columnar MTGs obtain the next ID from the store's
+        # cached maximum instead of traversing the tree.
         leaf = Node(
             root,
             MutableNodeMTG(_leaf_link(index), :Leaf, index, 2),
@@ -296,9 +296,9 @@ function build_a1_benchmark_suite!(suite::BenchmarkGroup)
             evals=1,
         )
 
-        # Kept separate because this is a known pre-existing full-tree-search
-        # path, not a regression introduced by row-presence storage.
-        a1["preexisting_auto_id"]["dense"][size_key] =
+        # Kept separate so the cost of automatic ID allocation remains visible
+        # independently of explicit-ID construction.
+        a1["automatic_id"]["dense"][size_key] =
             @benchmarkable build_dense_auto_id($n) samples=A1_BENCHMARK_SAMPLES evals=1
 
         dense_root = build_dense_explicit(n).root

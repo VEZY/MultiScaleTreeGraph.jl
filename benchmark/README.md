@@ -29,10 +29,10 @@ revision supports row-local absence. Historical schema-wide revisions keep their
 semantic oracle but are not used as a timing baseline for those different
 operations.
 
-The `preexisting_auto_id` subgroup deliberately exercises repeated ID-less node
-construction. It exposes the historical full-tree `max_id` search separately
-from the A1 row-presence cost and can be reused unchanged to validate a future
-topology-growth correction.
+The `automatic_id` subgroup exercises repeated ID-less node construction. For
+columnar MTGs, the next ID comes from the store's cached maximum instead of a
+full-tree search. The subgroup keeps the cost of automatic ID allocation visible
+separately from explicit-ID construction.
 
 The writer gate exercises 40 features at 1,000 and 10,000 nodes. It compares the
 streaming path with the compatibility materialization path, measures seven alternating

@@ -96,7 +96,7 @@ end
     expected_groups = Set([
         "explicit_cold",
         "explicit_hot_append",
-        "preexisting_auto_id",
+        "automatic_id",
         "write_mtg",
     ])
     row_local_mutation_supported() && push!(expected_groups, "row_local")
@@ -109,8 +109,8 @@ end
     @test Set(keys(a1["explicit_hot_append"])) == Set(["dense"])
     assert_benchmark_size_group(a1["explicit_hot_append"]["dense"])
 
-    @test Set(keys(a1["preexisting_auto_id"])) == Set(["dense"])
-    assert_benchmark_size_group(a1["preexisting_auto_id"]["dense"])
+    @test Set(keys(a1["automatic_id"])) == Set(["dense"])
+    assert_benchmark_size_group(a1["automatic_id"]["dense"])
 
     @test Set(keys(a1["write_mtg"])) == Set(["dense", "sparse"])
     assert_benchmark_size_group(a1["write_mtg"]["dense"])
