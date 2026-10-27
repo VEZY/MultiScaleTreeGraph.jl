@@ -133,6 +133,113 @@ end
     @test leaf_bucket.columns[leaf_bucket.col_index[:value]].n_present == 2
 end
 
+@testset "NamedTuple child creation preserves staged insertion semantics" begin
+    direct_root = Node(1, NodeMTG(:/, :Plant, 1, 1))
+    staged_root = Node(1, NodeMTG(:/, :Plant, 1, 1))
+    for root in (direct_root, staged_root)
+        add_column!(root, :Leaf, :temperature, Float64, default=20.0)
+    end
+
+    function compare_creation_stores()
+        direct = MultiScaleTreeGraph._node_store(direct_root)
+        staged = MultiScaleTreeGraph._node_store(staged_root)
+        @test direct.symbol_to_bucket == staged.symbol_to_bucket
+        @test direct.node_bucket == staged.node_bucket
+        @test direct.node_row == staged.node_row
+        @test direct.max_node_id == staged.max_node_id
+        for (actual, expected) in zip(direct.buckets, staged.buckets)
+            @test actual.col_index == expected.col_index
+            @test actual.col_types == expected.col_types
+            for (actual_col, expected_col) in zip(actual.columns, expected.columns)
+                @test actual_col.name == expected_col.name
+                @test actual_col.data == expected_col.data
+                @test actual_col.present == expected_col.present
+                @test actual_col.n_present == expected_col.n_present
+            end
+        end
+        for (actual, expected) in zip(children(direct_root), children(staged_root))
+            @test collect(keys(node_attributes(actual))) == collect(keys(node_attributes(expected)))
+            @test Dict(pairs(node_attributes(actual))) == Dict(pairs(node_attributes(expected)))
+        end
+    end
+
+    payload = [1, 2]
+    creations = (
+        (value=1, nullable=nothing, payload=payload, label="first"),
+        (value=Float32(2), nullable=nothing, payload=payload, label="second"),
+        (value=3 // 2, label="third"),
+        (late_added=true, value=4),
+        (label="fifth", value=5, late_added=false),
+        NamedTuple(),
+    )
+    for (rank, values) in enumerate(creations)
+        encoding = NodeMTG(:+, :Leaf, rank, 2)
+        Node(rank + 1, direct_root, encoding, values)
+        # Explicitly retain the previous NamedTuple -> two staged Dicts path as
+        # the reference, including its schema/column/key insertion order.
+        Node(rank + 1, staged_root, encoding, MultiScaleTreeGraph._to_columnar_attrs(values))
+        compare_creation_stores()
+    end
+
+    @test children(direct_root)[1][:payload] === payload
+    @test children(direct_root)[2][:payload] === payload
+    push!(payload, 3)
+    @test children(direct_root)[1][:payload] == [1, 2, 3]
+    @test haskey(children(direct_root)[1], :nullable)
+    @test !haskey(children(direct_root)[3], :nullable)
+    @test children(direct_root)[6][:temperature] === 20.0
+    @test node_attributes(children(direct_root)[1]).staged !== node_attributes(children(direct_root)[2]).staged
+    @test node_attributes(children(direct_root)[1]).ref !== node_attributes(children(direct_root)[2]).ref
+    @test all(node -> isempty(node_attributes(node).staged), children(direct_root))
+
+    source = Dict{Any,Any}("value" => 9, :label => "dictionary")
+    saved_source = copy(source)
+    moved = Node(8, direct_root, NodeMTG(:+, :Leaf, 7, 2), source)
+    staged_moved = Node(8, staged_root, NodeMTG(:+, :Leaf, 7, 2), source)
+    @test source == saved_source
+    source["value"] = -1
+    @test moved[:value] == 9
+    compare_creation_stores()
+
+    store = MultiScaleTreeGraph._node_store(direct_root)
+    moved_row = store.node_row[node_id(moved)]
+    removed = children(direct_root)[2]
+    removed_attrs = node_attributes(removed)
+    delete_node!(removed)
+    delete_node!(children(staged_root)[2])
+    @test store.node_row[node_id(moved)] != moved_row
+    @test moved[:value] == 9
+    moved[:value] = 9.5
+    staged_moved[:value] = 9.5
+    @test moved[:value] === 9.5
+    removed_attrs[:detached_only] = true
+    @test !haskey(node_attributes(children(direct_root)[1]), :detached_only)
+    compare_creation_stores()
+
+    before_rejection = (
+        child_ids=node_id.(children(direct_root)),
+        node_bucket=copy(store.node_bucket),
+        node_row=copy(store.node_row),
+        symbols=copy(store.symbol_to_bucket),
+        max_node_id=store.max_node_id,
+        index_state=(store.subtree_index.dirty, store.subtree_index.mutation_count),
+    )
+    for invalid_id in (8, 0)
+        @test_throws ArgumentError Node(
+            invalid_id, direct_root, NodeMTG(:+, :UnseenSymbol, 1, 2), (new_key=1,),
+        )
+    end
+    @test_throws ArgumentError Node(99, direct_root, NodeMTG(:+, :Leaf, 8, 2), node_attributes(moved))
+    @test (
+        child_ids=node_id.(children(direct_root)),
+        node_bucket=copy(store.node_bucket),
+        node_row=copy(store.node_row),
+        symbols=copy(store.symbol_to_bucket),
+        max_node_id=store.max_node_id,
+        index_state=(store.subtree_index.dirty, store.subtree_index.mutation_count),
+    ) == before_rejection
+end
+
 @testset "columnarize! preserves the root store schema" begin
     root = Node(1, NodeMTG(:/, :Plant, 1, 1), (root_value=1,))
     first_leaf = Node(2, root, NodeMTG(:/, :Leaf, 1, 2), (leaf_value=1,))

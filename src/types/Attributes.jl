@@ -423,7 +423,7 @@ end
     return store, bid, row
 end
 
-function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
+function _add_node_row!(store::MTGAttributeStore, node_id::Int, symbol::Symbol)
     _assert_node_id_available(store, node_id)
     _mark_subtree_index_mutation!(store)
     _ensure_node_capacity!(store, node_id)
@@ -442,10 +442,52 @@ function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::S
     store.node_row[node_id] = row
     store.max_node_id = max(store.max_node_id, node_id)
 
+    return bucket, row
+end
+
+function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
+    bucket, row = _add_node_row!(store, node_id, symbol)
+
     for (k, v) in attrs
         _set_value_bound!(bucket, row, _normalize_attr_key(k), v)
     end
 
+    return nothing
+end
+
+@inline _set_namedtuple_attrs!(bucket::SymbolBucket, row::Int, ::Tuple{}, ::Tuple{}) = nothing
+
+@inline function _set_namedtuple_attrs!(bucket::SymbolBucket, row::Int, names::Tuple, values::Tuple)
+    _set_value_bound!(bucket, row, first(names), first(values))
+    _set_namedtuple_attrs!(bucket, row, Base.tail(names), Base.tail(values))
+    return nothing
+end
+
+function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::NamedTuple)
+    bid = get(store.symbol_to_bucket, symbol, 0)
+    if bid == 0 || !all(key -> haskey(store.buckets[bid].col_index, key), keys(attrs))
+        # Keep the existing schema insertion order when a new key appears. Once
+        # the schema exists, repeated organ creation needs neither filled Dict.
+        staged = ColumnarAttrs(Dict{Symbol,Any}(pairs(attrs))).staged
+        return _add_node_with_attrs!(store, node_id, symbol, staged)
+    end
+
+    bucket, row = _add_node_row!(store, node_id, symbol)
+    _set_namedtuple_attrs!(bucket, row, keys(attrs), values(attrs))
+    return nothing
+end
+
+@inline function _remove_column_row!(column::Column{T}, row::Int, last_row::Int) where {T}
+    @inbounds begin
+        removed_present = column.present[row]
+        if row != last_row
+            column.data[row] = column.data[last_row]
+            column.present[row] = column.present[last_row]
+        end
+        pop!(column.data)
+        pop!(column.present)
+        removed_present && (column.n_present -= 1)
+    end
     return nothing
 end
 
@@ -469,15 +511,9 @@ function _remove_node!(store::MTGAttributeStore, node_id::Int)
     delete!(bucket.node_to_row, node_id)
 
     @inbounds for i in eachindex(bucket.columns)
-        col = bucket.columns[i]
-        removed_present = col.present[row]
-        if row != last_row
-            col.data[row] = col.data[last_row]
-            col.present[row] = col.present[last_row]
-        end
-        pop!(col.data)
-        pop!(col.present)
-        removed_present && (col.n_present -= 1)
+        # Columns have different element types. Dispatch once for the complete
+        # row operation instead of accessing each field through `Any`.
+        _remove_column_row!(bucket.columns[i], row, last_row)
     end
 
     if moved_node != 0
@@ -622,12 +658,18 @@ function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
     return attrs
 end
 
-function bind_columnar_child!(parent_attrs::ColumnarAttrs, child_attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
+function bind_columnar_child!(
+    parent_attrs::ColumnarAttrs,
+    child_attrs::ColumnarAttrs,
+    node_id::Int,
+    symbol::Symbol,
+    values=child_attrs.staged,
+)
     _assert_columnar_attrs_unbound(child_attrs)
     store = _store_for_node_attrs(parent_attrs)
     store === nothing && error("Parent node is not attached to a columnar attribute store.")
     _assert_node_id_available(store, node_id)
-    _add_node_with_attrs!(store, node_id, symbol, child_attrs.staged)
+    _add_node_with_attrs!(store, node_id, symbol, values)
     child_attrs.ref.store = store
     child_attrs.ref.node_id = node_id
     empty!(child_attrs.staged)
@@ -811,6 +853,13 @@ function Base.setindex!(attrs::ColumnarAttrs, value::T, key::Symbol) where {T}
 end
 Base.setindex!(attrs::ColumnarAttrs, value, key) = setindex!(attrs, value, _normalize_attr_key(key))
 
+@inline function _column_iteration_entry(column::Column{T}, row::Int, next_index::Int) where {T}
+    @inbounds if column.present[row]
+        return (Pair{Symbol,Any}(column.name, column.data[row]), next_index)
+    end
+    return nothing
+end
+
 function Base.iterate(attrs::ColumnarAttrs, state=nothing)
     if !_isbound(attrs)
         return state === nothing ? iterate(attrs.staged) : iterate(attrs.staged, state)
@@ -819,10 +868,11 @@ function Base.iterate(attrs::ColumnarAttrs, state=nothing)
     bucket = store.buckets[bid]
     i = state === nothing ? 1 : state
     @inbounds while i <= length(bucket.columns)
-        column = _column(bucket, i)
-        if column.present[row]
-            return (column.name => column.data[row], i + 1)
-        end
+        # Match AbstractDict{Symbol,Any}'s entry type across heterogeneous
+        # columns, so callers need not recover a different Pair type per value.
+        entry = _column_iteration_entry(bucket.columns[i], row, i + 1)::
+                Union{Nothing,Tuple{Pair{Symbol,Any},Int}}
+        entry === nothing || return entry
         i += 1
     end
     return nothing
