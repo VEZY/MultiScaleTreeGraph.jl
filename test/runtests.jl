@@ -22,6 +22,7 @@ end
 
 @testset "columnar backend" begin
     include("test-columnar.jl")
+    include("test-runtime-node-views.jl")
 end
 
 @testset "descendants()" begin

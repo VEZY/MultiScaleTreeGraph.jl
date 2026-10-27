@@ -43,7 +43,7 @@ internode = Node(mtg, NodeMTG("/", "Internode", 1, 2))
 mtg
 ```
 """
-mutable struct Node{N<:AbstractNodeMTG,A}
+mutable struct Node{N<:AbstractNodeMTG,A} <: AbstractMTGNode
     "Node unique ID"
     id::Int
     "Parent node"

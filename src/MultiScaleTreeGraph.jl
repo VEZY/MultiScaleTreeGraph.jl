@@ -17,6 +17,7 @@ import Dates: Date, @dateformat_str, format
 include("types/AbstractNodeMTG.jl")
 include("types/Attributes.jl")
 include("types/ColumnTable.jl")
+include("types/AbstractMTGNode.jl")
 include("types/Node.jl")
 include("read_MTG/read_MTG.jl")
 include("read_MTG/strip_comments.jl")
@@ -48,6 +49,8 @@ include("compute_MTG/mutation_helpers.jl")
 include("compute_MTG/nleaves.jl")
 include("compute_MTG/pipe_model.jl")
 include("compute_MTG/get_node.jl")
+include("types/NodeInterface.jl")
+include("types/AttributeRef.jl")
 include("conversion/Tables.jl")
 include("conversion/MetaGraph.jl")
 
@@ -75,7 +78,7 @@ export insert_parent!, insert_generation!, insert_child!, insert_sibling!
 export write_mtg
 export is_segment!
 export descendants, ancestors, ancestors!, descendants!
-export Node
+export Node, AbstractMTGNode, add_node!, attribute_ref
 export AbstractNodeMTG
 export NodeMTG
 export MutableNodeMTG

@@ -36,8 +36,9 @@ end
     map(normalize_symbol_filter, filters)
 end
 
-function check_filters(node::Node{N,A}; scale=nothing, symbol=nothing, link=nothing) where {N<:AbstractNodeMTG,A}
+function check_filters(node::AbstractMTGNode; scale=nothing, symbol=nothing, link=nothing)
     no_node_filters(scale, symbol, link) && return nothing
+    N = typeof(node_mtg(node))
 
     root_node = get_root(node)
 

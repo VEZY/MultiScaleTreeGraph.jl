@@ -227,7 +227,11 @@ end
 mutable struct NodeAttrRef
     store::Union{Nothing,MTGAttributeStore}
     node_id::Int
+    generation::UInt64
 end
+
+# Preserve the existing public constructor while tracking logical row lifetimes.
+NodeAttrRef(store, node_id) = NodeAttrRef(store, Int(node_id), UInt64(0))
 
 mutable struct ColumnarAttrs <: AbstractDict{Symbol,Any}
     ref::NodeAttrRef
@@ -618,6 +622,7 @@ function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
     _add_node_with_attrs!(store, node_id, symbol, attrs.staged)
     attrs.ref.store = store
     attrs.ref.node_id = node_id
+    attrs.ref.generation += UInt64(1)
     empty!(attrs.staged)
     return attrs
 end
@@ -630,6 +635,7 @@ function bind_columnar_child!(parent_attrs::ColumnarAttrs, child_attrs::Columnar
     _add_node_with_attrs!(store, node_id, symbol, child_attrs.staged)
     child_attrs.ref.store = store
     child_attrs.ref.node_id = node_id
+    child_attrs.ref.generation += UInt64(1)
     empty!(child_attrs.staged)
     return child_attrs
 end
@@ -639,6 +645,7 @@ function remove_columnar_node!(attrs::ColumnarAttrs)
     store === nothing && return nothing
     _remove_node!(store, attrs.ref.node_id)
     attrs.ref.node_id = 0
+    attrs.ref.generation += UInt64(1)
     return nothing
 end
 

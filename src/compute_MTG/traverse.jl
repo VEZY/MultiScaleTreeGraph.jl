@@ -1,6 +1,6 @@
 """
-    traverse!(node::Node, f::Function[, args...], <keyword arguments>)
-    traverse(node::Node, f::Function[, args...], <keyword arguments>)
+    traverse!(node::AbstractMTGNode, f::Function[, args...], <keyword arguments>)
+    traverse(node::AbstractMTGNode, f::Function[, args...], <keyword arguments>)
 
 Traverse the nodes of a (sub-)tree, given any starting node in the tree, and apply a function
 which is either mutating (use `traverse!`) or not (use `traverse`).
@@ -8,7 +8,7 @@ which is either mutating (use `traverse!`) or not (use `traverse`).
 
 # Arguments
 
-- `node::Node`: An MTG node (*e.g.* the whole mtg returned by `read_mtg()`).
+- `node::AbstractMTGNode`: An MTG node (*e.g.* the whole mtg returned by `read_mtg()`).
 - `f::Function`: a function to apply over each node
 - `args::Any`: any argument to pass to the function
 - <keyword arguments>:
@@ -44,7 +44,7 @@ end
 """
 traverse!, traverse
 
-function traverse_no_filter!(node::Node, f::Function, recursivity_level)
+function traverse_no_filter!(node::AbstractMTGNode, f::Function, recursivity_level)
     nodes = Vector{typeof(node)}(undef, 1)
     levels = Vector{typeof(recursivity_level)}(undef, 1)
     nodes[1] = node
@@ -73,7 +73,7 @@ function traverse_no_filter!(node::Node, f::Function, recursivity_level)
     return nothing
 end
 
-function traverse_no_filter(node::Node, f::Function, val, recursivity_level)
+function traverse_no_filter(node::AbstractMTGNode, f::Function, val, recursivity_level)
     nodes = Vector{typeof(node)}(undef, 1)
     levels = Vector{typeof(recursivity_level)}(undef, 1)
     nodes[1] = node
@@ -103,7 +103,7 @@ function traverse_no_filter(node::Node, f::Function, val, recursivity_level)
     return val
 end
 
-function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, recursivity_level=Inf)
+function traverse!(node::AbstractMTGNode, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, recursivity_level=Inf)
     if !isempty(args)
         g = node -> f(node, args...)
     else
@@ -134,7 +134,7 @@ function traverse!(node::Node, f::Function, args...; scale=nothing, symbol=nothi
     traverse!_(node, g, scale, symbol, link, filter_fun, all, recursivity_level)
 end
 
-function traverse!_(node::Node, f::Function, scale, symbol, link, filter_fun, all, recursivity_level)
+function traverse!_(node::AbstractMTGNode, f::Function, scale, symbol, link, filter_fun, all, recursivity_level)
     recursivity_level == 0 && return
     recursivity_level -= 1
 
@@ -159,7 +159,7 @@ end
 
 # Non-mutating version:
 # Set-up array of value and call the workhorse (traverse_)
-function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, type=Any, recursivity_level=Inf)
+function traverse(node::AbstractMTGNode, f::Function, args...; scale=nothing, symbol=nothing, link=nothing, filter_fun=nothing, all=true, type=Any, recursivity_level=Inf)
     if !isempty(args)
         g = node -> f(node, args...)
     else
@@ -203,7 +203,7 @@ function traverse(node::Node, f::Function, args...; scale=nothing, symbol=nothin
 end
 
 # Actual workhorse:
-function traverse_(node::Node, f::Function, val, scale, symbol, link, filter_fun, all, recursivity_level)
+function traverse_(node::AbstractMTGNode, f::Function, val, scale, symbol, link, filter_fun, all, recursivity_level)
     if recursivity_level == 0
         return
     else
@@ -234,7 +234,7 @@ end
 # Used for the do...end block notation
 function traverse!(
     f::Function,
-    node::Node,
+    node::AbstractMTGNode,
     args...;
     scale=nothing,
     symbol=nothing,
@@ -249,7 +249,7 @@ end
 # And with the non-mutating version:
 function traverse(
     f::Function,
-    node::Node,
+    node::AbstractMTGNode,
     args...;
     scale=nothing,
     symbol=nothing,
