@@ -449,6 +449,20 @@ function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::S
     return nothing
 end
 
+@inline function _remove_column_row!(column::Column{T}, row::Int, last_row::Int) where {T}
+    @inbounds begin
+        removed_present = column.present[row]
+        if row != last_row
+            column.data[row] = column.data[last_row]
+            column.present[row] = column.present[last_row]
+        end
+        pop!(column.data)
+        pop!(column.present)
+        removed_present && (column.n_present -= 1)
+    end
+    return nothing
+end
+
 function _remove_node!(store::MTGAttributeStore, node_id::Int)
     node_id > length(store.node_bucket) && return nothing
     bid = store.node_bucket[node_id]
@@ -469,15 +483,9 @@ function _remove_node!(store::MTGAttributeStore, node_id::Int)
     delete!(bucket.node_to_row, node_id)
 
     @inbounds for i in eachindex(bucket.columns)
-        col = bucket.columns[i]
-        removed_present = col.present[row]
-        if row != last_row
-            col.data[row] = col.data[last_row]
-            col.present[row] = col.present[last_row]
-        end
-        pop!(col.data)
-        pop!(col.present)
-        removed_present && (col.n_present -= 1)
+        # Columns have different element types. Dispatch once for the complete
+        # row operation instead of accessing each field through `Any`.
+        _remove_column_row!(bucket.columns[i], row, last_row)
     end
 
     if moved_node != 0
@@ -811,6 +819,13 @@ function Base.setindex!(attrs::ColumnarAttrs, value::T, key::Symbol) where {T}
 end
 Base.setindex!(attrs::ColumnarAttrs, value, key) = setindex!(attrs, value, _normalize_attr_key(key))
 
+@inline function _column_iteration_entry(column::Column{T}, row::Int, next_index::Int) where {T}
+    @inbounds if column.present[row]
+        return (Pair{Symbol,Any}(column.name, column.data[row]), next_index)
+    end
+    return nothing
+end
+
 function Base.iterate(attrs::ColumnarAttrs, state=nothing)
     if !_isbound(attrs)
         return state === nothing ? iterate(attrs.staged) : iterate(attrs.staged, state)
@@ -819,10 +834,11 @@ function Base.iterate(attrs::ColumnarAttrs, state=nothing)
     bucket = store.buckets[bid]
     i = state === nothing ? 1 : state
     @inbounds while i <= length(bucket.columns)
-        column = _column(bucket, i)
-        if column.present[row]
-            return (column.name => column.data[row], i + 1)
-        end
+        # Match AbstractDict{Symbol,Any}'s entry type across heterogeneous
+        # columns, so callers need not recover a different Pair type per value.
+        entry = _column_iteration_entry(bucket.columns[i], row, i + 1)::
+                Union{Nothing,Tuple{Pair{Symbol,Any},Int}}
+        entry === nothing || return entry
         i += 1
     end
     return nothing
