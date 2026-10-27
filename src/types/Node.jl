@@ -137,6 +137,20 @@ function _to_columnar_attrs(attributes)
 end
 
 function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::ColumnarAttrs) where {M<:AbstractNodeMTG}
+    _node_with_columnar_attrs(id, parent, MTG, attributes, attributes.staged)
+end
+
+function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, values::NamedTuple) where {M<:AbstractNodeMTG}
+    _node_with_columnar_attrs(id, parent, MTG, ColumnarAttrs(), values)
+end
+
+function _node_with_columnar_attrs(
+    id::Int,
+    parent::Node{M,ColumnarAttrs},
+    MTG::M,
+    attributes::ColumnarAttrs,
+    values,
+) where {M<:AbstractNodeMTG}
     parent_attrs = node_attributes(parent)
     parent_store = _store_for_node_attrs(parent_attrs)
     parent_store === nothing &&
@@ -148,7 +162,7 @@ function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::Column
     )
     push!(children(parent), node)
     _invalidate_traversal_caches!(parent)
-    bind_columnar_child!(node_attributes(parent), attributes, id, getfield(MTG, :symbol))
+    bind_columnar_child!(parent_attrs, attributes, id, getfield(MTG, :symbol), values)
     return node
 end
 

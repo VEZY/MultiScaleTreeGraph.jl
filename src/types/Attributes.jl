@@ -423,7 +423,7 @@ end
     return store, bid, row
 end
 
-function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
+function _add_node_row!(store::MTGAttributeStore, node_id::Int, symbol::Symbol)
     _assert_node_id_available(store, node_id)
     _mark_subtree_index_mutation!(store)
     _ensure_node_capacity!(store, node_id)
@@ -442,10 +442,38 @@ function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::S
     store.node_row[node_id] = row
     store.max_node_id = max(store.max_node_id, node_id)
 
+    return bucket, row
+end
+
+function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
+    bucket, row = _add_node_row!(store, node_id, symbol)
+
     for (k, v) in attrs
         _set_value_bound!(bucket, row, _normalize_attr_key(k), v)
     end
 
+    return nothing
+end
+
+@inline _set_namedtuple_attrs!(bucket::SymbolBucket, row::Int, ::Tuple{}, ::Tuple{}) = nothing
+
+@inline function _set_namedtuple_attrs!(bucket::SymbolBucket, row::Int, names::Tuple, values::Tuple)
+    _set_value_bound!(bucket, row, first(names), first(values))
+    _set_namedtuple_attrs!(bucket, row, Base.tail(names), Base.tail(values))
+    return nothing
+end
+
+function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::NamedTuple)
+    bid = get(store.symbol_to_bucket, symbol, 0)
+    if bid == 0 || !all(key -> haskey(store.buckets[bid].col_index, key), keys(attrs))
+        # Keep the existing schema insertion order when a new key appears. Once
+        # the schema exists, repeated organ creation needs neither filled Dict.
+        staged = ColumnarAttrs(Dict{Symbol,Any}(pairs(attrs))).staged
+        return _add_node_with_attrs!(store, node_id, symbol, staged)
+    end
+
+    bucket, row = _add_node_row!(store, node_id, symbol)
+    _set_namedtuple_attrs!(bucket, row, keys(attrs), values(attrs))
     return nothing
 end
 
@@ -630,12 +658,18 @@ function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
     return attrs
 end
 
-function bind_columnar_child!(parent_attrs::ColumnarAttrs, child_attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
+function bind_columnar_child!(
+    parent_attrs::ColumnarAttrs,
+    child_attrs::ColumnarAttrs,
+    node_id::Int,
+    symbol::Symbol,
+    values=child_attrs.staged,
+)
     _assert_columnar_attrs_unbound(child_attrs)
     store = _store_for_node_attrs(parent_attrs)
     store === nothing && error("Parent node is not attached to a columnar attribute store.")
     _assert_node_id_available(store, node_id)
-    _add_node_with_attrs!(store, node_id, symbol, child_attrs.staged)
+    _add_node_with_attrs!(store, node_id, symbol, values)
     child_attrs.ref.store = store
     child_attrs.ref.node_id = node_id
     empty!(child_attrs.staged)
