@@ -27,6 +27,11 @@ function Base.append!(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, attr)
     return node
 end
 
+function Base.append!(node::Node{<:AbstractNodeMTG,ColumnarAttrs}, attr::NamedTuple)
+    merge!(node_attributes(node), attr)
+    return node
+end
+
 # And ensure compatibility between both so a script wouldn't be broken if we just change the
 # type of the attributes:
 function Base.append!(node::Node{<:AbstractNodeMTG,<:AbstractDict}, attr)
