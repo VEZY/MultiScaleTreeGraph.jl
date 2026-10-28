@@ -23,6 +23,7 @@ end
 @testset "columnar backend" begin
     include("test-columnar.jl")
     include("test-columnar-iteration-mutation.jl")
+    include("test-columnar-reads.jl")
 end
 
 @testset "descendants()" begin

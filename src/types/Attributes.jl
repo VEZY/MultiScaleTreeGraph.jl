@@ -395,12 +395,26 @@ function _set_value!(bucket::SymbolBucket, row::Int, key::Symbol, value)
     return value
 end
 
+@inline function _get_column_value(column::Column{T}, row::Int, default) where {T}
+    @inbounds begin
+        column.present[row] || return default
+        return column.data[row]
+    end
+end
+
+@inline function _get_column_value_or_error(column::Column{T}, row::Int, key::Symbol) where {T}
+    @inbounds begin
+        column.present[row] || throw(KeyError(key))
+        return column.data[row]
+    end
+end
+
 function _get_value(bucket::SymbolBucket, row::Int, key::Symbol, default=nothing)
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && return default
-    column = _column(bucket, col_idx)
-    _row_has_value(column, row) || return default
-    column.data[row]
+    # Columns are heterogeneous. Resolve the key once, then dispatch once for
+    # both the presence bit and the value instead of accessing fields via Any.
+    return _get_column_value(_column(bucket, col_idx), row, default)
 end
 
 function _bucket_row(ref::NodeAttrRef)
@@ -755,9 +769,7 @@ function Base.getindex(attrs::ColumnarAttrs, key::Symbol)
     bucket = store.buckets[bid]
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && throw(KeyError(key))
-    column = _column(bucket, col_idx)
-    _row_has_value(column, row) || throw(KeyError(key))
-    return column.data[row]
+    return _get_column_value_or_error(_column(bucket, col_idx), row, key)
 end
 Base.getindex(attrs::ColumnarAttrs, key) = getindex(attrs, _normalize_attr_key(key))
 
@@ -781,17 +793,16 @@ end
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && return default
     column = _column(bucket, col_idx)
-    _row_has_value(column, row) || return default
 
     if _column_matches_exact_type(bucket, col_idx, T)
         col = column::Column{T}
-        return @inbounds col.data[row]
+        return _get_column_value(col, row, default)
     elseif _column_matches_nullable_type(bucket, col_idx, T)
-        col = bucket.columns[col_idx]::Column{Union{Nothing,T}}
-        return @inbounds col.data[row]
+        col = column::Column{Union{Nothing,T}}
+        return _get_column_value(col, row, default)
     end
 
-    v = _get_value(bucket, row, key, default)
+    v = _get_column_value(column, row, default)
     v === nothing && return nothing
     return v isa T ? v : (convert(T, v)::T)
 end
@@ -805,17 +816,16 @@ function Base.get(attrs::ColumnarAttrs, key::Symbol, default::T) where {T}
     col_idx = get(bucket.col_index, key, 0)
     col_idx == 0 && return default
     column = _column(bucket, col_idx)
-    _row_has_value(column, row) || return default
 
     if _column_matches_exact_type(bucket, col_idx, T)
         col = column::Column{T}
-        return @inbounds col.data[row]
+        return _get_column_value(col, row, default)
     elseif _column_matches_nullable_type(bucket, col_idx, T)
-        col = bucket.columns[col_idx]::Column{Union{Nothing,T}}
-        return @inbounds col.data[row]
+        col = column::Column{Union{Nothing,T}}
+        return _get_column_value(col, row, default)
     end
 
-    return _get_value(bucket, row, key, default)
+    return _get_column_value(column, row, default)
 end
 Base.get(attrs::ColumnarAttrs, key, default) = get(attrs, _normalize_attr_key(key), default)
 
