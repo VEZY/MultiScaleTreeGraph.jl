@@ -863,6 +863,19 @@ function Base.setindex!(attrs::ColumnarAttrs, value::T, key::Symbol) where {T}
 end
 Base.setindex!(attrs::ColumnarAttrs, value, key) = setindex!(attrs, value, _normalize_attr_key(key))
 
+function Base.merge!(attrs::ColumnarAttrs, updates::NamedTuple)
+    if !_isbound(attrs)
+        for (key, value) in pairs(updates)
+            attrs[key] = value
+        end
+        return attrs
+    end
+    store, bid, row = _bound_store_bid_row(attrs.ref)
+    bucket = store.buckets[bid]
+    _set_namedtuple_attrs!(bucket, row, keys(updates), values(updates))
+    return attrs
+end
+
 @inline function _column_iteration_entry(column::Column{T}, row::Int, next_index::Int) where {T}
     @inbounds if column.present[row]
         return (Pair{Symbol,Any}(column.name, column.data[row]), next_index)
