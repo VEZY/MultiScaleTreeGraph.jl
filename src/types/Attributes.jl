@@ -231,17 +231,22 @@ end
 
 mutable struct ColumnarAttrs <: AbstractDict{Symbol,Any}
     ref::NodeAttrRef
-    staged::Dict{Symbol,Any}
+    staged::Union{Nothing,Dict{Symbol,Any}}
 end
 
-ColumnarAttrs() = ColumnarAttrs(NodeAttrRef(nothing, 0), Dict{Symbol,Any}())
+ColumnarAttrs() = ColumnarAttrs(NodeAttrRef(nothing, 0), nothing)
 function ColumnarAttrs(d::AbstractDict)
+    isempty(d) && return ColumnarAttrs()
     staged = Dict{Symbol,Any}()
     for (k, v) in d
         staged[Symbol(k)] = v
     end
     ColumnarAttrs(NodeAttrRef(nothing, 0), staged)
 end
+
+# Unbound empty attributes need no mutable staging dictionary.
+@inline _staged_attributes(attrs::ColumnarAttrs) =
+    isnothing(attrs.staged) ? NamedTuple() : attrs.staged
 
 @inline _isbound(attrs::ColumnarAttrs) = attrs.ref.store !== nothing && attrs.ref.node_id > 0
 
@@ -478,6 +483,10 @@ end
 end
 
 function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::NamedTuple)
+    if isempty(attrs)
+        _add_node_row!(store, node_id, symbol)
+        return nothing
+    end
     bid = get(store.symbol_to_bucket, symbol, 0)
     if bid == 0 || !all(key -> haskey(store.buckets[bid].col_index, key), keys(attrs))
         # Keep the existing schema insertion order when a new key appears. Once
@@ -665,10 +674,10 @@ end
 function init_columnar_root!(attrs::ColumnarAttrs, node_id::Int, symbol::Symbol)
     _assert_columnar_attrs_unbound(attrs)
     store = MTGAttributeStore()
-    _add_node_with_attrs!(store, node_id, symbol, attrs.staged)
+    _add_node_with_attrs!(store, node_id, symbol, _staged_attributes(attrs))
     attrs.ref.store = store
     attrs.ref.node_id = node_id
-    empty!(attrs.staged)
+    attrs.staged = nothing
     return attrs
 end
 
@@ -677,7 +686,7 @@ function bind_columnar_child!(
     child_attrs::ColumnarAttrs,
     node_id::Int,
     symbol::Symbol,
-    values=child_attrs.staged,
+    values=_staged_attributes(child_attrs),
 )
     _assert_columnar_attrs_unbound(child_attrs)
     store = _store_for_node_attrs(parent_attrs)
@@ -686,7 +695,7 @@ function bind_columnar_child!(
     _add_node_with_attrs!(store, node_id, symbol, values)
     child_attrs.ref.store = store
     child_attrs.ref.node_id = node_id
-    empty!(child_attrs.staged)
+    child_attrs.staged = nothing
     return child_attrs
 end
 
@@ -720,7 +729,7 @@ end
 
 function Base.length(attrs::ColumnarAttrs)
     if !_isbound(attrs)
-        return length(attrs.staged)
+        return length(_staged_attributes(attrs))
     end
     store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
@@ -733,7 +742,7 @@ end
 
 function Base.keys(attrs::ColumnarAttrs)
     if !_isbound(attrs)
-        return collect(keys(attrs.staged))
+        return collect(Symbol, keys(_staged_attributes(attrs)))
     end
     store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
@@ -751,7 +760,7 @@ end
 
 function Base.haskey(attrs::ColumnarAttrs, key::Symbol)
     if !_isbound(attrs)
-        return haskey(attrs.staged, key)
+        return haskey(_staged_attributes(attrs), key)
     end
     store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
@@ -763,6 +772,7 @@ Base.haskey(attrs::ColumnarAttrs, key) = haskey(attrs, _normalize_attr_key(key))
 
 function Base.getindex(attrs::ColumnarAttrs, key::Symbol)
     if !_isbound(attrs)
+        isnothing(attrs.staged) && throw(KeyError(key))
         return attrs.staged[key]
     end
     store, bid, row = _bound_store_bid_row(attrs.ref)
@@ -783,7 +793,7 @@ end
 
 @inline function _get_typed_numeric(attrs::ColumnarAttrs, key::Symbol, default::T) where {T<:Number}
     if !_isbound(attrs)
-        v = get(attrs.staged, key, default)
+        v = get(_staged_attributes(attrs), key, default)
         v === nothing && return nothing
         return v isa T ? v : (convert(T, v)::T)
     end
@@ -809,7 +819,7 @@ end
 
 function Base.get(attrs::ColumnarAttrs, key::Symbol, default::T) where {T}
     if !_isbound(attrs)
-        return get(attrs.staged, key, default)
+        return get(_staged_attributes(attrs), key, default)
     end
     store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
@@ -853,7 +863,12 @@ end
 
 function Base.setindex!(attrs::ColumnarAttrs, value::T, key::Symbol) where {T}
     if !_isbound(attrs)
-        attrs.staged[key] = value
+        staged = attrs.staged
+        if isnothing(staged)
+            staged = Dict{Symbol,Any}()
+            attrs.staged = staged
+        end
+        staged[key] = value
         return value
     end
     store, bid, row = _bound_store_bid_row(attrs.ref)
@@ -885,7 +900,8 @@ end
 
 function Base.iterate(attrs::ColumnarAttrs, state=nothing)
     if !_isbound(attrs)
-        return state === nothing ? iterate(attrs.staged) : iterate(attrs.staged, state)
+        staged = _staged_attributes(attrs)
+        return state === nothing ? iterate(staged) : iterate(staged, state)
     end
     store, bid, row = _bound_store_bid_row(attrs.ref)
     bucket = store.buckets[bid]
@@ -922,6 +938,7 @@ end
 function Base.pop!(attrs::ColumnarAttrs, key)
     key_ = _normalize_attr_key(key)
     if !_isbound(attrs)
+        isnothing(attrs.staged) && throw(KeyError(key_))
         return pop!(attrs.staged, key_)
     end
     return _pop_bound!(attrs, key_, nothing, true)
@@ -930,6 +947,7 @@ end
 function Base.pop!(attrs::ColumnarAttrs, key, default)
     key_ = _normalize_attr_key(key)
     if !_isbound(attrs)
+        isnothing(attrs.staged) && return default
         return pop!(attrs.staged, key_, default)
     end
     return _pop_bound!(attrs, key_, default, false)
@@ -942,7 +960,7 @@ end
 
 function Base.empty!(attrs::ColumnarAttrs)
     if !_isbound(attrs)
-        empty!(attrs.staged)
+        attrs.staged = nothing
         return attrs
     end
     store, bid, row = _bound_store_bid_row(attrs.ref)
