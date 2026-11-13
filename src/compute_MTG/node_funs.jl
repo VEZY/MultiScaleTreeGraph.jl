@@ -119,7 +119,7 @@ function _merge_columnar_subtree_into_store!(node::Node, target_store::MTGAttrib
     end
     attrs.ref.store = target_store
     attrs.ref.node_id = node_id(node)
-    empty!(attrs.staged)
+    attrs.staged = nothing
     if _maybe_traversal_cache(node) !== nothing
         source_store === nothing || source_store === target_store ||
             _unregister_traversal_cache!(source_store, node)

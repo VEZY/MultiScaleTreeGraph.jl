@@ -188,9 +188,8 @@ end
     @test haskey(children(direct_root)[1], :nullable)
     @test !haskey(children(direct_root)[3], :nullable)
     @test children(direct_root)[6][:temperature] === 20.0
-    @test node_attributes(children(direct_root)[1]).staged !== node_attributes(children(direct_root)[2]).staged
     @test node_attributes(children(direct_root)[1]).ref !== node_attributes(children(direct_root)[2]).ref
-    @test all(node -> isempty(node_attributes(node).staged), children(direct_root))
+    @test all(node -> isnothing(node_attributes(node).staged), children(direct_root))
 
     source = Dict{Any,Any}("value" => 9, :label => "dictionary")
     saved_source = copy(source)
@@ -525,3 +524,39 @@ leaf_widths_after = descendants(mtg, :Width, symbol=:Leaf, ignore_nothing=true)
 descendants_strategy!(mtg, :pointer)
 @test descendants_strategy(mtg) == :pointer
 @test descendants(mtg, :Width, symbol=:Leaf, ignore_nothing=true) == leaf_widths_after
+
+
+@testset "Empty attributes stay independent through binding and removal" begin
+    first = MultiScaleTreeGraph.ColumnarAttrs()
+    second = MultiScaleTreeGraph.ColumnarAttrs(Dict{Symbol,Any}())
+    @test isempty(first)
+    @test keys(first) == Symbol[]
+    @test collect(pairs(first)) == Pair{Symbol,Any}[]
+    @test get(first, :value, 3f0) === 3f0
+    @test pop!(first, :value, :absent) === :absent
+    @test_throws KeyError first[:value]
+    @test_throws KeyError pop!(first, :value)
+    first[:value] = 2f0
+    @test first[:value] === 2f0
+    @test !haskey(second, :value)
+    empty!(first)
+    @test isempty(first)
+    @test isnothing(first.staged)
+
+    root = Node(1, NodeMTG(:/, :Plant, 1, 1))
+    leaf_a = Node(2, root, NodeMTG(:/, :Leaf, 1, 2), NamedTuple())
+    leaf_b = Node(3, root, NodeMTG(:+, :Leaf, 2, 2))
+    @test all(n -> isnothing(node_attributes(n).staged), (root, leaf_a, leaf_b))
+    leaf_a[:value] = 4f0
+    @test leaf_a[:value] === 4f0
+    @test !haskey(leaf_b, :value)
+    saved = node_attributes(leaf_a)
+    delete_node!(leaf_a)
+    @test isempty(saved)
+    saved[:detached] = :annotation
+    @test saved[:detached] === :annotation
+    @test !haskey(leaf_b, :detached)
+    @test columnarize!(root) === root
+    @test !haskey(leaf_b, :value)
+    @test !haskey(leaf_b, :detached)
+end

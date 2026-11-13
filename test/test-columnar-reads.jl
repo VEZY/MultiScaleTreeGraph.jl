@@ -14,7 +14,7 @@ using MultiScaleTreeGraph
 
     function historical_get(attrs, key::Symbol, default::T) where {T}
         if !MultiScaleTreeGraph._isbound(attrs)
-            return get(attrs.staged, key, default)
+            return isnothing(attrs.staged) ? default : get(attrs.staged, key, default)
         end
         store, bid, row = MultiScaleTreeGraph._bound_store_bid_row(attrs.ref)
         bucket = store.buckets[bid]
@@ -33,7 +33,7 @@ using MultiScaleTreeGraph
 
     function historical_numeric_get(attrs, key::Symbol, default::T) where {T<:Number}
         if !MultiScaleTreeGraph._isbound(attrs)
-            value = get(attrs.staged, key, default)
+            value = isnothing(attrs.staged) ? default : get(attrs.staged, key, default)
             value === nothing && return nothing
             return value isa T ? value : (convert(T, value)::T)
         end
