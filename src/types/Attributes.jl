@@ -852,11 +852,16 @@ end
     bucket.col_types[col_idx] === Union{Nothing,T}
 end
 
+@inline _attribute_read_value(value, default) = value
+@inline function _attribute_read_value(value, default::T) where {T<:Number}
+    value === nothing && return nothing
+    return value isa T ? value : (convert(T, value)::T)
+end
+
 @inline function _get_typed_numeric(attrs::ColumnarAttrs, key::Symbol, default::T) where {T<:Number}
     if !_isbound(attrs)
         v = get(_staged_attributes(attrs), key, default)
-        v === nothing && return nothing
-        return v isa T ? v : (convert(T, v)::T)
+        return _attribute_read_value(v, default)
     end
 
     store, bid, row = _bound_store_bid_row(attrs.ref)
@@ -874,8 +879,7 @@ end
     end
 
     v = _get_column_value(column, row, default)
-    v === nothing && return nothing
-    return v isa T ? v : (convert(T, v)::T)
+    return _attribute_read_value(v, default)
 end
 
 function Base.get(attrs::ColumnarAttrs, key::Symbol, default::T) where {T}

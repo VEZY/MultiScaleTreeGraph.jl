@@ -40,7 +40,7 @@ function delete_node!(plan::PreparedNodeEdits, node::Node{M,ColumnarAttrs}) wher
     return _delete_node!(node, new_child_link, plan.schema)
 end
 
-function attribute(plan::PreparedNodeEdits, node::Node{M,ColumnarAttrs}, key::Symbol, default=nothing) where {M}
+function attribute(plan::PreparedNodeEdits, node::Node{M,ColumnarAttrs}, key::Symbol, default) where {M}
     _check_edit_store(plan, node)
     store, bid, row = _bucket_row(getfield(node_attributes(node), :ref))
     bucket = store.buckets[bid]
@@ -48,5 +48,9 @@ function attribute(plan::PreparedNodeEdits, node::Node{M,ColumnarAttrs}, key::Sy
     iszero(slot) && return default
     column = _column(bucket, slot)
     _check_row_column_type(plan.schema, typeof(column))
-    return _get_column_value(_row_column(plan.schema, column), row, default)
+    value = _get_column_value(_row_column(plan.schema, column), row, default)
+    return _attribute_read_value(value, default)
 end
+
+attribute(plan::PreparedNodeEdits, node::Node, key::Symbol; default=nothing) =
+    attribute(plan, node, key, default)

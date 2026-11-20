@@ -26,3 +26,23 @@
     @test get_node(root, 4) === nothing
     @test only(children(root)) === child
 end
+
+@testset "Refresh a prepared tree after declaring a column" begin
+    root = Node(1, NodeMTG(:/, :Plant, 1, 1), (;))
+    plan = prepare_node_edits(root)
+    label = NodeMTG(:+, :Leaf, 1, 2)
+    first_leaf = addchild!(plan, root, 2, label)
+    add_column!(root, :Leaf, :area, Float32; default=0f0)
+    @test_throws ArgumentError addchild!(plan, root, 3, label)
+    @test_throws ArgumentError delete_node!(plan, first_leaf)
+    @test_throws ArgumentError attribute(plan, first_leaf, :area)
+    @test only(children(root)) === first_leaf
+    refreshed = prepare_node_edits(first_leaf)
+    second_leaf = addchild!(refreshed, root, 3, label, (area=0.5f0,))
+    @test attribute(refreshed, first_leaf, :area) === 0f0
+    @test attribute(refreshed, second_leaf, :area) === 0.5f0
+    @test attribute(refreshed, second_leaf, :area; default=0.0) === attribute(second_leaf, :area, 0.0) === 0.5
+    @test_throws InexactError attribute(refreshed, second_leaf, :area, 0)
+    @test delete_node!(refreshed, first_leaf) === root
+    @test only(children(root)) === second_leaf
+end
