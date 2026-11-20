@@ -152,6 +152,7 @@ function _node_with_columnar_attrs(
     MTG::M,
     attributes::ColumnarAttrs,
     values,
+    schema=nothing,
 ) where {M<:AbstractNodeMTG}
     parent_attrs = node_attributes(parent)
     parent_store = _store_for_node_attrs(parent_attrs)
@@ -162,9 +163,9 @@ function _node_with_columnar_attrs(
     node = Node{M,ColumnarAttrs}(
         id, parent, Vector{Node{M,ColumnarAttrs}}(), MTG, attributes, nothing
     )
+    bind_columnar_child!(parent_attrs, attributes, id, getfield(MTG, :symbol), values, schema)
     push!(children(parent), node)
     _invalidate_traversal_caches!(parent)
-    bind_columnar_child!(parent_attrs, attributes, id, getfield(MTG, :symbol), values)
     return node
 end
 
@@ -293,15 +294,19 @@ end
 Set the parent of the node, removing it from the old parent's children and adding it
 to the new parent's children.
 """
-function reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,A}}} where {T,A}
+reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,A}}} where {T,A} =
+    _reparent!(node, p, nothing)
+
+function _reparent!(node::Node{T,A}, p::Union{Nothing,Node{T,A}}, schema, new_link=nothing) where {T,A}
     p === node && error("A node cannot be its own parent.")
 
     old_parent = parent(node)
     changed = old_parent !== p
     if changed && p !== nothing
         _validate_reparent_target(node, p)
-        _validate_columnar_attach!(p, node)
+        _validate_columnar_attach!(p, node, nothing, schema)
     end
+    isnothing(new_link) || link!(node, something(new_link))
     changed && _maybe_traversal_cache(node) !== nothing && _discard_traversal_cache!(node)
     if old_parent !== nothing && changed
         _detach_child!(old_parent, node)
@@ -309,7 +314,7 @@ function reparent!(node::N, p::N2) where {N<:Node{T,A},N2<:Union{Nothing,Node{T,
 
     setfield!(node, :parent, p)
     attached = p === nothing ? false : _attach_child!(p, node)
-    p === nothing || _maybe_recolumnarize_after_attach!(p, node)
+    p === nothing || _maybe_recolumnarize_after_attach!(p, node, schema)
     if (changed || attached) && (!attached || _maybe_traversal_cache(node) !== nothing)
         _mark_structure_mutation!(node)
     end
@@ -322,7 +327,11 @@ end
 Set the children of the node, detaching removed children and setting this node as the
 parent of the new children.
 """
-function rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
+rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A} =
+    _replace_children!(node, chnodes)
+
+# Empty tuples let a deletion express that it supplies no new children.
+function _replace_children!(node::Node{T,A}, chnodes) where {T,A}
     if length(chnodes) <= 8
         for child_index in eachindex(chnodes)
             child = chnodes[child_index]
@@ -350,7 +359,7 @@ function rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
     end
 
     old_children = children(node)
-    setfield!(node, :children, chnodes)
+    setfield!(node, :children, chnodes isa Tuple{} ? Node{T,A}[] : chnodes)
 
     for old_child in old_children
         if parent(old_child) === node && _child_index_by_identity(chnodes, old_child) === nothing
@@ -363,7 +372,7 @@ function rechildren!(node::Node{T,A}, chnodes::Vector{Node{T,A}}) where {T,A}
     end
 
     _mark_structure_mutation!(node)
-    return chnodes
+    return children(node)
 end
 # AbstractTrees.childstatetype(::Type{Node{T,A}}) where {T,A} = Node{T,A}
 

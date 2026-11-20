@@ -39,6 +39,7 @@ include("compute_MTG/columnarize.jl")
 include("compute_MTG/transform.jl")
 include("compute_MTG/select.jl")
 include("compute_MTG/delete_nodes.jl")
+include("compute_MTG/prepared_node_edits.jl")
 include("compute_MTG/prune.jl")
 include("compute_MTG/filter/filter-funs.jl")
 include("compute_MTG/summary.jl")
@@ -56,7 +57,7 @@ export isleaf
 export isroot
 export children, lastchild
 export reparent!, rechildren!
-export addchild!
+export prepare_node_edits, addchild!
 export traverse!
 export traverse
 export transform!, transform, select!, select

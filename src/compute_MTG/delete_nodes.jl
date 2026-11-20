@@ -118,21 +118,20 @@ link shouldn't be modified, use the `link` function instead.
 
 The function returns the parent node (or the new root if the node is a root)
 """
-function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:AbstractNodeMTG,A}
+delete_node!(node::Node; child_link_fun=new_child_link) = _delete_node!(node, child_link_fun, nothing)
+
+function _delete_node!(node::Node, child_link_fun, column_schema)
+    _check_deleted_row(column_schema, node)
     if isroot(node)
         if length(children(node)) == 1
             # If it has only one child, make it the new root:
             chnode = children(node)[1]
-            link!(chnode, child_link_fun(chnode))
+            inherited_link = child_link_fun(chnode)
+            values = _root_attributes_to_inherit(chnode, node, column_schema)
+            link!(chnode, inherited_link)
             reparent!(chnode, nothing)
             # Add to the new root the mandatory root attributes:
-            root_attrs = Dict(
-                :symbols => node[:symbols],
-                :scales => node[:scales],
-                :description => node[:description]
-            )
-
-            append!(chnode, root_attrs)
+            _inherit_root_attributes!(chnode, node, column_schema, values)
 
             node_return = chnode
         else
@@ -145,27 +144,65 @@ function delete_node!(node::Node{N,A}; child_link_fun=new_child_link) where {N<:
             # We re-parent the children to the parent of the node.
             for chnode in copy(children(node))
                 # Updating the link of the children:
-                link!(chnode, child_link_fun(chnode))
-                addchild!(parent_node, chnode; force=true)
+                _reparent!(chnode, parent_node, column_schema, Some(child_link_fun(chnode)))
             end
         end
 
-        # Delete the node as child of his parent:
-        parent_children = children(parent_node)
-        idx = _child_index_by_id(parent_children, node_id(node))
-        idx === nothing || deleteat!(parent_children, idx)
-        idx === nothing || _mark_structure_mutation!(parent_node)
-        node_return = parent_node
+        return _detach_deleted_node!(parent_node, node, column_schema)
     end
+    _isolate_deleted_node!(node, column_schema)
+    return node_return
+end
 
-    # Clean the old deleted node (isolate it, no parent, no children):
+_check_deleted_row(::Nothing, node) = nothing
+function _check_deleted_row(schema::_ColumnRowSchema, node)
+    store, bid, _ = _bucket_row(getfield(node_attributes(node), :ref))
+    _check_row_columns(schema, store.buckets[bid])
+end
+
+_root_attributes_to_inherit(child, node, ::Nothing) = nothing
+function _inherit_root_attributes!(child, node, ::Nothing, values)
+    append!(child, Dict(:symbols => node[:symbols], :scales => node[:scales],
+        :description => node[:description]))
+end
+
+function _root_attributes_to_inherit(child, node, schema::_ColumnRowSchema{C,V}) where {C,V}
+    attrs = node_attributes(node)
+    source, bid, row = _bucket_row(getfield(attrs, :ref))
+    bucket = source.buckets[bid]
+    values = Dict{Symbol,V}()
+    sizehint!(values, 3)
+    for key in (:symbols, :scales, :description)
+        idx = get(bucket.col_index, key, 0)
+        values[key] = iszero(idx) ? nothing :
+            _get_column_value(_row_column(schema, _column(bucket, idx)), row, nothing)
+    end
+    dest = _store_for_node_attrs(node_attributes(child))
+    _check_row_writes(schema, dest, symbol(child), values)
+    return values
+end
+
+function _inherit_root_attributes!(child, node, schema::_ColumnRowSchema, values)
+    dest, dbid, drow = _bucket_row(getfield(node_attributes(child), :ref))
+    for (key, value) in values
+        _set_value_bound!(dest.buckets[dbid], drow, key, value, schema)
+    end
+    return child
+end
+
+function _detach_deleted_node!(parent_node, node, schema)
+    _detach_child!(parent_node, node)
+    _isolate_deleted_node!(node, schema)
+    return parent_node
+end
+
+function _isolate_deleted_node!(node::Node{N,A}, schema) where {N,A}
     _discard_traversal_cache!(node)
     attrs = node_attributes(node)
-    attrs isa ColumnarAttrs && remove_columnar_node!(attrs)
+    attrs isa ColumnarAttrs && remove_columnar_node!(attrs, schema)
     reparent!(node, nothing)
-    rechildren!(node, Node{N,A}[])
-
-    return node_return
+    _replace_children!(node, ())
+    return nothing
 end
 
 """
