@@ -28,7 +28,7 @@ function columnarize!(mtg::Node)
         attrs isa ColumnarAttrs ||
             error("columnarize! expects nodes with ColumnarAttrs attributes.")
         source_store = _store_for_node_attrs(attrs)
-        raw = _isbound(attrs) ? Dict{Symbol,Any}(pairs(attrs)) : attrs.staged
+        raw = _isbound(attrs) ? Dict{Symbol,Any}(pairs(attrs)) : _staged_attributes(attrs)
         _add_node_with_attrs!(store, node_id(n), symbol(n), raw)
         if root_store !== nothing && source_store === root_store
             _restore_root_row_absences!(store, root_store, node_id(n))
@@ -39,7 +39,7 @@ function columnarize!(mtg::Node)
         attrs = node_attributes(n)::ColumnarAttrs
         attrs.ref.store = store
         attrs.ref.node_id = node_id(n)
-        empty!(attrs.staged)
+        attrs.staged = nothing
     end
     return mtg
 end

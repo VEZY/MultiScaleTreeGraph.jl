@@ -124,6 +124,8 @@ function _to_columnar_attrs(attributes::AbstractDict)
     ColumnarAttrs(attributes)
 end
 
+_to_columnar_attrs(::NamedTuple{(),Tuple{}}) = ColumnarAttrs()
+
 function _to_columnar_attrs(attributes::NamedTuple)
     ColumnarAttrs(Dict{Symbol,Any}(pairs(attributes)))
 end
@@ -137,7 +139,7 @@ function _to_columnar_attrs(attributes)
 end
 
 function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, attributes::ColumnarAttrs) where {M<:AbstractNodeMTG}
-    _node_with_columnar_attrs(id, parent, MTG, attributes, attributes.staged)
+    _node_with_columnar_attrs(id, parent, MTG, attributes, _staged_attributes(attributes))
 end
 
 function Node(id::Int, parent::Node{M,ColumnarAttrs}, MTG::M, values::NamedTuple) where {M<:AbstractNodeMTG}
