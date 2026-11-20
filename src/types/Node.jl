@@ -810,6 +810,26 @@ end
     return nothing
 end
 
+"""
+    attribute_type(node, key::Symbol)
+
+Return the union of the value types declared for `key` across the columnar
+tree that contains `node`. Columns on organ symbols with no nodes are included.
+An undeclared attribute gives `Union{}`. This queries the current schema,
+so call it before preparing an application that fixes its attribute types.
+"""
+function attribute_type(node::Node, key::Symbol)
+    store = _node_store(node)
+    T = Union{}
+    for bucket in store.buckets
+        slot = get(bucket.col_index, key, 0)
+        if !iszero(slot)
+            T = Union{T,bucket.col_types[slot]}
+        end
+    end
+    return T
+end
+
 function add_column!(node::Node, symbol::Symbol, key::Symbol, ::Type{T}; default::T) where {T}
     add_column!(_node_store(node), symbol, key, T, default=default)
 end

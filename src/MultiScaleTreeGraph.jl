@@ -88,7 +88,7 @@ export symbol, scale, index, link
 export symbol!, scale!, index!, link!
 export ColumnarStore
 export Column, SymbolBucket, MTGAttributeStore, NodeAttrRef
-export attribute, attribute!, attributes, attribute_names
+export attribute, attribute!, attributes, attribute_names, attribute_type
 export add_column!, drop_column!, rename_column!
 export descendants_strategy, descendants_strategy!
 export columnarize!

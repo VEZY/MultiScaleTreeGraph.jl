@@ -46,3 +46,18 @@ end
     @test delete_node!(refreshed, first_leaf) === root
     @test only(children(root)) === second_leaf
 end
+
+@testset "Declared attribute types include organ symbols without nodes" begin
+    root = Node(1, NodeMTG(:/, :Plant, 1, 1), (;))
+    @test attribute_type(root, :kind) === Union{}
+    add_column!(root, :Leaf, :kind, Int; default=3)
+    add_column!(root, :Flower, :kind, Symbol; default=:open)
+    add_column!(root, :Plant, :note, String; default="plot")
+    @test isempty(children(root))
+    @test attribute_type(root, :kind) === Union{Int,Symbol}
+    leaf = addchild!(prepare_node_edits(root), root, 2, NodeMTG(:+, :Leaf, 1, 2))
+    @test attribute_type(leaf, :note) === String
+    @test attribute_type(leaf, :kind) === Union{Int,Symbol}
+    drop_column!(root, :Leaf, :kind)
+    @test attribute_type(leaf, :kind) === Symbol
+end

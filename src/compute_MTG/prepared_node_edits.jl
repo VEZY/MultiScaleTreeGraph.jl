@@ -14,7 +14,7 @@ Use `addchild!(plan, parent, id, encoding[, attributes])` to insert a child,
 
 An empty attribute tuple is the default. New nodes and attribute names may
 appear at any time. Each resulting column type must belong to the prepared
-family. To introduce another type, declare its column with [`add_column!`](@ref)
+family. To introduce another type, declare its column with `add_column!`
 and prepare a fresh plan. The plan is specific to this store.
 """
 function prepare_node_edits(node::Node{M,ColumnarAttrs}) where {M}

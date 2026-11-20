@@ -120,8 +120,9 @@ function _columnar_row_snapshot(attrs::ColumnarAttrs, schema)
         source, source_bid, source_row = _bucket_row(ref)
         for raw in source.buckets[source_bid].columns
             column = _row_column(schema, raw)
-            if _row_has_value(column, source_row)
-                snapshot[column.name] = column.data[source_row]::V
+            value = _get_column_value(column, source_row, nothing)::V
+            if !isnothing(value) || _row_has_value(column, source_row)
+                snapshot[column.name] = value
             end
         end
     end
