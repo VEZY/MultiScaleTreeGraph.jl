@@ -1,0 +1,2 @@
+# Preserve the upstream tab-delimited fixtures, including empty cells at line ends.
+*.mtg -text whitespace=-blank-at-eol,-blank-at-eof

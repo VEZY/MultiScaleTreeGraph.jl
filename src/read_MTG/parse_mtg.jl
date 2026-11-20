@@ -167,7 +167,13 @@ function _parse_MTG_node_attr_fields(
             continue
         end
 
-        if node_type[i] == "INT"
+        typ = node_type[i]
+        is_real = typ == "REAL" || (typ == "ALPHA" && feature_name in (:Width, :Length))
+        if (typ in ("INT", "BOOLEAN", "DD/MM/YY") || is_real) && isempty(strip(field))
+            continue
+        end
+
+        if typ == "INT"
             try
                 node_attr[feature_name] = parse(Int, field)
             catch e
@@ -178,7 +184,7 @@ function _parse_MTG_node_attr_fields(
                         _mtg_node_data_text(node_data, diagnostic_start))
                 end
             end
-        elseif node_type[i] == "BOOLEAN"
+        elseif typ == "BOOLEAN"
             try
                 node_attr[feature_name] = parse(Bool, field)
             catch e
@@ -189,7 +195,7 @@ function _parse_MTG_node_attr_fields(
                         _mtg_node_data_text(node_data, diagnostic_start))
                 end
             end
-        elseif node_type[i] == "DD/MM/YY"
+        elseif typ == "DD/MM/YY"
             try
                 node_attr[feature_name] = Date(field, dateformat"d/m/y")
             catch e
@@ -200,7 +206,7 @@ function _parse_MTG_node_attr_fields(
                         _mtg_node_data_text(node_data, diagnostic_start))
                 end
             end
-        elseif node_type[i] == "REAL" || (node_type[i] == "ALPHA" && feature_name in (:Width, :Length))
+        elseif is_real
             try
                 node_attr[feature_name] = parse(Float64, field)
             catch e
@@ -261,7 +267,7 @@ It may also add several nodes if the line contains several MTG elements.
 function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_column, node_id, mtg_type, features, feature_names, classes)
 
     splitted_MTG = split(l[1], "\t")
-    node_column = findfirst(x -> length(x) > 0, splitted_MTG)
+    node_column = findfirst(x -> !isempty(strip(x)), splitted_MTG)
 
     if attr_column_start < node_column
         error(
@@ -275,8 +281,8 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
         )
     end
 
-    node = split_MTG_elements(splitted_MTG[node_column])
-    node, shared = expand_node!(node, 1)
+    node = split_MTG_elements(strip(splitted_MTG[node_column]))
+    node, shared = expand_node!(node, line[1])
 
     # Get node attributes:
     if features !== nothing
@@ -332,8 +338,10 @@ function parse_line_to_node!(tree_dict, l, line, attr_column_start, last_node_co
 
         symbol = node_element[2]
 
-        if k == length(node) || findfirst(x -> x == k, shared) !== nothing
+        if k == length(node)
             node_k_attr = node_attr
+        elseif k in shared
+            node_k_attr = ColumnarAttrs(node_attr)
         else
             node_k_attr = init_empty_attr()
         end
