@@ -57,6 +57,59 @@ end
     @test traverse(mtg1, n -> Dict(pairs(node_attributes(n)))) == traverse(mtg2, n -> Dict(pairs(node_attributes(n))))
 end
 
+@testset "mtg index ranges and row attributes" begin
+    root = read_mtg(joinpath(@__DIR__, "files", "index-ranges.mtg"))
+    segments = traverse(root, identity; symbol=:E)
+    @test index.(segments) == [11, 12, 13, 14, 21, 22, 23, 24, 25, 31, 32, 33, 41, 42, 43, 51, 52]
+    @test link.(segments) == [:/, fill(:<, 8)..., fill(:+, 6)..., :<, :<]
+    @test parent(first(segments)) === root
+    @test all(parent(segments[k]) === segments[k-1] for k in 2:length(segments))
+    @test [attribute(n, :value) for n in segments] == [
+        nothing, nothing, nothing, 10, nothing, 20, 20, 20, 20,
+        nothing, nothing, 30, 40, 40, 40, 40, 40,
+    ]
+
+    attribute!(segments[6], :value, 99)
+    @test attribute(segments[6], :value) == 99
+    @test attribute(segments[7], :value) == 20
+end
+
+@testset "OpenAlea reader fixtures" begin
+    # OpenAlea's counts exclude its implicit scale-zero root here.
+    for (file, counts) in (
+        ("mtg3.mtg", (12,)),
+        ("mtg51.mtg", (1, 4, 13)),
+        ("test6_apricot2.mtg", (1, 10, 20, 65)),
+        ("test8_boutdenoylum2.mtg", (1, 63, 198)),
+        ("test10_agraf.mtg", (1, 484, 2994)),
+        ("test12_wij10.mtg", (1, 93, 93, 316)),
+    )
+        @testset "$file" begin
+            root = read_mtg(joinpath(@__DIR__, "files", "openalea", file))
+            scales = traverse(root, scale)
+            @test length(root) == sum(counts)
+            @test [count(==(s), scales) for s in eachindex(counts)] == collect(counts)
+
+            if file == "test10_agraf.mtg"
+                # Issue #116 starts with P1, U94 and the row ^/E1<<E35.
+                segments = [get_node(root, id) for id in 3:37]
+                @test all(==(:E), symbol.(segments))
+                @test index.(segments) == 1:35
+                @test parent(first(segments)) === get_node(root, 2)
+                @test all(link(segments[k]) == :< && parent(segments[k]) === segments[k-1]
+                          for k in 2:length(segments))
+                @test all(n -> attribute(n, :dist) === nothing, segments[1:end-1])
+                @test attribute(last(segments), :dist) == 825
+            elseif file == "test6_apricot2.mtg"
+                @test any(n -> index(n) == 2 && link(n) == :+, traverse(root, identity; symbol=:B))
+                leaf = only(traverse(root, identity; symbol=:L, filter_fun=n -> index(n) == 261))
+                @test attribute(leaf, :DBC) === nothing
+                @test attribute(leaf, :L1) == 3455
+            end
+        end
+    end
+end
+
 @testset "mtg with no attributes" begin
     mtg = read_mtg("files/palm.mtg")
     @test names(mtg) == [:scales, :description, :symbols]
@@ -136,7 +189,7 @@ end
     )
     feature_names = Symbol.(features.NAME)
     node_data = split(
-        "/Plant1\t7\ttrue\t24/08/2026\t1.5\tlabel-value\t2.25\tNA",
+        "/Plant1\t7\ttrue\t24/08/2026\t1.5\t  \t2.25\tNA",
         "\t",
     )
     expected = _legacy_parse_attrs_for_test(
@@ -150,6 +203,7 @@ end
     @test actual[:alive] === true
     @test actual[:when] == Date(2026, 8, 24)
     @test actual[:measure] === 1.5
+    @test actual[:label] == "  "
     @test actual[:Width] === 2.25
     @test typeof(actual[:label]) == typeof(expected[:label])
     @test !haskey(actual, :skipped)
