@@ -107,15 +107,37 @@ function _subtree_has_node_id_conflict(node::Node, store::MTGAttributeStore)
     return false
 end
 
-function _merge_columnar_subtree_into_store!(node::Node, target_store::MTGAttributeStore)
+function _columnar_row_snapshot(attrs::ColumnarAttrs, schema)
+    V = _row_value_type(schema)
+    snapshot = Dict{Symbol,V}()
+    sizehint!(snapshot, _row_length(attrs, schema))
+    ref = getfield(attrs, :ref)
+    if !_isbound(attrs)
+        for (key, value) in pairs(_staged_attributes(attrs))
+            snapshot[key] = value::V
+        end
+    else
+        source, source_bid, source_row = _bucket_row(ref)
+        for raw in source.buckets[source_bid].columns
+            column = _row_column(schema, raw)
+            value = _get_column_value(column, source_row, nothing)::V
+            if !isnothing(value) || _row_has_value(column, source_row)
+                snapshot[column.name] = value
+            end
+        end
+    end
+    return snapshot
+end
+
+function _merge_columnar_subtree_into_store!(node::Node, target_store::MTGAttributeStore, schema=nothing)
     attrs = node_attributes(node)
     attrs isa ColumnarAttrs || return false
     source_store = _store_for_node_attrs(attrs)
     source_node_id = attrs.ref.node_id
-    snapshot = Dict{Symbol,Any}(pairs(attrs))
-    _add_node_with_attrs!(target_store, node_id(node), symbol(node), snapshot)
+    snapshot = _columnar_row_snapshot(attrs, schema)
+    _add_node_with_attrs!(target_store, node_id(node), symbol(node), snapshot, schema)
     if source_store !== nothing && source_store !== target_store
-        _remove_node!(source_store, source_node_id)
+        _remove_node!(source_store, source_node_id, schema)
     end
     attrs.ref.store = target_store
     attrs.ref.node_id = node_id(node)
@@ -126,27 +148,29 @@ function _merge_columnar_subtree_into_store!(node::Node, target_store::MTGAttrib
         _register_traversal_cache!(target_store, node)
     end
     for ch in children(node)
-        _merge_columnar_subtree_into_store!(ch, target_store) || return false
+        _merge_columnar_subtree_into_store!(ch, target_store, schema) || return false
     end
     return true
 end
 
-function _try_merge_subtree_store!(child::Node, parent_store::MTGAttributeStore, child_store::MTGAttributeStore)
+function _try_merge_subtree_store!(child::Node, parent_store::MTGAttributeStore, child_store::MTGAttributeStore, schema=nothing)
     parent_store === child_store && return true
     _subtree_has_node_id_conflict(child, parent_store) && return false
-    return _merge_columnar_subtree_into_store!(child, parent_store)
+    return _merge_columnar_subtree_into_store!(child, parent_store, schema)
 end
 
 function _validate_columnar_attach!(
     p::Node,
     child::Node,
     reserved_ids::Union{Nothing,Set{Int}}=nothing,
+    schema=nothing,
 )
     p_store = _columnar_store_or_nothing(p)
     c_store = _columnar_store_or_nothing(child)
     if p_store !== nothing && c_store !== nothing && p_store !== c_store
         reserved_ids === nothing && (reserved_ids = Set{Int}())
         subtree_ids = Set{Int}()
+        pending = isnothing(schema) ? nothing : Dict{Tuple{Symbol,Symbol},Type}()
         stack = typeof(child)[child]
         while !isempty(stack)
             current = pop!(stack)
@@ -157,6 +181,13 @@ function _validate_columnar_attach!(
                 throw(ArgumentError(
                     "cannot attach subtree rooted at node $(node_id(child)): node id $nid is duplicated or already present in the destination attribute store",
                 ))
+            end
+            if !isnothing(schema)
+                attrs = node_attributes(current)
+                source, bid, _ = _bucket_row(getfield(attrs, :ref))
+                _check_row_columns(schema, source.buckets[bid])
+                _check_row_writes(schema, p_store, symbol(current),
+                    _columnar_row_snapshot(attrs, schema), pending)
             end
             push!(subtree_ids, nid)
             current_children = children(current)
@@ -169,11 +200,11 @@ function _validate_columnar_attach!(
     return reserved_ids
 end
 
-@inline function _maybe_recolumnarize_after_attach!(p::Node, child::Node)
+@inline function _maybe_recolumnarize_after_attach!(p::Node, child::Node, schema=nothing)
     p_store = _columnar_store_or_nothing(p)
     c_store = _columnar_store_or_nothing(child)
     if p_store !== nothing && c_store !== nothing && p_store !== c_store
-        _try_merge_subtree_store!(child, p_store, c_store) || error(
+        _try_merge_subtree_store!(child, p_store, c_store, schema) || error(
             "failed to merge the attached subtree into its destination attribute store",
         )
     end

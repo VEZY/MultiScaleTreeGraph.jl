@@ -237,23 +237,27 @@ end
 ColumnarAttrs() = ColumnarAttrs(NodeAttrRef(nothing, 0), nothing)
 function ColumnarAttrs(d::AbstractDict)
     isempty(d) && return ColumnarAttrs()
-    staged = Dict{Symbol,Any}()
+    return ColumnarAttrs(NodeAttrRef(nothing, 0), _stage_attributes(d, Any))
+end
+
+function _stage_attributes(d::AbstractDict, ::Type{V}) where {V}
+    staged = Dict{Symbol,V}()
     for (k, v) in d
-        staged[Symbol(k)] = v
+        staged[Symbol(k)] = v::V
     end
-    ColumnarAttrs(NodeAttrRef(nothing, 0), staged)
+    return staged
 end
 
 # Unbound empty attributes need no mutable staging dictionary.
 @inline _staged_attributes(attrs::ColumnarAttrs) =
     isnothing(attrs.staged) ? NamedTuple() : attrs.staged
 
-@inline _isbound(attrs::ColumnarAttrs) = attrs.ref.store !== nothing && attrs.ref.node_id > 0
+@inline _isbound(attrs::ColumnarAttrs) = getfield(attrs, :ref).store !== nothing && getfield(attrs, :ref).node_id > 0
 
 function _assert_columnar_attrs_unbound(attrs::ColumnarAttrs)
     _isbound(attrs) || return nothing
     throw(ArgumentError(
-        "ColumnarAttrs is already bound to node id $(attrs.ref.node_id); " *
+        "ColumnarAttrs is already bound to node id $(string(getfield(attrs, :ref).node_id)); " *
         "pass `copy(attrs)` to a Node constructor to copy its current values.",
     ))
 end
@@ -264,9 +268,9 @@ end
 end
 
 function _assert_node_id_available(store::MTGAttributeStore, node_id::Int)
-    node_id > 0 || throw(ArgumentError("node id must be positive; got $(node_id)"))
+    node_id > 0 || throw(ArgumentError("node id must be positive; got $(string(node_id))"))
     _node_id_is_active(store, node_id) && throw(ArgumentError(
-        "node id $(node_id) is already registered in the destination attribute store",
+        "node id $(string(node_id)) is already registered in the destination attribute store",
     ))
     return nothing
 end
@@ -302,15 +306,14 @@ end
     bucket.columns[col_idx]
 end
 
-function _widen_column!(bucket::SymbolBucket, col_idx::Int, ::Type{NewT}) where {NewT}
-    old_col = bucket.columns[col_idx]
+function _widen_column!(bucket::SymbolBucket, col_idx::Int, old_col::Column, ::Type{NewT}) where {NewT}
     old_data = old_col.data
     new_data = Vector{NewT}(undef, length(old_data))
     @inbounds for i in eachindex(old_data)
         new_data[i] = old_data[i]
     end
     new_default = convert(NewT, old_col.default)
-    bucket.columns[col_idx] = Column{NewT}(
+    column = Column{NewT}(
         old_col.name,
         new_data,
         copy(old_col.present),
@@ -318,18 +321,16 @@ function _widen_column!(bucket::SymbolBucket, col_idx::Int, ::Type{NewT}) where 
         new_default,
         old_col.default_present,
     )
+    bucket.columns[col_idx] = column
     bucket.col_types[col_idx] = NewT
-    return bucket.columns[col_idx]
+    return column
 end
 
-function _ensure_column_type!(bucket::SymbolBucket, col_idx::Int, value)
-    T = bucket.col_types[col_idx]
-    value_T = typeof(value)
-    if value_T <: T
-        return _column(bucket, col_idx)
-    end
-    NewT = Union{T,value_T}
-    return _widen_column!(bucket, col_idx, NewT)
+function _ensure_column_type!(bucket::SymbolBucket, col_idx::Int, column::Column{T}, value::V, schema) where {T,V}
+    value isa T && return column
+    NewT = Union{T,V}
+    _check_row_column_type(schema, Column{NewT})
+    return _widen_column!(bucket, col_idx, column, NewT)
 end
 
 function _add_column_internal!(
@@ -383,19 +384,21 @@ end
     return nothing
 end
 
-function _set_value!(bucket::SymbolBucket, row::Int, key::Symbol, value)
+function _set_value!(bucket::SymbolBucket, row::Int, key::Symbol, value::V, schema=nothing) where {V}
     col_idx = get(bucket.col_index, key, 0)
     if col_idx == 0
-        if value === nothing
-            _add_nullable_column_internal!(bucket, key, Nothing)
-        else
-            _add_nullable_column_internal!(bucket, key, typeof(value))
-        end
+        _check_row_column_type(schema, Column{Union{Nothing,V}})
+        _add_nullable_column_internal!(bucket, key, V)
         col_idx = bucket.col_index[key]
     end
 
-    col = _ensure_column_type!(bucket, col_idx, value)
-    col.data[row] = value
+    col = _ensure_column_type!(bucket, col_idx, _row_column(schema, _column(bucket, col_idx)), value, schema)
+    _write_present_value!(col, row, value)
+    return value
+end
+
+@inline function _write_present_value!(col::Column{T}, row, value) where {T}
+    col.data[row] = value::T
     _mark_row_present!(col, row)
     return value
 end
@@ -426,11 +429,11 @@ function _bucket_row(ref::NodeAttrRef)
     store = ref.store
     store === nothing && error("Columnar attributes are not bound to a store.")
     node_id = ref.node_id
-    node_id <= 0 && error("Invalid node id for columnar attributes: $(node_id)")
-    node_id > length(store.node_bucket) && error("Node id $(node_id) is outside of store bounds.")
+    node_id <= 0 && error("Invalid node id for columnar attributes: $(string(node_id))")
+    node_id > length(store.node_bucket) && error("Node id $(string(node_id)) is outside of store bounds.")
     bid = store.node_bucket[node_id]
     row = store.node_row[node_id]
-    bid == 0 && error("Node id $(node_id) is no longer attached to the attribute store.")
+    bid == 0 && error("Node id $(string(node_id)) is no longer attached to the attribute store.")
     return store, bid, row
 end
 
@@ -442,19 +445,48 @@ end
     return store, bid, row
 end
 
-function _add_node_row!(store::MTGAttributeStore, node_id::Int, symbol::Symbol)
+# Prepared tree operations admit the concrete column types present during preparation.
+# Row widths, attribute names and the number of nodes can still change.
+struct _ColumnRowSchema{C,V} end
+
+function _column_row_schema(store::MTGAttributeStore)
+    types = unique(typeof(column) for bucket in store.buckets for column in bucket.columns)
+    values = [eltype(fieldtype(T, :data)) for T in types]
+    return _ColumnRowSchema{Union{Column{Nothing},types...},Union{Nothing,values...}}()
+end
+
+_check_row_column_type(::Nothing, type) = nothing
+function _check_row_column_type(::_ColumnRowSchema{C}, type) where {C}
+    type <: C || throw(ArgumentError("The attribute column type is outside the prepared tree schema."))
+    return nothing
+end
+
+_row_value_type(::Nothing) = Any
+_row_value_type(::_ColumnRowSchema{C,V}) where {C,V} = V
+
+_check_row_columns(::Nothing, bucket) = nothing
+function _check_row_columns(::_ColumnRowSchema{C}, bucket) where {C}
+    all(column -> column isa C, bucket.columns) && return nothing
+    throw(ArgumentError("The attribute column type is outside the prepared tree schema."))
+end
+
+_row_column(::Nothing, column) = column
+_row_column(::_ColumnRowSchema{C}, column) where {C} = column::C
+
+function _add_node_row!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, schema=nothing)
     _assert_node_id_available(store, node_id)
-    _mark_subtree_index_mutation!(store)
-    _ensure_node_capacity!(store, node_id)
     bid = _get_or_create_bucket!(store, symbol)
     bucket = store.buckets[bid]
+    _check_row_columns(schema, bucket)
+    _mark_subtree_index_mutation!(store)
+    _ensure_node_capacity!(store, node_id)
 
     row = length(bucket.row_to_node) + 1
     push!(bucket.row_to_node, node_id)
     bucket.node_to_row[node_id] = row
 
     @inbounds for i in eachindex(bucket.columns)
-        _append_default_row!(bucket.columns[i])
+        _append_default_row!(_row_column(schema, bucket.columns[i]))
     end
 
     store.node_bucket[node_id] = bid
@@ -464,39 +496,65 @@ function _add_node_row!(store::MTGAttributeStore, node_id::Int, symbol::Symbol)
     return bucket, row
 end
 
-function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict)
-    bucket, row = _add_node_row!(store, node_id, symbol)
+function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, ::NamedTuple{()}, schema=nothing)
+    _add_node_row!(store, node_id, symbol, schema)
+    return nothing
+end
+
+# The open store may widen columns freely. A bounded operation must admit all
+# prospective types before it publishes its row or detaches a source subtree.
+_check_row_writes(::Nothing, store, symbol, attrs, pending=nothing) = nothing
+function _check_row_writes(schema::_ColumnRowSchema, store, symbol, attrs, pending=nothing)
+    bid = get(store.symbol_to_bucket, symbol, 0)
+    bucket = iszero(bid) ? nothing : store.buckets[bid]
+    isnothing(bucket) || _check_row_columns(schema, bucket)
+    for (name, value) in pairs(attrs)
+        key = _normalize_attr_key(name)
+        index = isnothing(bucket) ? 0 : get(bucket.col_index, key, 0)
+        previous = iszero(index) ? Nothing : bucket.col_types[index]::Type
+        if !isnothing(pending)
+            previous = get(pending, (symbol, key), previous)
+        end
+        next = Union{previous,typeof(value)}
+        _check_row_column_type(schema, Column{next})
+        isnothing(pending) || (pending[(symbol, key)] = next)
+    end
+    return nothing
+end
+
+function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::AbstractDict, schema=nothing)
+    _check_row_writes(schema, store, symbol, attrs)
+    bucket, row = _add_node_row!(store, node_id, symbol, schema)
 
     for (k, v) in attrs
-        _set_value_bound!(bucket, row, _normalize_attr_key(k), v)
+        _set_value_bound!(bucket, row, _normalize_attr_key(k), v, schema)
     end
 
     return nothing
 end
 
-@inline _set_namedtuple_attrs!(bucket::SymbolBucket, row::Int, ::Tuple{}, ::Tuple{}) = nothing
+@inline _set_namedtuple_attrs!(bucket::SymbolBucket, row::Int, ::Tuple{}, ::Tuple{}, schema=nothing) = nothing
 
-@inline function _set_namedtuple_attrs!(bucket::SymbolBucket, row::Int, names::Tuple, values::Tuple)
-    _set_value_bound!(bucket, row, first(names), first(values))
-    _set_namedtuple_attrs!(bucket, row, Base.tail(names), Base.tail(values))
+@inline function _set_namedtuple_attrs!(bucket::SymbolBucket, row::Int, names::Tuple, values::Tuple, schema=nothing)
+    _set_value_bound!(bucket, row, first(names), first(values), schema)
+    _set_namedtuple_attrs!(bucket, row, Base.tail(names), Base.tail(values), schema)
     return nothing
 end
 
-function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::NamedTuple)
-    if isempty(attrs)
-        _add_node_row!(store, node_id, symbol)
-        return nothing
-    end
+function _add_node_with_attrs!(store::MTGAttributeStore, node_id::Int, symbol::Symbol, attrs::NamedTuple, schema=nothing)
     bid = get(store.symbol_to_bucket, symbol, 0)
     if bid == 0 || !all(key -> haskey(store.buckets[bid].col_index, key), keys(attrs))
         # Keep the existing schema insertion order when a new key appears. Once
         # the schema exists, repeated organ creation needs neither filled Dict.
-        staged = ColumnarAttrs(Dict{Symbol,Any}(pairs(attrs))).staged
-        return _add_node_with_attrs!(store, node_id, symbol, staged)
+        V = _row_value_type(schema)
+        _check_row_writes(schema, store, symbol, attrs)
+        staged = _stage_attributes(Dict{Symbol,V}(pairs(attrs)), V)
+        return _add_node_with_attrs!(store, node_id, symbol, staged, schema)
     end
 
-    bucket, row = _add_node_row!(store, node_id, symbol)
-    _set_namedtuple_attrs!(bucket, row, keys(attrs), values(attrs))
+    _check_row_writes(schema, store, symbol, attrs)
+    bucket, row = _add_node_row!(store, node_id, symbol, schema)
+    _set_namedtuple_attrs!(bucket, row, keys(attrs), values(attrs), schema)
     return nothing
 end
 
@@ -514,13 +572,14 @@ end
     return nothing
 end
 
-function _remove_node!(store::MTGAttributeStore, node_id::Int)
+function _remove_node!(store::MTGAttributeStore, node_id::Int, schema=nothing)
     node_id > length(store.node_bucket) && return nothing
     bid = store.node_bucket[node_id]
     bid == 0 && return nothing
+    bucket = store.buckets[bid]
+    _check_row_columns(schema, bucket)
     _mark_subtree_index_mutation!(store)
 
-    bucket = store.buckets[bid]
     row = bucket.node_to_row[node_id]
     last_row = length(bucket.row_to_node)
     moved_node = 0
@@ -536,7 +595,7 @@ function _remove_node!(store::MTGAttributeStore, node_id::Int)
     @inbounds for i in eachindex(bucket.columns)
         # Columns have different element types. Dispatch once for the complete
         # row operation instead of accessing each field through `Any`.
-        _remove_column_row!(bucket.columns[i], row, last_row)
+        _remove_column_row!(_row_column(schema, bucket.columns[i]), row, last_row)
     end
 
     if moved_node != 0
@@ -687,22 +746,23 @@ function bind_columnar_child!(
     node_id::Int,
     symbol::Symbol,
     values=_staged_attributes(child_attrs),
+    schema=nothing,
 )
     _assert_columnar_attrs_unbound(child_attrs)
     store = _store_for_node_attrs(parent_attrs)
     store === nothing && error("Parent node is not attached to a columnar attribute store.")
     _assert_node_id_available(store, node_id)
-    _add_node_with_attrs!(store, node_id, symbol, values)
+    _add_node_with_attrs!(store, node_id, symbol, values, schema)
     child_attrs.ref.store = store
     child_attrs.ref.node_id = node_id
     child_attrs.staged = nothing
     return child_attrs
 end
 
-function remove_columnar_node!(attrs::ColumnarAttrs)
+function remove_columnar_node!(attrs::ColumnarAttrs, schema=nothing)
     store = _store_for_node_attrs(attrs)
     store === nothing && return nothing
-    _remove_node!(store, attrs.ref.node_id)
+    _remove_node!(store, getfield(attrs, :ref).node_id, schema)
     attrs.ref.node_id = 0
     return nothing
 end
@@ -727,7 +787,8 @@ function rename_column!(store::MTGAttributeStore, symbol::Symbol, from::Symbol, 
     return store
 end
 
-function Base.length(attrs::ColumnarAttrs)
+Base.length(attrs::ColumnarAttrs) = _row_length(attrs, nothing)
+function _row_length(attrs::ColumnarAttrs, schema)
     if !_isbound(attrs)
         return length(_staged_attributes(attrs))
     end
@@ -735,7 +796,7 @@ function Base.length(attrs::ColumnarAttrs)
     bucket = store.buckets[bid]
     count = 0
     @inbounds for column in bucket.columns
-        count += column.present[row]
+        count += _row_has_value(_row_column(schema, column), row)
     end
     return count
 end
@@ -791,11 +852,16 @@ end
     bucket.col_types[col_idx] === Union{Nothing,T}
 end
 
+@inline _attribute_read_value(value, default) = value
+@inline function _attribute_read_value(value, default::T) where {T<:Number}
+    value === nothing && return nothing
+    return value isa T ? value : (convert(T, value)::T)
+end
+
 @inline function _get_typed_numeric(attrs::ColumnarAttrs, key::Symbol, default::T) where {T<:Number}
     if !_isbound(attrs)
         v = get(_staged_attributes(attrs), key, default)
-        v === nothing && return nothing
-        return v isa T ? v : (convert(T, v)::T)
+        return _attribute_read_value(v, default)
     end
 
     store, bid, row = _bound_store_bid_row(attrs.ref)
@@ -813,8 +879,7 @@ end
     end
 
     v = _get_column_value(column, row, default)
-    v === nothing && return nothing
-    return v isa T ? v : (convert(T, v)::T)
+    return _attribute_read_value(v, default)
 end
 
 function Base.get(attrs::ColumnarAttrs, key::Symbol, default::T) where {T}
@@ -839,10 +904,10 @@ function Base.get(attrs::ColumnarAttrs, key::Symbol, default::T) where {T}
 end
 Base.get(attrs::ColumnarAttrs, key, default) = get(attrs, _normalize_attr_key(key), default)
 
-@inline function _set_value_bound!(bucket::SymbolBucket, row::Int, key::Symbol, value::T) where {T}
+@inline function _set_value_bound!(bucket::SymbolBucket, row::Int, key::Symbol, value::T, schema=nothing) where {T}
     col_idx = get(bucket.col_index, key, 0)
     if col_idx == 0
-        _set_value!(bucket, row, key, value)
+        _set_value!(bucket, row, key, value, schema)
         return value
     end
 
@@ -855,7 +920,7 @@ Base.get(attrs::ColumnarAttrs, key, default) = get(attrs, _normalize_attr_key(ke
         @inbounds col.data[row] = value
         _mark_row_present!(col, row)
     else
-        _set_value!(bucket, row, key, value)
+        _set_value!(bucket, row, key, value, schema)
     end
 
     return value

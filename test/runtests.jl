@@ -25,6 +25,7 @@ end
     include("test-columnar-iteration-mutation.jl")
     include("test-columnar-reads.jl")
     include("test-columnar-updates.jl")
+    include("test-prepared-node-edits.jl")
 end
 
 @testset "descendants()" begin
